@@ -1,0 +1,23 @@
+# Replace the domain and certificate paths before installing this template.
+server {
+    listen 443 ssl;
+    server_name images.example.com;
+    ssl_certificate /etc/letsencrypt/live/images.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/images.example.com/privkey.pem;
+    client_max_body_size 41m;
+
+    location / {
+        proxy_pass http://127.0.0.1:7860;
+        proxy_set_header Host $http_host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_http_version 1.1;
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+    }
+}
+
+server {
+    listen 80;
+    server_name images.example.com;
+    return 301 https://images.example.com$request_uri;
+}

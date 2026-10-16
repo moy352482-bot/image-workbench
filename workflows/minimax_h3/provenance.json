@@ -1,0 +1,17 @@
+{
+  "t2v": {
+    "official_source": "https://github.com/Comfy-Org/workflow_templates/blob/371a7b7171bbd11e9cc92ef615ba5ad223d7e5b4/templates/video_minimax_h3_t2v.json",
+    "source_sha256": "2400b01a7c8acae3fed038c0372f08bacb90d2cdf915febadbe7e3f9802506ea",
+    "converter": "artokun/comfyui-mcp@1d5b12b1b499a7358ac614ffb41b736a0817f855"
+  },
+  "i2v": {
+    "official_source": "https://github.com/Comfy-Org/workflow_templates/blob/371a7b7171bbd11e9cc92ef615ba5ad223d7e5b4/templates/video_minimax_h3_i2v.json",
+    "source_sha256": "4dc94e9ea308c1d60409e7f55dba5e2788dab4659c2dbb90f1e9481498767540",
+    "converter": "artokun/comfyui-mcp@1d5b12b1b499a7358ac614ffb41b736a0817f855"
+  },
+  "r2v": {
+    "official_source": "https://github.com/Comfy-Org/workflow_templates/blob/371a7b7171bbd11e9cc92ef615ba5ad223d7e5b4/templates/video_minimax_h3_r2v.json",
+    "source_sha256": "14b30659a057547e02bdd4bbbdda3f8670aa6d7d81d1d8d99c4f9ad1e2eabc44",
+    "converter": "artokun/comfyui-mcp@1d5b12b1b499a7358ac614ffb41b736a0817f855"
+  }
+}

@@ -1,2 +1,128 @@
-# image-workbench
-一个电商和漫剧制作专用的图片生成网站1
+# Image Workbench
+
+用于电商素材、角色资产和分镜制作的自托管图片与视频工作台。浏览器管理项目、参考资产、任务和结果；执行器在你自己的电脑上运行。支持个人账号、独立工作空间、内部积分、任务恢复和管理员维护页面。
+
+本仓库提供应用代码和 ComfyUI 工作流模板，不包含模型权重、登录凭据、业务数据、示例人物素材或生成结果。
+
+## 功能
+
+- 图片分区：新建图片、参考图生成、基于历史图片修改、版本追溯、放大与对比、结果下载。
+- H3 视频分区：保存脚本原文，手动创建分镜，选择 T2V、I2V 首尾帧或 R2V 参考资产模式；由本机 ComfyUI 执行。
+- 账号隔离：每个账号拥有自己的工作空间、项目与文件；浏览器写入需要登录和 CSRF 校验。
+- 积分账本：提交时冻结积分，成功后消费，明确失败后退款；请求重放不会重复冻结或启动生成。
+- 分离部署：云端接收任务和保存结果，本机执行器主动领取任务，ComfyUI 无需直接暴露到公网。
+
+图片后端使用本机已安装并登录的 Codex CLI。H3 后端使用本机 ComfyUI、相应节点与模型。两种后端需要各自配置；安装本应用不会安装模型，也不会获得上游服务额度。
+
+## 安装与本机启动
+
+建议 Python 3.12。以下命令在仓库根目录运行。
+
+Windows 建议将仓库放在较短的路径，例如 `D:/image-workbench`；任务执行记录与 UUID 会形成多层目录，过长的安装路径可能触及 Windows 路径长度限制。
+
+```powershell
+git clone https://github.com/moy352482-bot/image-workbench.git
+cd image-workbench
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-web.txt
+.\.venv\Scripts\python.exe -m image_workbench --data-root data web --port 7860
+```
+
+打开 [本机工作台](http://127.0.0.1:7860)。图片工作台会启动本机图片队列执行器，只有在页面中明确提交任务后才执行生成。
+
+Linux/macOS 的对应环境创建方式为 `python3 -m venv .venv`，后续将 Python 命令替换为 `.venv/bin/python`。Windows 本机执行器和 Linux 云端服务是主要部署方式；具体系统、Python、Codex 与 ComfyUI 版本仍需在你的环境中验证。
+
+首次启动会预留管理员用户名 `moy`，不会设置公开默认密码。管理员在服务器或本机读取 `<data-root>/.identity/moy-activation.json`，在登录页的管理员首次启用入口输入其中的启用令牌，并设置自己的密码。这个文件只能通过受信任的本机访问获取，不要提交到 Git、贴到公开 Issue 或分享截图。
+
+默认允许普通账号注册，初始内部积分为 200；管理员账号不受积分额度限制。公网部署可以将注册模式改为 `invite` 或 `closed`，见 [部署说明](docs/deployment.md)。
+
+### 图片执行器
+
+先安装并配置可用的 Codex CLI，完成其 ChatGPT 登录，再运行只读环境检查：
+
+```powershell
+.\.venv\Scripts\python.exe -m image_workbench doctor
+```
+
+本项目通过独立 CLI 进程请求图片工具，并验证、复制、归档本次明确返回的图片。它不包含 Codex，也不自动使用付费图片 API 作为回退。CLI 版本、账号权限或上游协议变化可能需要调整适配器。
+
+需要在不调用模型的情况下演练页面，可使用自己准备的图片作为确定性输出：
+
+```powershell
+.\.venv\Scripts\python.exe -m image_workbench --data-root demo-data web --backend local --image C:/path/to/example.png
+```
+
+`local` 后端只复制指定图片，不能衡量真实生成质量或速度。请使用独立的演练数据目录。
+
+## H3 视频执行器
+
+先准备运行中的 ComfyUI、MiniMax H3 所需节点与模型，以及 PATH 中可用的 `ffmpeg` 和 `ffprobe`。仓库附带的 [三份工作流](workflows/minimax_h3) 来自 Comfy Org 官方模板的 API 格式转换；[来源记录](workflows/minimax_h3/provenance.json) 保留原始来源、校验值和转换器标识。
+
+把示例复制到**仓库根目录**，再按本机环境修改端口、模型文件名和工具路径：
+
+```powershell
+Copy-Item deploy/h3-worker.example.json h3-worker.local.json
+.\.venv\Scripts\python.exe -m image_workbench h3-worker --config h3-worker.local.json --check
+.\.venv\Scripts\python.exe -m image_workbench --data-root data h3-worker --config h3-worker.local.json
+```
+
+`workflow_dir`、`cache_root` 和 `gpu_lock_path` 中的相对路径按**配置文件所在目录**解析。示例中的 `workflow_dir` 是 `workflows/minimax_h3`，因此上述根目录放置方式可直接找到随包模板。示例 ComfyUI 地址为 `http://127.0.0.1:8189`，应改成你的实际端口。
+
+`--check` 只检查模板、工具和可用节点，不领取任务，不证明真实模型可以完成全尺寸生成。普通启动后，执行器只处理已提交并冻结积分的分镜。浏览器通过 [视频分区](http://127.0.0.1:7860/video) 上传资产、保存脚本、添加分镜并点击生成。脚本不会被自动发送给语言模型解析。
+
+### 分辨率与积分
+
+| 档位 | 默认每秒积分 | 横屏交付尺寸 | 竖屏交付尺寸 | 方形交付尺寸 |
+| --- | ---: | --- | --- | --- |
+| 720p | 40 | 1280 × 720 | 720 × 1280 | 720 × 720 |
+| 1080p | 80 | 1920 × 1080 | 1080 × 1920 | 1080 × 1080 |
+
+分镜时长为整数 4–15 秒，总积分为 `时长 × 对应档位每秒积分`。管理员可以在视频页面修改两档价格；已经提交的任务保留提交时的价格快照。旧版低分辨率分镜需要重新创建高清分镜，历史完成视频仍能播放。
+
+执行器将原生生成画布向上对齐到 32 的倍数，再裁掉边缘得到精确交付尺寸，不把低分辨率结果放大后当作高清交付。实际显存、运行时间和模型兼容性取决于使用的权重、节点和硬件。
+
+T2V 不使用参考图；I2V 使用 1 张首帧及可选的第 2 张末帧；R2V 使用 1–9 张参考图。一个项目最多保存 9 张参考图，文件内容相同的重复上传会复用已有资产。当前每个 H3 队列串行执行，单个 MP4 结果上限为 40 MiB。
+
+### 离线、断线与重复请求
+
+- 本机执行器或 ComfyUI 离线时，已提交任务保留在队列中；排队任务的积分处于冻结状态。
+- 提交意图、执行标识和结果缓存在本机持久保存；连接恢复后优先查询原任务或重传结果。
+- 无法确认上游是否已经接受任务时，状态为“待确认”，保留冻结积分和执行占位，不自动再次生成。
+- 明确失败才退款。失败后的重新生成需要用户显式重试，并使用重试时的价格。
+
+不要删除正在运行或状态待确认任务的执行器缓存。先确认原工作流的状态；清空缓存不能作为避免重复生成的恢复办法。
+
+## 云端网站与本机算力
+
+云端运行 `cloud` 模式，公开网站通过 HTTPS 反向代理访问。本机图片执行器和 H3 执行器使用独立配置主动拉取任务。云端部署、令牌配置、更新与备份见 [部署说明](docs/deployment.md)。
+
+```text
+浏览器 → HTTPS 网站 → 任务队列与积分账本
+                         ↑          ↓
+                     本机执行器 ← 领取任务
+                         ↓
+                  Codex / ComfyUI
+                         ↓
+                  验证结果并回传网站
+```
+
+网站账号密码与执行器 Bearer 令牌分别管理。真实配置、SSH 私钥、数据库、图片、视频和执行日志均不属于源码仓库。
+
+## 测试与适用边界
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests -v
+```
+
+自动化测试使用临时目录、合成素材和模拟上游，覆盖账号隔离、积分幂等、队列恢复、文件边界、视频档位和 HTTP 上传下载；安装 FFmpeg 后还可运行相应媒体验证测试。部分平台相关检查会按运行环境跳过。
+
+2026-10-16 的源码回归执行了 312 项测试：309 项通过，3 项按环境跳过。一次真实 720p I2V 验证完成了 4 秒横屏视频，输出为 1280 × 720，用时约 341 秒；160 积分成功结算，冻结余额归零。这是一次具体环境下的结果，不是运行速度基准。1080p 的真实生成结果尚未计入本版说明。
+
+这套回归不代表所有模型、显卡、ComfyUI 节点版本或 Codex 账号都经过真实生成测试，也不提供高并发生产容量承诺。部署前应在自己的环境中检查一次真实图片生成和所需的每个视频模式、分辨率；不要把 `--check` 通过等同于模型生成成功。
+
+`scripts/deploy_release.py --package-only` 会运行回归并制作仅含网站运行代码和依赖声明的部署包，不连接服务器。它不会把业务数据、工作流权重、执行器登录信息或本机缓存放进发布包。
+
+## 许可证
+
+本项目原创代码采用 [MIT License](LICENSE)。随包前端组件和 Comfy Org 工作流保留各自 MIT 许可证与来源记录，见 [第三方许可说明](docs/licenses.md)。模型权重、Codex、ComfyUI 及外部服务由各自的许可和使用条件约束，不由本项目 MIT 许可证重新授权。

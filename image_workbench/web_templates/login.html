@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>登录 · Image Workbench</title><link rel="stylesheet" href="/static/workbench.css"><link rel="stylesheet" href="/static/accounts.css"></head>
+<body class="auth-page"><main class="auth-card"><a class="auth-brand" href="/">IMAGE WORKBENCH</a><p class="eyebrow">你的图片创作空间</p><h1 id="authTitle">欢迎回来</h1><p id="authDescription">登录后，继续你的项目与图片创作。</p><div class="auth-tabs"><button id="loginTab" class="secondary-button" type="button">登录</button><button id="registerTab" class="secondary-button" type="button">注册账号</button><button id="activateTab" class="text-button" type="button">启用管理员</button></div>
+<div id="practiceNotice" class="practice-notice" role="status" hidden>演练环境：只返回固定测试图片，不会按提示词生成。这里的账号、项目和积分独立于正式工作台。</div>
+<p id="registrationNotice" class="field-hint" hidden>当前暂停新账号注册，已有账号可正常登录。</p>
+<form id="authForm">
+<label class="field-label" for="username">用户名</label><input id="username" name="username" autocomplete="username" minlength="3" maxlength="40" required placeholder="英文字母、数字或下划线">
+<div id="emailField" hidden><label class="field-label" for="email">邮箱（可选）</label><input id="email" type="email" autocomplete="email" maxlength="254"></div>
+<div id="invitationField" hidden><label class="field-label" for="invitation">邀请码</label><input id="invitation" type="password" autocomplete="off" maxlength="128"><p class="field-hint">请输入管理员提供的一次性邀请码。</p></div>
+<div id="activationField" hidden><label class="field-label" for="activation">本机启用凭据</label><input id="activation" type="password" autocomplete="off" maxlength="128"></div>
+<label class="field-label" for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required><p class="field-hint">新密码至少 10 个字符。</p>
+<p id="authMessage" class="form-message" role="status"></p><button id="authSubmit" class="primary-button" type="submit" disabled>登录工作台</button></form>
+<p class="auth-footnote">项目归属于账号和工作空间，可在不同设备登录访问。</p></main><script src="/static/login.js" defer></script></body></html>

@@ -1,0 +1,18 @@
+{
+  "comfy_url": "http://127.0.0.1:8189",
+  "workflow_dir": "workflows/minimax_h3",
+  "cache_root": ".remote-cache/h3-local",
+  "gpu_lock_path": ".remote-cache/h3-gpu.lock",
+  "ffmpeg": "ffmpeg",
+  "ffprobe": "ffprobe",
+  "timeout": 7200,
+  "poll_seconds": 5,
+  "models": {
+    "diffusion": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+    "reference_diffusion": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+    "encoder": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+    "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+    "audio_vae": "minimax_h3_audio_vae_fp32.safetensors",
+    "turbo_lora": "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
+  }
+}

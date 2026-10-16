@@ -1,0 +1,23 @@
+[Unit]
+Description=Image Workbench cloud task inbox
+After=network.target
+
+[Service]
+Type=simple
+User=image-workbench
+Group=image-workbench
+WorkingDirectory=/opt/image-workbench/current
+EnvironmentFile=/etc/image-workbench.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/image-workbench/current/.venv/bin/python -m image_workbench --data-root /var/lib/image-workbench cloud --port 7860
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/image-workbench
+
+[Install]
+WantedBy=multi-user.target

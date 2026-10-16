@@ -1,0 +1,5 @@
+{
+  "server": "https://images.example.com",
+  "worker_token": "REPLACE_WITH_THE_SERVERS_WORKER_TOKEN",
+  "cache_root": "D:/image-workbench/.remote-cache/image"
+}
