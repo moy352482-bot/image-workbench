@@ -51,6 +51,15 @@
     $('videoCredits').textContent = wallet.is_unlimited ? '无限积分' : `可用 ${wallet.remaining_credit ?? 0} 积分 · 冻结 ${wallet.frozen_credit ?? 0}`;
   }
   async function refreshAccount() { state.account = await api('/api/auth/me'); balance(); }
+  function enabledResolutions() {
+    const enabled = state.config?.enabled_resolutions;
+    return resolutions.filter(value => (Array.isArray(enabled) ? enabled : ['720p']).includes(value));
+  }
+  function pricingRates() {
+    const rates = { ...state.config.rates };
+    for (const resolution of enabledResolutions()) rates[resolution] = Number($(resolution === '720p' ? 'videoRate720' : 'videoRate1080').value);
+    return rates;
+  }
   function rateFor(resolution) {
     const rate = state.config?.rates?.[resolution];
     return Number.isInteger(rate) && rate > 0 ? rate : null;
@@ -71,18 +80,27 @@
   }
   function configView() {
     const c = state.config;
+    const enabled = enabledResolutions();
     $('videoWorkerStatus').textContent = c.worker_online ? 'H3 执行器在线' : 'H3 执行器离线 · 新任务排队';
     $('videoPricingPanel').hidden = !state.account.is_admin;
     $('videoAdminLink').hidden = !state.account.is_admin;
-    $('videoRateSummary').textContent = resolutions.map(resolution => `${resolution}：${rateFor(resolution) ? `${rateFor(resolution)} 积分 / 秒` : '尚未设置'}`).join(' · ');
+    $('videoRateSummary').textContent = enabled.map(resolution => `${resolution}：${rateFor(resolution) ? `${rateFor(resolution)} 积分 / 秒` : '尚未设置'}`).join(' · ');
     for (const resolution of resolutions) {
       const input = $(resolution === '720p' ? 'videoRate720' : 'videoRate1080');
+      input.disabled = !enabled.includes(resolution);
+      $(resolution === '720p' ? 'videoRate720Label' : 'videoRate1080Label').hidden = input.disabled;
+      input.hidden = input.disabled;
       if (document.activeElement !== input) input.value = rateFor(resolution) ?? '';
     }
-    for (const option of $('videoResolution').options) {
-      const rate = rateFor(option.value);
-      option.textContent = `${option.value}${rate ? ` · ${rate} 积分 / 秒` : ' · 待设置价格'}`;
+    const previous = $('videoResolution').value;
+    $('videoResolution').replaceChildren();
+    for (const resolution of enabled) {
+      const rate = rateFor(resolution);
+      const option = el('option', '', `${resolution}${rate ? ` · ${rate} 积分 / 秒` : ' · 待设置价格'}`);
+      option.value = resolution;
+      $('videoResolution').append(option);
     }
+    $('videoResolution').value = enabled.includes(previous) ? previous : enabled[0] || '';
     if (!c.configured && state.account.is_admin) $('videoPricingPanel').open = true;
     resolutionView();
   }
@@ -150,17 +168,18 @@
       heading.append(el('h3', '', `${String(index + 1).padStart(2, '0')}  ${shot.name}`), el('span', `status-pill video-status-${status}`, labels[status] || status));
       const resolution = resolutions.includes(shot.resolution) ? shot.resolution : null;
       const requiresRebuild = shot.requires_rebuild === true || !resolution;
+      const blockedReason = shot.run_blocked_reason || (resolution && !enabledResolutions().includes(resolution) ? `${resolution} 暂未开放，请新建 720p 分镜。` : '');
       const rate = rateFor(resolution);
       const expected = requiresRebuild ? null : shot.estimated_credit ?? (rate ? shot.duration * rate : null);
       const cost = job?.credit_cost ?? expected;
       const size = Number.isInteger(shot.width) && Number.isInteger(shot.height) ? ` · ${shot.width} × ${shot.height}` : '';
       const meta = `${modes[shot.mode] || shot.mode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
       copy.append(heading, el('p', 'video-shot-meta', meta), el('p', 'video-shot-prompt', shot.prompt));
-      if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild ? '' : '可检查素材后重新提交。'}`));
+      if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild || blockedReason ? '' : '可检查素材后重新提交。'}`));
       const actions = el('div', 'video-shot-actions');
       if (status === 'draft' || status === 'failed') {
-        if (requiresRebuild) {
-          actions.append(el('p', 'field-hint', shot.run_blocked_reason || '此分镜使用旧版尺寸。请在上方按原内容重新创建 720p 或 1080p 高清分镜。'));
+        if (requiresRebuild || blockedReason) {
+          actions.append(el('p', 'field-hint', blockedReason || `此分镜使用旧版尺寸。请在上方按原内容重新创建 ${enabledResolutions().join(' 或 ')} 高清分镜。`));
         } else {
           const canGenerate = rate !== null && expected !== null;
           const button = el('button', 'primary-button', canGenerate ? `${status === 'failed' ? '重新生成' : '生成视频'} · ${expected} 积分` : `等待设置 ${resolution} 价格`);
@@ -198,7 +217,7 @@
     $('videoProjectDetail').hidden = false; $('videoCreatePanel').hidden = true;
     $('videoActiveName').textContent = project.name; $('videoProjectCrumb').textContent = project.name;
     $('videoActiveScript').textContent = project.script || '未填写脚本说明';
-    const signature = JSON.stringify([project.assets, project.shots, state.config.rates]);
+    const signature = JSON.stringify([project.assets, project.shots, state.config.rates, enabledResolutions()]);
     if (force || signature !== state.projectSignature) { renderAssets(project); renderShots(project); state.projectSignature = signature; }
   }
   async function selectProject(id) {
@@ -256,7 +275,7 @@
       if (state.project?.project_id === id) await refresh(); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');
     });
   });
-  $('videoPricingForm').addEventListener('submit', event => { event.preventDefault(); busy(event.submitter, async () => { await api('/api/video/config', { method: 'PUT', body: JSON.stringify({ rates: { '720p': Number($('videoRate720').value), '1080p': Number($('videoRate1080').value) } }) }); await refresh(); notice('两档每秒积分已保存。已提交镜头继续按原价格结算。'); }); });
+  $('videoPricingForm').addEventListener('submit', event => { event.preventDefault(); busy(event.submitter, async () => { await api('/api/video/config', { method: 'PUT', body: JSON.stringify({ rates: pricingRates() }) }); await refresh(); notice('每秒积分已保存。已提交镜头继续按原价格结算。'); }); });
   $('videoMode').addEventListener('change', updateMode);
   $('videoResolution').addEventListener('change', resolutionView);
   $('videoDuration').addEventListener('input', quote);

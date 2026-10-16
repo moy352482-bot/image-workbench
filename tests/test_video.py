@@ -39,6 +39,9 @@ def mp4():
 
 class VideoTests(unittest.TestCase):
     def setUp(self):
+        environment = patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": ""})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.storage = StorageManager(StorageConfig(data_root=Path(self.temp.name) / "data"))
@@ -125,6 +128,7 @@ class VideoTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.project(self.aid, self.wid, "../outside")
 
+    @patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"})
     def test_project_and_shot_request_idempotency(self):
         project = self.store.create_project(self.aid, self.wid, self.pid, "视频项目", "第一场\n保留原始脚本")
         self.assertEqual(project["script"], "第一场\n保留原始脚本")
@@ -138,12 +142,14 @@ class VideoTests(unittest.TestCase):
         with self.assertRaises(ConflictError):
             self.shot(request_id=rid, resolution="1080p")
 
+    @patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"})
     def test_resolution_tiers_deliver_exact_sizes_and_reject_invalid_resolution(self):
         expected = {
             "720p": {"landscape": (1280, 720), "portrait": (720, 1280), "square": (720, 720)},
             "1080p": {"landscape": (1920, 1080), "portrait": (1080, 1920), "square": (1080, 1080)},
         }
         config = self.store.config()
+        self.assertEqual(config["enabled_resolutions"], ["720p", "1080p"])
         for resolution, ratios in expected.items():
             for ratio, dimensions in ratios.items():
                 shot = self.shot(resolution=resolution, aspect_ratio=ratio)
@@ -155,6 +161,7 @@ class VideoTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.shot(resolution=resolution)
 
+    @patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"})
     def test_1080p_default_rate_snapshot_failure_and_retry_price(self):
         with self.identity.transaction() as db:
             db.execute("UPDATE credit_accounts SET total_credit=10000 WHERE account_id=?", (self.aid,))
@@ -179,6 +186,78 @@ class VideoTests(unittest.TestCase):
         retry = self.submit(shot, expected_credit=475, retry_of=job["job_id"])
         self.assertEqual((retry["resolution"], retry["credits_per_second"], retry["credit_cost"]), ("1080p", 95, 475))
         self.assertEqual(self.wallet()["frozen_credit"], 475)
+
+    def test_default_720p_five_second_submission_freezes_200_credits(self):
+        config = self.store.config()
+        self.assertEqual(config["enabled_resolutions"], ["720p"])
+        self.assertEqual(config["rates"], {"720p": 40, "1080p": 80})
+        self.assertIn("1080p", config["resolutions"])
+        shot = self.shot()
+        job = self.submit(shot, expected_credit=200)
+        self.assertEqual((job["resolution"], job["duration"], job["credit_cost"]), ("720p", 5, 200))
+        self.assertEqual(self.wallet()["frozen_credit"], 200)
+
+    def test_disabled_1080p_create_submit_and_retry_do_not_freeze_credits(self):
+        for flag in ("", "0", "true"):
+            with patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": flag}):
+                with self.assertRaisesRegex(ConflictError, "1080p暂不可用，请新建720p分镜"):
+                    self.shot(resolution="1080p")
+        self.assertEqual(self.store.project(self.aid, self.wid, self.pid)["shots"], [])
+        self.assertEqual(self.wallet()["frozen_credit"], 0)
+        self.store.set_config(self.admin, {"720p": 2, "1080p": 4})
+        with patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"}):
+            draft = self.shot(resolution="1080p")
+            failed = self.shot(resolution="1080p")
+            job = self.submit(failed, expected_credit=20)
+            worker = uid()
+            manifest = self.store.claim(worker)
+            self.store.complete(job["job_id"], worker, manifest["claim_id"], "failed", error="工作流明确失败")
+        for shot, extra in ((draft, {}), (failed, {"retry_of": job["job_id"]})):
+            with self.subTest(retry=bool(extra)):
+                with self.assertRaisesRegex(ConflictError, "1080p暂不可用，请新建720p分镜"):
+                    self.submit(shot, expected_credit=20, **extra)
+                self.assertEqual(self.wallet()["frozen_credit"], 0)
+                view = self.store.shot(self.aid, self.wid, self.pid, shot["shot_id"])
+                self.assertFalse(view["requires_rebuild"])
+                self.assertEqual(view["run_blocked_reason"], "1080p暂不可用，请新建720p分镜")
+        self.assertEqual(self.wallet()["used_credit"], 0)
+        with self.identity.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM reservations").fetchone()[0], 1)
+        self.assertEqual(self.store.config()["rates"], {"720p": 2, "1080p": 4})
+
+    def test_disabled_1080p_running_uncertain_recovery_settlement_and_history_download(self):
+        self.store.set_config(self.admin, {"720p": 2, "1080p": 4})
+        request_id, worker, attempt = uid(), uid(), uid()
+        with patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"}):
+            shot = self.shot(resolution="1080p")
+            job = self.submit(shot, request_id=request_id, expected_credit=20)
+            manifest = self.store.claim(worker)
+            claim = manifest["claim_id"]
+            self.store.start(job["job_id"], worker, claim, attempt, "existing-1080p-prompt")
+        self.assertEqual(self.store.claim(worker)["job_id"], job["job_id"])
+        self.assertEqual(self.submit(shot, request_id=request_id, expected_credit=20)["job_id"], job["job_id"])
+        self.store.complete(job["job_id"], worker, claim, "uncertain", error="等待原任务")
+        self.assertEqual(self.submit(shot, expected_credit=20)["job_id"], job["job_id"])
+        self.assertEqual(self.store.claim(worker)["prompt_id"], "existing-1080p-prompt")
+        self.assertEqual(self.wallet()["frozen_credit"], 20)
+        self.store.start(job["job_id"], worker, claim, attempt, "existing-1080p-prompt")
+        data, sha = mp4(), hashlib.sha256(mp4()).hexdigest()
+        self.store.upload_output(job["job_id"], worker, claim, data, sha)
+        self.store.complete(job["job_id"], worker, claim, "succeeded", sha)
+        self.assertEqual(self.wallet()["frozen_credit"], 0)
+        self.assertEqual(self.wallet()["used_credit"], 20)
+        view = self.store.shot(self.aid, self.wid, self.pid, shot["shot_id"])
+        self.assertEqual(view["status"], "completed")
+        self.assertFalse(view["requires_rebuild"])
+        self.assertEqual(view["current_job"]["credits_per_second"], 4)
+        self.assertEqual(self.store.config()["rates"], {"720p": 2, "1080p": 4})
+        self.assertEqual(self.store.output_file(self.aid, self.wid, self.pid, shot["shot_id"]).read_bytes(), data)
+        app = create_app(self.storage, backend="local")
+        client = self.http_client(app, self.aid, self.wid)
+        response = client.get(view["download_url"])
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.content, data)
+        self.assertIn("attachment", response.headers["content-disposition"])
 
     def test_legacy_scalar_configuration_and_low_resolution_shots_are_not_repriced_as_hd(self):
         self.store._write(self.store._path("config.json"), {"credits_per_second": 2})
@@ -396,6 +475,10 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(bobby.get(asset["url"]).status_code, 404)
         body = dict(request_id=uid(), name="镜头", prompt="挥手", mode="I2V", duration=5, aspect_ratio="portrait", reference_ids=[asset["asset_id"]])
         self.assertEqual(alice.post(f"/api/video/projects/{self.pid}/shots", json={**body, "resolution": "4k"}).status_code, 422)
+        self.assertEqual(alice.get("/api/video/config").json()["enabled_resolutions"], ["720p"])
+        disabled = alice.post(f"/api/video/projects/{self.pid}/shots", json={**body, "resolution": "1080p"})
+        self.assertEqual(disabled.status_code, 409, disabled.text)
+        self.assertEqual(self.wallet()["frozen_credit"], 0)
         response = alice.post(f"/api/video/projects/{self.pid}/shots", json=body)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["resolution"], "720p")

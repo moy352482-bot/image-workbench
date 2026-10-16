@@ -400,7 +400,8 @@ class H3WorkerTests(unittest.TestCase):
         self.assertEqual(self.comfy.posts, 1)
 
     def test_hd_postprocessing_restart_only_reuses_original_source_and_workflow(self):
-        _, job = self.submit(resolution="1080p")
+        with mock.patch.dict("os.environ", {"IMAGE_WORKBENCH_ENABLE_1080P": "1"}):
+            _, job = self.submit(resolution="1080p")
         original = self.adapter.finalize_output
         with mock.patch.object(self.adapter, "finalize_output", side_effect=OSError("temporary disk failure")):
             with self.assertRaises(OSError):

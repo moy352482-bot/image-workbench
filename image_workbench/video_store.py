@@ -23,6 +23,7 @@ RESOLUTIONS = {
 }
 DEFAULT_RATES = {"720p": 40, "1080p": 80}
 REBUILD_REASON = "旧版低分辨率分镜不能按高清价格运行，请新建高清分镜"
+DISABLED_RESOLUTION_REASON = "1080p暂不可用，请新建720p分镜"
 MAX_OUTPUT_BYTES = 40 * 1024 * 1024
 FORMATS = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}
 ACTIVE = {"queued", "running", "uncertain"}
@@ -114,6 +115,7 @@ class VideoStore:
             info = self._read(path)
             online |= 0 <= time.time() - info.get("time", 0) <= 120
         return {"rates": dict(rates), "configured": True, "legacy_credits_per_second": legacy_rate,
+                "enabled_resolutions": self._enabled_resolutions(),
                 "worker_online": online, "modes": ["T2V", "I2V", "R2V"],
                 "durations": {"min": 4, "max": 15},
                 "ratios": {key: {"width": value[0], "height": value[1]} for key, value in RATIOS.items()},
@@ -121,6 +123,10 @@ class VideoStore:
                                 for resolution, ratios in RESOLUTIONS.items()},
                 "max_reference_images": 9, "max_output_bytes": MAX_OUTPUT_BYTES,
                 "max_asset_bytes": self.storage.config.max_image_bytes}
+
+    @staticmethod
+    def _enabled_resolutions():
+        return ["720p", "1080p"] if os.environ.get("IMAGE_WORKBENCH_ENABLE_1080P") == "1" else ["720p"]
 
     @staticmethod
     def _validate_rates(rates):
@@ -267,6 +273,8 @@ class VideoStore:
             raise ValueError("请选择有效的视频模式和画幅")
         if not isinstance(resolution, str) or resolution not in RESOLUTIONS:
             raise ValueError("视频分辨率只支持720p或1080p")
+        if resolution not in self._enabled_resolutions():
+            raise ConflictError(DISABLED_RESOLUTION_REASON)
         if type(duration) is not int or not 4 <= duration <= 15:
             raise ValueError("视频时长需为4–15秒的整数")
         if not isinstance(reference_ids, list) or len(reference_ids) > 9 or len(set(reference_ids)) != len(reference_ids):
@@ -345,12 +353,15 @@ class VideoStore:
     def _shot_view(self, shot, wid, jobs):
         job = self._current(shot["project_id"], shot["shot_id"], jobs)
         supported = self._is_hd_shot(shot)
-        rate = self.config()["rates"][shot["resolution"]] if supported else None
+        config = self.config()
+        rate = config["rates"][shot["resolution"]] if supported else None
+        blocked_reason = REBUILD_REASON if not supported else (
+            DISABLED_RESOLUTION_REASON if shot["resolution"] not in config["enabled_resolutions"] else None)
         base = f"/api/video/projects/{shot['project_id']}/shots/{shot['shot_id']}/output?workspace_id={wid}"
         completed = bool(job and job["status"] == "completed")
         return {**shot, "status": job["status"] if job else "draft", "current_job": self.public_job(job),
                 "estimated_credit": shot["duration"] * rate if rate is not None else None,
-                "requires_rebuild": not supported, "run_blocked_reason": None if supported else REBUILD_REASON,
+                "requires_rebuild": not supported, "run_blocked_reason": blocked_reason,
                 "output_url": base if completed else None, "download_url": base + "&download=1" if completed else None}
 
     def shot(self, account_id, workspace_id, pid, sid):
@@ -386,6 +397,8 @@ class VideoStore:
             job = self._current(pid, sid)
             if job and job["status"] in ACTIVE | {"completed"}:
                 return self.public_job(job)
+            if shot["resolution"] not in self._enabled_resolutions():
+                raise ConflictError(DISABLED_RESOLUTION_REASON)
             if job and retry_of != job["job_id"]:
                 raise ConflictError("已有失败记录，请确认后显式重试")
             if not job and retry_of is not None:

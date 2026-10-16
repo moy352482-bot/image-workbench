@@ -35,6 +35,8 @@ python -m image_workbench --data-root /var/lib/image-workbench accounts-invite
 
 注册模式可以是 `open`、`invite` 或 `closed`。部署示例还提供账号总量、排队数量、日积分提交预算和图片执行并发上限。它们是服务运营限制，不能代表显卡性能或上游账号额度。H3 执行器仍使用独立的串行队列与 GPU 锁。
 
+视频默认只开放 720p。验证实际硬件可以完成 1080p 后，在网站的环境配置中设置 `IMAGE_WORKBENCH_ENABLE_1080P=1` 并重启网站进程，才会开放 1080p。删除该变量或设为 `0` 会关闭新提交入口；已有执行任务与历史作品保持可恢复、可下载。执行器不需要这个开关。
+
 ## 本机连接云端
 
 图片执行器可以把 [remote-worker.example.json](../deploy/remote-worker.example.json) 复制为 `deploy/remote-worker.local.json`，填写网站源站、同一个执行器令牌和独立持久缓存目录：
