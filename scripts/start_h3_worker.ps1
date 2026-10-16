@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)][string]$ConfigPath,
     [string]$WorkerConfigPath,
     [string]$DataRoot,

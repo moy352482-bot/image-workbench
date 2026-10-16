@@ -55,6 +55,8 @@ powershell -NoProfile -File scripts/start_h3_worker.ps1 -ConfigPath h3-worker.lo
 
 ComfyUI 地址只允许本机回环 HTTP 服务，正常部署不需要开放 ComfyUI 端口到公网。云端网站地址使用 HTTPS；HTTP 仅用于本机或 SSH 隧道联调。
 
+本项目在 RTX 5070 12 GB 上的 1080p 实测使用了 ComfyUI 的 `--vram-headroom 2` 参数，预留 2 GiB 显存后完成生成。该参数依赖所用 ComfyUI 版本；重启时应保留已经验证的启动参数，并在不同硬件上重新验证所需档位。
+
 ## systemd 与代码更新
 
 [systemd 示例](../deploy/image-workbench.service) 使用以下通用布局：
