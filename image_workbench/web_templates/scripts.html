@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>脚本与剧本 — Image Workbench</title>
+  <link rel="stylesheet" href="/static/workbench.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/accounts.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/scripts.css?v={{ asset_version }}">
+</head>
+<body>
+  <div class="app-shell scripts-shell">
+    <aside class="sidebar" aria-label="工作台导航">
+      <a class="brand" href="/" aria-label="Image Workbench 首页"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="3" y="3" width="26" height="26" rx="8"/><path d="M9 21l5-6 3 3 3-4 4 7H9z"/><circle cx="12" cy="11" r="1.8"/></svg></span><span><strong>Image</strong><span>WORKBENCH</span></span></a>
+      <div class="workspace-switcher"><label class="side-label" for="scriptWorkspace">工作空间</label><select id="scriptWorkspace" aria-label="切换工作空间"></select></div>
+      <nav class="scripts-nav" aria-label="创作工具"><a class="nav-item" href="/">图片工作台</a><a class="nav-item active" href="/scripts" aria-current="page">脚本与剧本</a><a class="nav-item" href="/video">H3 视频工作台</a></nav>
+      <div class="scripts-location"><label class="side-label" for="scriptMainProject">主项目</label><select id="scriptMainProject" aria-label="选择主项目"></select><label class="side-label" for="scriptSubproject">子项目</label><select id="scriptSubproject" aria-label="选择子项目"></select><a class="text-button" href="/">管理项目与子项目</a></div>
+      <div class="sidebar-spacer"></div>
+      <div class="account-footer"><strong id="scriptAccountName">正在读取账号</strong><div id="scriptCredits" class="credit-summary"></div><a id="scriptAdminLink" href="/admin" class="text-button" hidden>管理中心</a><button id="scriptLogout" class="text-button" type="button">退出登录</button></div>
+      <div class="local-note"><span class="pulse-dot"></span><span>内容创作<br><small>脚本 · 剧本 · TXT 版本</small></span></div>
+    </aside>
+    <main class="main-area">
+      <header class="topbar"><div class="breadcrumb"><span>脚本与剧本</span><span class="crumb-slash">/</span><strong id="scriptLocation">请选择子项目</strong></div><button id="scriptRefresh" class="refresh-button" type="button">刷新</button></header>
+      <div class="scripts-content">
+        <section class="welcome-row scripts-welcome"><div><div class="eyebrow"><span class="eyebrow-line"></span>VIDEO SCRIPT GENERATION</div><h1>把想法写成下一场故事</h1><p>选择结构参考与模型，完成可阅读、可修改、可追溯的脚本或剧本。</p></div><span class="scripts-format">UTF-8 · TXT</span></section>
+        <div id="scriptNotice" class="scripts-notice" role="status" aria-live="polite" hidden></div>
+        <div id="scriptNoProject" class="scripts-empty-project" hidden>当前空间还没有可用子项目。<a href="/">先创建项目</a>，再回到这里开始创作。</div>
+        <div class="scripts-grid">
+          <section class="panel scripts-editor">
+            <div class="panel-heading"><div><span class="step-label">01 · 创作要求</span><h2 id="scriptEditorTitle">新建内容</h2></div><button id="scriptNew" class="text-button" type="button">新建</button></div>
+            <form id="scriptForm">
+              <div id="scriptParent" class="scripts-parent" hidden><span id="scriptParentLabel"></span><button id="scriptClearParent" class="text-button" type="button">取消版本关联</button></div>
+              <div class="scripts-fields">
+                <div><label class="field-label" for="scriptType">内容类型</label><select id="scriptType" required><option value="script">脚本</option><option value="screenplay">剧本</option></select></div>
+                <div><label class="field-label" for="scriptTemplate">模板</label><select id="scriptTemplate" required><option value="">请选择模板</option></select></div>
+              </div>
+              <p id="scriptTypeHelp" class="scripts-help"></p>
+              <div id="scriptTemplateInfo" class="scripts-template-info" hidden><p id="scriptTemplateDescription"></p><p id="scriptTemplateRequirements"></p><p id="scriptTemplateExamples"></p></div>
+              <label class="field-label" for="scriptRequest">你希望生成什么？</label><textarea id="scriptRequest" rows="7" maxlength="20000" placeholder="写下主题、情节或创意，以及必须保留的内容。例如：一支面向城市通勤者的新品短视频，先呈现早高峰困扰，再用真实使用场景带出产品价值。" required></textarea>
+              <details class="scripts-options"><summary>补充创作参数 <span>选填</span></summary><div class="scripts-fields"><div><label class="field-label" for="scriptDuration">视频时长</label><input id="scriptDuration" maxlength="120" placeholder="例如：60 秒、3 分钟"></div><div><label class="field-label" for="scriptRatio">画面比例</label><input id="scriptRatio" maxlength="120" placeholder="例如：9:16"></div><div><label class="field-label" for="scriptAudience">目标受众</label><input id="scriptAudience" maxlength="4000" placeholder="面向哪些观众"></div><div><label class="field-label" for="scriptTone">语气与风格</label><input id="scriptTone" maxlength="4000" placeholder="例如：轻喜剧、纪实、克制"></div></div><label class="field-label" for="scriptCharacters">人物</label><textarea id="scriptCharacters" rows="2" maxlength="10000" placeholder="人物身份、关系和性格"></textarea><label class="field-label" for="scriptProduct">产品 / IP</label><input id="scriptProduct" maxlength="4000" placeholder="需要出现的产品、品牌或 IP"><label class="field-label" for="scriptConstraints">其他约束</label><textarea id="scriptConstraints" rows="2" maxlength="12000" placeholder="必须包含或避免的内容、场地与拍摄条件"></textarea></details>
+              <div id="scriptChangeReasonField" hidden><label class="field-label" for="scriptChangeReason">本次修改说明</label><textarea id="scriptChangeReason" rows="2" maxlength="4000" placeholder="说明相对上一版要改变什么"></textarea></div>
+              <div class="scripts-model-heading"><span class="step-label">02 · 模型与积分</span><span class="field-hint">每次生成一份 TXT</span></div>
+              <div class="scripts-fields"><div><label class="field-label" for="scriptModel">生成模型</label><select id="scriptModel"><option value="recommended">系统推荐</option></select></div><div><label class="field-label" for="scriptThinking">思考强度</label><select id="scriptThinking" disabled><option value="">根据需求推荐</option></select></div></div>
+              <p id="scriptModelHelp" class="scripts-help">系统推荐会结合需求和模板选择模型与思考强度。</p>
+              <div class="scripts-quote" aria-live="polite"><div><span>本次生成</span><strong id="scriptPrice">等待报价</strong></div><p id="scriptQuoteDetail">填写需求后查看模型和积分。</p><p id="scriptBalance"></p></div>
+              <div id="scriptWarnings" class="scripts-warning" role="status" hidden><p id="scriptWarningText"></p><div><button id="scriptContinue" class="secondary-button" type="button">仍按当前选择继续生成</button><button id="scriptModify" class="text-button" type="button">返回修改</button></div></div>
+              <div class="form-footer"><button id="scriptQuote" class="secondary-button" type="button">查看报价</button><button id="scriptGenerate" class="primary-button" type="submit" disabled>生成 TXT</button></div>
+            </form>
+          </section>
+          <div class="scripts-results-column">
+            <section class="panel scripts-result"><div class="panel-heading"><div><span class="step-label">03 · 作品与版本</span><h2 id="scriptResultTitle">等待你的第一份作品</h2></div><span id="scriptResultStatus" class="status-pill status-neutral">未选择</span></div><p id="scriptResultMeta" class="scripts-result-meta">生成的 TXT 会保存在当前项目与子项目中。</p><div id="scriptTaskError" class="detail-error" role="status" hidden></div><pre id="scriptText" class="scripts-text" tabindex="0">这里将显示脚本或剧本正文。
+
+脚本侧重视频主题、视觉事件、旁白与节奏。
+剧本侧重人物、场景、冲突、动作与对白。</pre><div id="scriptRecoveryActions" class="scripts-result-actions" hidden><button id="scriptRecover" class="secondary-button" type="button" hidden>恢复 TXT 归档</button><button id="scriptResume" class="secondary-button" type="button" hidden>继续执行排队任务</button></div><div id="scriptResultActions" class="scripts-result-actions" hidden><a id="scriptDownload" class="primary-button" download>下载 TXT</a><button id="scriptEdit" class="secondary-button" type="button">编辑并保存新版本</button><button id="scriptRegenerate" class="secondary-button" type="button">基于此版继续生成</button></div><details id="scriptVersionsPanel" class="scripts-versions" hidden><summary>版本记录</summary><div id="scriptVersions"></div></details></section>
+            <section class="panel scripts-history"><div class="panel-heading"><div><span class="step-label">当前子项目</span><h2>生成历史</h2></div><span id="scriptTaskCount" class="count-pill">0 条</span></div><div id="scriptHistory" class="scripts-history-list"><p class="scripts-help">选择子项目后查看历史。</p></div></section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <dialog id="scriptEditDialog" class="scripts-edit-dialog"><form id="scriptEditForm"><div class="dialog-top"><div><span class="eyebrow">保留原版</span><h2>编辑并保存新版本</h2></div><button id="scriptEditClose" class="icon-button" type="button" aria-label="关闭编辑">×</button></div><p class="scripts-help">手动保存不调用模型、不扣积分。历史版本会继续保留。</p><p id="scriptEditMessage" class="detail-error" role="status" hidden></p><label class="field-label" for="scriptEditedText">正文</label><textarea id="scriptEditedText" rows="16" maxlength="200000" required></textarea><label class="field-label" for="scriptEditReason">修改说明</label><input id="scriptEditReason" maxlength="2000" placeholder="说明本次修改内容" required><div class="dialog-footer"><button id="scriptEditCancel" class="secondary-button" type="button">取消</button><button id="scriptEditSave" class="primary-button" type="submit">保存新版本</button></div></form></dialog>
+  <script src="/static/scripts.js?v={{ asset_version }}" defer></script>
+</body>
+</html>

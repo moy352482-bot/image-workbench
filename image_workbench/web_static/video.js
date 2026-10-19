@@ -39,7 +39,7 @@
     finally { if (button.isConnected) button.disabled = false; }
   }
   function mediaURL(path) {
-    if (typeof path !== 'string' || !path.startsWith('/api/video/')) return '';
+    if (typeof path !== 'string' || !/^\/api\/(video\/|artifacts\/|scripts\/tasks\/)/.test(path)) return '';
     const url = new URL(path, location.origin);
     if (url.origin !== location.origin) return '';
     url.searchParams.set('workspace_id', state.account.workspace_id);
@@ -55,17 +55,14 @@
     const enabled = state.config?.enabled_resolutions;
     return resolutions.filter(value => (Array.isArray(enabled) ? enabled : ['720p']).includes(value));
   }
-  function pricingRates() {
-    const rates = { ...state.config.rates };
-    for (const resolution of enabledResolutions()) rates[resolution] = Number($(resolution === '720p' ? 'videoRate720' : 'videoRate1080').value);
-    return rates;
-  }
   function rateFor(resolution) {
     const rate = state.config?.rates?.[resolution];
     return Number.isInteger(rate) && rate > 0 ? rate : null;
   }
   function resolutionView() {
     const resolution = $('videoResolution').value;
+    const rate = rateFor(resolution);
+    $('videoFixedPrice').textContent = rate ? `${resolution} · ${rate} 积分 / 秒 · 平台预设价格` : '正在读取预设价格';
     for (const option of $('videoRatio').options) {
       const size = state.config?.resolutions?.[resolution]?.[option.value];
       option.textContent = `${ratioNames[option.value]}${size ? ` · ${size.width} × ${size.height}` : ''}`;
@@ -82,26 +79,15 @@
     const c = state.config;
     const enabled = enabledResolutions();
     $('videoWorkerStatus').textContent = c.worker_online ? 'H3 执行器在线' : 'H3 执行器离线 · 新任务排队';
-    $('videoPricingPanel').hidden = !state.account.is_admin;
     $('videoAdminLink').hidden = !state.account.is_admin;
-    $('videoRateSummary').textContent = enabled.map(resolution => `${resolution}：${rateFor(resolution) ? `${rateFor(resolution)} 积分 / 秒` : '尚未设置'}`).join(' · ');
-    for (const resolution of resolutions) {
-      const input = $(resolution === '720p' ? 'videoRate720' : 'videoRate1080');
-      input.disabled = !enabled.includes(resolution);
-      $(resolution === '720p' ? 'videoRate720Label' : 'videoRate1080Label').hidden = input.disabled;
-      input.hidden = input.disabled;
-      if (document.activeElement !== input) input.value = rateFor(resolution) ?? '';
-    }
     const previous = $('videoResolution').value;
     $('videoResolution').replaceChildren();
     for (const resolution of enabled) {
-      const rate = rateFor(resolution);
-      const option = el('option', '', `${resolution}${rate ? ` · ${rate} 积分 / 秒` : ' · 待设置价格'}`);
+      const option = el('option', '', resolution);
       option.value = resolution;
       $('videoResolution').append(option);
     }
     $('videoResolution').value = enabled.includes(previous) ? previous : enabled[0] || '';
-    if (!c.configured && state.account.is_admin) $('videoPricingPanel').open = true;
     resolutionView();
   }
   async function loadProjects() {
@@ -173,7 +159,7 @@
       const expected = requiresRebuild ? null : shot.estimated_credit ?? (rate ? shot.duration * rate : null);
       const cost = job?.credit_cost ?? expected;
       const size = Number.isInteger(shot.width) && Number.isInteger(shot.height) ? ` · ${shot.width} × ${shot.height}` : '';
-      const meta = `${modes[shot.mode] || shot.mode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
+      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${modes[shot.mode] || shot.mode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
       copy.append(heading, el('p', 'video-shot-meta', meta), el('p', 'video-shot-prompt', shot.prompt));
       if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild || blockedReason ? '' : '可检查素材后重新提交。'}`));
       const actions = el('div', 'video-shot-actions');
@@ -212,20 +198,42 @@
     }
     if (!project.shots.length) $('videoShots').append(el('div', 'video-empty', '还没有分镜。填写上方镜头内容并保存，再单独点击生成。'));
   }
-  function projectView(project, force = false) {
+  function projectView(project, force = false, preserveDraft = false) {
     state.project = project;
     $('videoProjectDetail').hidden = false; $('videoCreatePanel').hidden = true;
+    $('videoProjectIntro').hidden = false;
     $('videoActiveName').textContent = project.name; $('videoProjectCrumb').textContent = project.name;
     $('videoActiveScript').textContent = project.script || '未填写脚本说明';
     const signature = JSON.stringify([project.assets, project.shots, state.config.rates, enabledResolutions()]);
     if (force || signature !== state.projectSignature) { renderAssets(project); renderShots(project); state.projectSignature = signature; }
+    document.dispatchEvent(new CustomEvent('video-project-view', { detail: { project, force, preserveDraft } }));
   }
-  async function selectProject(id) {
+  async function selectProject(id, preserveDraft = false) {
+    if (!preserveDraft) state.draftRevision = (state.draftRevision || 0) + 1;
+    state.selectingProject = id;
     const project = await api(`/api/video/projects/${id}`);
-    $('videoShotForm').reset(); state.shotRequest = uuid(); state.referenceOrder = [];
+    if (state.selectingProject !== id) return;
+    if (!preserveDraft) $('videoShotForm').reset(); state.shotRequest = uuid(); state.referenceOrder = [];
     $('videoReferenceChoices').replaceChildren();
-    projectView(project, true); resolutionView(); await loadProjects();
+    projectView(project, true, preserveDraft); resolutionView(); await loadProjects();
     const url = new URL(location.href); url.searchParams.set('project', id); history.replaceState(null, '', url);
+  }
+  async function ensureProject() {
+    if (state.project) return state.project;
+    if (!state.account) throw new Error('工作台正在加载，请稍候再试');
+    if (state.projectCreating) return state.projectCreating;
+    const revision = state.draftRevision;
+    state.projectDraft ||= { request_id: state.projectRequest, name: $('videoProjectName').value.trim() || `新作品 ${new Date().toLocaleString('zh-CN', { hour12: false })}`, script: '' };
+    const pending = (async () => {
+      const project = await api('/api/video/projects', { method: 'POST', body: JSON.stringify(state.projectDraft) });
+      if (state.draftRevision !== revision) throw new Error('已切换项目，请在当前项目重新操作');
+      await selectProject(project.project_id, true);
+      if (state.draftRevision !== revision || state.project?.project_id !== project.project_id) throw new Error('已切换项目，请在当前项目重新操作');
+      state.projectRequest = uuid(); state.projectDraft = null;
+      return project;
+    })();
+    state.projectCreating = pending;
+    try { return await pending; } finally { if (state.projectCreating === pending) state.projectCreating = null; }
   }
   async function refresh() {
     if (state.loading) return;
@@ -241,20 +249,23 @@
     } finally { state.loading = false; }
   }
 
-  $('videoProjectForm').addEventListener('submit', event => {
-    event.preventDefault();
-    busy(event.submitter, async () => {
-      const project = await api('/api/video/projects', { method: 'POST', body: JSON.stringify({ request_id: state.projectRequest, name: $('videoProjectName').value.trim(), script: $('videoScript').value }) });
-      state.projectRequest = uuid(); $('videoProjectForm').reset(); await selectProject(project.project_id); notice('项目已保存。添加参考资产，然后创建分镜。');
-    });
+  $('newVideoProject').addEventListener('click', () => {
+    state.draftRevision = (state.draftRevision || 0) + 1; state.selectingProject = null; state.project = null; state.projectSignature = '';
+    state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; state.shotRequest = uuid();
+    $('videoShotForm').reset(); $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
+    renderAssets({ assets: [] }); renderShots({ shots: [] });
+    document.dispatchEvent(new CustomEvent('video-project-cleared')); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
+    $('videoProjectCrumb').textContent = '新作品'; notice('');
+    const url = new URL(location.href); url.searchParams.delete('project'); history.replaceState(null, '', url);
+    loadProjects().catch(error => notice(error.message, true));
   });
-  $('newVideoProject').addEventListener('click', () => { state.project = null; state.projectSignature = ''; $('videoCreatePanel').hidden = false; $('videoProjectDetail').hidden = true; $('videoProjectCrumb').textContent = '新建项目'; const url = new URL(location.href); url.searchParams.delete('project'); history.replaceState(null, '', url); $('videoProjectName').focus(); loadProjects().catch(error => notice(error.message, true)); });
   $('videoAssets').addEventListener('change', async event => {
-    const input = event.target; const files = Array.from(input.files); const id = state.project?.project_id;
-    if (!files.length || !id) return;
+    const input = event.target; const files = Array.from(input.files);
+    if (!files.length) return;
     input.disabled = true;
     try {
       if (files.some(file => file.size > 20 * 1024 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 40 * 1024 * 1024) throw new Error('单张图片最大 20 MB，一次上传合计最大 40 MB');
+      const id = (await ensureProject()).project_id;
       const form = new FormData(); files.forEach(file => form.append('files', file));
       $('videoUploadMessage').textContent = '正在上传并校验图片…';
       await api(`/api/video/projects/${id}/assets`, { method: 'POST', body: form });
@@ -266,7 +277,7 @@
   $('videoShotForm').addEventListener('submit', event => {
     event.preventDefault();
     busy(event.submitter, async () => {
-      const id = state.project?.project_id; if (!id) return;
+      const id = (await ensureProject()).project_id;
       const mode = $('videoMode').value;
       const refs = mode === 'T2V' ? [] : [...state.referenceOrder];
       if ((mode === 'I2V' && (refs.length < 1 || refs.length > 2)) || (mode === 'R2V' && (refs.length < 1 || refs.length > 9))) throw new Error(mode === 'I2V' ? '首尾帧模式需要选择 1–2 张参考图' : '参考素材模式需要选择 1–9 张参考图');
@@ -275,7 +286,6 @@
       if (state.project?.project_id === id) await refresh(); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');
     });
   });
-  $('videoPricingForm').addEventListener('submit', event => { event.preventDefault(); busy(event.submitter, async () => { await api('/api/video/config', { method: 'PUT', body: JSON.stringify({ rates: pricingRates() }) }); await refresh(); notice('每秒积分已保存。已提交镜头继续按原价格结算。'); }); });
   $('videoMode').addEventListener('change', updateMode);
   $('videoResolution').addEventListener('change', resolutionView);
   $('videoDuration').addEventListener('input', quote);
@@ -283,6 +293,7 @@
   $('videoWorkspace').addEventListener('change', async event => { try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { event.target.value = state.account.workspace_id; notice(error.message, true); } });
   $('videoLogout').addEventListener('click', event => busy(event.currentTarget, async () => { await api('/api/auth/logout', { method: 'POST' }); location.assign('/login'); }));
 
+  window.IWVideo = { state, api, refresh, notice, busy, mediaURL, el, uuid, ensureProject };
   (async () => {
     state.csrf = (await api('/api/config')).csrf_token;
     await refreshAccount();
@@ -291,7 +302,7 @@
     const projects = await loadProjects(); const requested = new URL(location.href).searchParams.get('project');
     if (requested && projects.some(project => project.project_id === requested)) await selectProject(requested);
     else if (projects.length) await selectProject(projects[0].project_id);
-    if (!state.config.configured) notice(state.account.is_admin ? '请展开“视频积分设置”，填写每秒积分。设置前可以保存项目、资产和分镜。' : '视频价格尚未设置。你可以先保存项目、资产和分镜。');
+    document.dispatchEvent(new CustomEvent('video-ready'));
     setInterval(() => { if (!document.hidden && state.account) refresh().catch(error => notice(error.message, true)); }, 8000);
   })().catch(error => notice(error.message, true));
 })();

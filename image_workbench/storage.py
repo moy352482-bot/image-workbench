@@ -19,6 +19,7 @@ import warnings
 from PIL import Image, UnidentifiedImageError
 
 from .config import StorageConfig
+from .locking import FileLock
 from .models import Artifact, Project, Task
 
 
@@ -27,7 +28,9 @@ class MetadataError(ValueError):
 
 
 _ID = re.compile(r"[0-9a-f]{32}")
-_FORMATS = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}
+_IMAGE_FORMATS = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}
+_FORMATS = {**_IMAGE_FORMATS, "TXT": ".txt"}
+_TEXT_OPERATIONS = {"script", "screenplay"}
 _CHUNK_BYTES = 1024 * 1024
 _metadata_reads = ContextVar("storage_metadata_reads", default=None)
 
@@ -177,11 +180,11 @@ class StorageManager:
             elif isinstance(record, Task):
                 _validate_id(record.task_id)
                 _text(record.prompt, "prompt")
-                if record.operation not in ("generate", "edit"):
+                if record.operation not in {"generate", "edit", *_TEXT_OPERATIONS}:
                     raise ValueError("未知任务操作")
                 if record.operation == "generate" and record.base_artifact_id is not None:
                     raise ValueError("generate 不接受基底图片")
-                if record.operation == "edit":
+                if record.operation == "edit" or record.base_artifact_id is not None:
                     _validate_id(record.base_artifact_id)
             else:
                 _validate_id(record.task_id)
@@ -197,9 +200,17 @@ class StorageManager:
                     raise ValueError("输出图片的 role 必须为 None")
                 if record.format not in _FORMATS:
                     raise ValueError("未知图片格式")
-                for field in ("width", "height", "size_bytes"):
-                    if type(getattr(record, field)) is not int or getattr(record, field) <= 0:
-                        raise ValueError(f"{field} 必须为正整数")
+                if type(record.size_bytes) is not int or record.size_bytes <= 0:
+                    raise ValueError("size_bytes 必须为正整数")
+                if record.format == "TXT":
+                    if record.kind != "output":
+                        raise ValueError("TXT 仅支持文本输出")
+                    if any(type(value) is not int or value != 0 for value in (record.width, record.height)):
+                        raise ValueError("TXT 的 width 和 height 必须为 0")
+                else:
+                    for field in ("width", "height"):
+                        if type(getattr(record, field)) is not int or getattr(record, field) <= 0:
+                            raise ValueError(f"{field} 必须为正整数")
                 if not isinstance(record.sha256, str) or re.fullmatch(r"[0-9a-f]{64}", record.sha256) is None:
                     raise ValueError("无效 SHA-256")
                 if record.source_artifact_id is not None:
@@ -274,12 +285,14 @@ class StorageManager:
     ) -> Task:
         self.get_project(project_id)
         _text(prompt, "prompt")
-        if operation not in ("generate", "edit"):
-            raise ValueError("operation 必须为 generate 或 edit")
+        if operation not in {"generate", "edit", *_TEXT_OPERATIONS}:
+            raise ValueError("operation 必须为 generate、edit、script 或 screenplay")
         if operation == "generate" and base_artifact_id is not None:
             raise ValueError("generate 任务不能指定 base_artifact_id")
         if operation == "edit":
             self._require_source(project_id, base_artifact_id)
+        elif operation in _TEXT_OPERATIONS and base_artifact_id is not None:
+            self._require_text_source(project_id, base_artifact_id, operation)
         task = Task(uuid4().hex if task_id is None else _validate_id(task_id), project_id, operation, prompt, base_artifact_id, _now())
         final = self._task_dir(project_id, task.task_id)
         if final.exists():
@@ -342,7 +355,7 @@ class StorageManager:
         return path
 
     def list_task_artifacts(self, project_id: str, task_id: str) -> list[Artifact]:
-        self.get_task(project_id, task_id)
+        task = self.get_task(project_id, task_id)
         payload = self._read_json(self._task_dir(project_id, task_id) / "artifacts.json")
         if set(payload) != {"schema_version", "artifacts"} or not isinstance(payload["artifacts"], list):
             raise MetadataError("artifacts 清单结构无效")
@@ -350,6 +363,8 @@ class StorageManager:
         seen = set()
         for entry in payload["artifacts"]:
             artifact = self._decode_record(Artifact, entry)
+            if (artifact.format == "TXT") != (task.operation in _TEXT_OPERATIONS):
+                raise MetadataError("产物格式与所属任务类型不匹配")
             if artifact.project_id != project_id or artifact.task_id != task_id:
                 raise MetadataError("图片的项目或任务 ID 与目录不匹配")
             if artifact.artifact_id in seen:
@@ -513,6 +528,18 @@ class StorageManager:
         artifact = self.get_artifact(artifact_id)
         if artifact.project_id != project_id:
             raise ValueError("来源图片必须属于同一项目")
+        if artifact.format not in _IMAGE_FORMATS:
+            raise ValueError("图片任务只能引用图片产物")
+        self._artifact_file(artifact)
+        return artifact
+
+    def _require_text_source(self, project_id: str, artifact_id: str, operation: str) -> Artifact:
+        artifact = self.get_artifact(artifact_id)
+        if artifact.project_id != project_id or artifact.format != "TXT" or artifact.kind != "output":
+            raise ValueError("来源必须是同一项目的 TXT 输出")
+        source_task = self.get_task(project_id, artifact.task_id)
+        if source_task.operation != operation:
+            raise ValueError("来源文本的脚本/剧本类型必须一致")
         self._artifact_file(artifact)
         return artifact
 
@@ -520,7 +547,9 @@ class StorageManager:
         self, project_id: str, task_id: str, source_path: str | Path,
         role: str = "reference",
     ) -> Artifact:
-        self.get_task(project_id, task_id)
+        task = self.get_task(project_id, task_id)
+        if task.operation not in {"generate", "edit"}:
+            raise ValueError("文本任务不接受图片输入")
         _text(role, "role")
         return self._store_image(project_id, task_id, source_path, "input", role, None)
 
@@ -530,6 +559,8 @@ class StorageManager:
         *, artifact_id: str | None = None,
     ) -> Artifact:
         task = self.get_task(project_id, task_id)
+        if task.operation not in {"generate", "edit"}:
+            raise ValueError("文本任务不接受图片输出")
         if task.operation == "edit":
             if source_artifact_id is None:
                 source_artifact_id = task.base_artifact_id
@@ -541,6 +572,112 @@ class StorageManager:
             project_id, task_id, source_path, "output", None, source_artifact_id,
             artifact_id=artifact_id,
         )
+
+    def register_output_text(
+        self, project_id: str, task_id: str, source_path: str | Path,
+        source_artifact_id: str | None = None,
+        *, artifact_id: str | None = None,
+    ) -> Artifact:
+        """将脚本/剧本作为不可变 TXT 产物登记，修订保持原父产物关系。"""
+        # 文本登记具有独立的跨进程锁，避免同时完成的文本任务丢失清单更新。
+        with FileLock(self._path(".text-artifacts.lock"), timeout=30):
+            task = self.get_task(project_id, task_id)
+            if task.operation not in _TEXT_OPERATIONS:
+                raise ValueError("只有 script 或 screenplay 任务可以登记 TXT 输出")
+            if source_artifact_id is None:
+                source_artifact_id = task.base_artifact_id
+            elif source_artifact_id != task.base_artifact_id:
+                raise ValueError("文本输出来源必须与任务的 base_artifact_id 一致")
+            if source_artifact_id is not None:
+                self._require_text_source(project_id, source_artifact_id, task.operation)
+            return self._store_text(project_id, task_id, source_path, source_artifact_id, artifact_id=artifact_id)
+
+    def _inspect_text(self, path: Path) -> str:
+        info = path.stat()
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("文本路径必须指向普通文件")
+        if info.st_size > self.config.max_text_bytes:
+            raise ValueError("文本文件超过 max_text_bytes 限制")
+        with path.open("rb") as stream:
+            data = stream.read(self.config.max_text_bytes + 1)
+        if len(data) > self.config.max_text_bytes:
+            raise ValueError("文本文件超过 max_text_bytes 限制")
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError("TXT 必须使用 UTF-8 编码") from exc
+        body = text.lstrip("\ufeff").strip()
+        if not body:
+            raise ValueError("TXT 正文不能为空")
+        if any((ord(char) < 32 and char not in "\t\n\r") or 0x7F <= ord(char) <= 0x9F for char in text):
+            raise ValueError("TXT 不允许二进制或控制字符")
+        if re.search(r"(?m)^\s*(?:`{3,}|~{3,})", text):
+            raise ValueError("TXT 不允许 Markdown 代码块")
+        if re.search(r"<\s*(?:!doctype\s+html\b|/?\s*(?:html|head|body|div|span|p|h[1-6]|table|tr|td|script|style|think|analysis)\b[^>]*>)", text, re.I):
+            raise ValueError("TXT 不允许 HTML 或模型思考标签")
+        if body.startswith(("{", "[")):
+            try:
+                structured = json.loads(body)
+            except json.JSONDecodeError:
+                pass
+            else:
+                if isinstance(structured, (dict, list)):
+                    raise ValueError("TXT 必须是可阅读正文，不能是 JSON")
+        return text
+
+    def _store_text(self, project_id, task_id, source_path, source_artifact_id, *, artifact_id=None):
+        if not isinstance(source_path, (str, Path)) or not str(source_path).strip():
+            raise ValueError("source_path 必须是可信本地文件路径")
+        source = Path(source_path).expanduser()
+        self.list_task_artifacts(project_id, task_id)
+        artifact_id = uuid4().hex if artifact_id is None else _validate_id(artifact_id)
+        if self._find_artifacts(artifact_id):
+            raise FileExistsError(f"产物 ID 已存在: {artifact_id}")
+        directory = self._path("projects", project_id, "tasks", task_id, "outputs")
+        temporary = final = None
+        final_created = committed = False
+        try:
+            info = source.stat()
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError("源文本必须是普通文件")
+            if info.st_size > self.config.max_text_bytes:
+                raise ValueError("文本文件超过 max_text_bytes 限制")
+            with source.open("rb") as reader:
+                data = reader.read(self.config.max_text_bytes + 1)
+            if len(data) > self.config.max_text_bytes:
+                raise ValueError("文本文件超过 max_text_bytes 限制")
+            with tempfile.NamedTemporaryFile(dir=directory, prefix=".tmp-", delete=False) as stream:
+                temporary = Path(stream.name)
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+            self._inspect_text(temporary)
+            relative_path = "/".join(("projects", project_id, "tasks", task_id, "outputs", artifact_id + ".txt"))
+            artifact = Artifact(artifact_id, project_id, task_id, "output", None, source.name,
+                                "TXT", 0, 0, len(data), hashlib.sha256(data).hexdigest(),
+                                relative_path, _now(), source_artifact_id)
+            final = self._artifact_file(artifact, must_exist=False)
+            with final.open("xb") as writer:
+                final_created = True
+                writer.write(data)
+                writer.flush()
+                os.fsync(writer.fileno())
+            if self._find_artifacts(artifact_id):
+                raise FileExistsError(f"产物 ID 已存在: {artifact_id}")
+            artifacts = self.list_task_artifacts(project_id, task_id)
+            prior_signature = self._artifact_index_signature
+            self._write_json(self._task_dir(project_id, task_id) / "artifacts.json", {
+                "schema_version": 1, "artifacts": [asdict(item) for item in [*artifacts, artifact]],
+            })
+            committed = True
+            self._advance_cached_write(prior_signature,
+                                       {f"artifacts.json:{project_id}:{task_id}", f"task:{project_id}:{task_id}"}, artifact)
+            return artifact
+        finally:
+            if temporary is not None:
+                self._cleanup(temporary)
+            if final_created and not committed:
+                self._cleanup(final)
 
     def _copy_source(self, source: Path, target: Path) -> tuple[int, str]:
         # 检查已有大小，也在流式复制过程中限量，避免源文件变大绕过限制。
@@ -569,7 +706,7 @@ class StorageManager:
                 warnings.simplefilter("error", Image.DecompressionBombWarning)
                 with Image.open(path, formats=["PNG", "JPEG", "WEBP"]) as picture:
                     image_format = picture.format
-                    if image_format not in _FORMATS:
+                    if image_format not in _IMAGE_FORMATS:
                         raise ValueError("仅支持真实内容为 PNG、JPEG、WEBP 的图片")
                     width, height = picture.size
                     if width * height > self.config.max_image_pixels:

@@ -98,6 +98,9 @@ def _parser() -> argparse.ArgumentParser:
     confirm.add_argument("--project", required=True)
     confirm.add_argument("--task", required=True)
     confirm.add_argument("--confirm-stopped", action="store_true", help="明确确认原执行进程已停止；之后仍需网页手动重试")
+    script_confirm = commands.add_parser("script-confirm-stopped", help="确认原文本 Codex 已停止后，解除待确认脚本任务并释放积分；不会结束进程或重新生成")
+    script_confirm.add_argument("--task", required=True)
+    script_confirm.add_argument("--confirm-stopped", action="store_true")
     return parser
 
 
@@ -119,7 +122,7 @@ def main(argv=None) -> int:
             parser.error("--timeout 必须大于0")
     if args.command == "remote-worker" and (not math.isfinite(args.poll_seconds) or args.poll_seconds < 1):
         parser.error("--poll-seconds 必须为至少1秒的有限数")
-    if args.command == "worker-confirm-stopped" and not args.confirm_stopped:
+    if args.command in {"worker-confirm-stopped", "script-confirm-stopped"} and not args.confirm_stopped:
         parser.error("请核实原执行进程已经停止，再添加 --confirm-stopped")
     if args.command in {"web", "cloud"} and not 1 <= args.port <= 65535:
         parser.error("端口必须在1到65535之间")
@@ -214,6 +217,13 @@ def main(argv=None) -> int:
             _print(result)
             return 0
         runner = TaskRunner(storage)
+        if args.command == "script-confirm-stopped":
+            from .accounts import IdentityStore
+            from .script_service import ScriptService
+            service = ScriptService(storage, IdentityStore(storage))
+            job = service._load(args.task)
+            _print(service.confirm_stopped(job["account_id"], job["workspace_id"], args.task, confirmed=True))
+            return 0
         if args.command == "worker-confirm-stopped":
             from .workbench_state import WorkbenchState
             from .worker import confirm_stopped

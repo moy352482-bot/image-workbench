@@ -401,13 +401,17 @@ def create_workspace_app(storage: StorageManager | None = None, *, backend="code
     def artifact(artifact_id: str, download: bool = False):
         item = storage.get_artifact(artifact_id)
         path = storage.get_artifact_path(artifact_id)
-        if path.stat().st_size != item.size_bytes or item.size_bytes > storage.config.max_image_bytes:
+        size_limit = storage.config.max_text_bytes if item.format == "TXT" else storage.config.max_image_bytes
+        if path.stat().st_size != item.size_bytes or item.size_bytes > size_limit:
             raise ValueError("图片体积与登记不符")
         data = path.read_bytes()
         if hashlib.sha256(data).hexdigest() != item.sha256:
             raise ValueError("图片内容与登记不符")
-        mime, extension = {"PNG": ("image/png", "png"), "JPEG": ("image/jpeg", "jpg"), "WEBP": ("image/webp", "webp")}[item.format]
-        headers = {"Content-Disposition": f'{"attachment" if download else "inline"}; filename="image-{artifact_id}.{extension}"'}
+        mime, extension = {"PNG": ("image/png", "png"), "JPEG": ("image/jpeg", "jpg"), "WEBP": ("image/webp", "webp"), "TXT": ("text/plain; charset=utf-8", "txt")}[item.format]
+        if item.format == "TXT":
+            data.decode("utf-8")
+        prefix = "text" if item.format == "TXT" else "image"
+        headers = {"Content-Disposition": f'{"attachment" if download else "inline"}; filename="{prefix}-{artifact_id}.{extension}"'}
         return Response(data, media_type=mime, headers=headers)
 
     return app

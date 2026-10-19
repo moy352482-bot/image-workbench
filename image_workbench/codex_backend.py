@@ -90,7 +90,11 @@ class CodexImageBackend:
             raise ValueError("model 必须是有效模型标识")
         self.executable = executable
         self.model = model
-        self.generated_root = Path(generated_root).expanduser().resolve() if generated_root is not None else _codex_home() / "generated_images"
+        # The operator may relocate the whole cache with a Windows junction.
+        # Bind that configured root once; links inside the cache stay forbidden.
+        self.generated_alias = (Path(generated_root).expanduser() if generated_root is not None
+                                else _codex_home() / "generated_images").absolute()
+        self.generated_root = self.generated_alias.resolve()
 
     def _build_command(self, request: BackendRequest) -> list[str]:
         command = [
@@ -159,6 +163,12 @@ class CodexImageBackend:
             raise ValueError("Codex 产物路径必须是非空字符串")
         source = Path(raw)
         root = self.generated_root
+        if not source.is_absolute() or ".." in source.parts:
+            raise ValueError("Codex 产物路径必须绝对且不能包含穿越")
+        if self.generated_alias.resolve() != root:
+            raise ValueError("Codex 缓存根目录在执行期间发生变化")
+        if source.is_relative_to(self.generated_alias):
+            source = root / source.relative_to(self.generated_alias)
         if not source.is_absolute() or not source.is_relative_to(root) or source == root:
             raise ValueError("Codex 产物不在约定的 generated_images 根目录内")
         parts = source.relative_to(root).parts

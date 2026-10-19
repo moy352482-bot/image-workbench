@@ -18,10 +18,6 @@ class Body(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class Config(Body):
-    rates: dict[Literal["720p", "1080p"], StrictInt]
-
-
 class Project(Body):
     request_id: str = Field(pattern=ID)
     name: str = Field(min_length=1, max_length=120)
@@ -86,14 +82,6 @@ def install_video(application):
         owner(request)
         return {**store.config(), "csrf_token": request.scope.get("account_csrf"),
                 "is_admin": bool(request.scope["account_session"]["is_admin"])}
-
-    @app.put("/api/video/config")
-    def configure(body: Config, request: Request):
-        aid, _ = owner(request)
-        try:
-            return store.set_config(aid, body.rates)
-        except PermissionError as exc:
-            raise HTTPException(403, str(exc)) from exc
 
     @app.get("/api/video/projects")
     def projects(request: Request):

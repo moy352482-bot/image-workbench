@@ -351,6 +351,11 @@ class VideoStore:
                 and (shot.get("width"), shot.get("height")) == RESOLUTIONS[resolution][ratio])
 
     def _shot_view(self, shot, wid, jobs):
+        if shot.get("source") == "upload":
+            base = f"/api/video/projects/{shot['project_id']}/shots/{shot['shot_id']}/output?workspace_id={wid}"
+            return {**shot, "status": "completed", "current_job": None, "estimated_credit": 0,
+                    "requires_rebuild": False, "run_blocked_reason": "已上传的视频无需生成",
+                    "output_url": base, "download_url": base + "&download=1"}
         job = self._current(shot["project_id"], shot["shot_id"], jobs)
         supported = self._is_hd_shot(shot)
         config = self.config()
@@ -387,6 +392,8 @@ class VideoStore:
         with self.lock():
             self._project(account_id, workspace_id, pid)
             shot = self._shot(pid, sid)
+            if shot.get("source") == "upload":
+                raise ConflictError("已上传的视频无需生成，请创建新分镜")
             previous = self.identity.request_job(account_id, request_id, pid, sid)
             if previous:
                 if previous.get("kind") != "video":
@@ -557,7 +564,11 @@ class VideoStore:
 
     def output_file(self, account_id, workspace_id, pid, sid):
         self._project(account_id, workspace_id, pid)
-        self._shot(pid, sid)
+        shot = self._shot(pid, sid)
+        if shot.get("source") == "upload":
+            path = self._path("projects", pid, "shots", sid + ".mp4")
+            self._verify_file(path, shot["output"])
+            return path
         with self.lock():
             job = self._current(pid, sid)
             if not job or job["status"] != "completed" or not job.get("output"):
@@ -565,3 +576,22 @@ class VideoStore:
             path = self._path("outputs", job["job_id"] + ".mp4")
             self._verify_file(path, job["output"])
             return path
+
+    def upload_video(self, account_id, workspace_id, pid, request_id, name, data):
+        _validate_id(request_id)
+        _string(name, "视频名称", 120)
+        inspect_mp4(data)
+        digest = hashlib.sha256(data).hexdigest()
+        with self.lock():
+            self._project(account_id, workspace_id, pid)
+            path = self._path("projects", pid, "shots", request_id + ".json")
+            old = self._optional(path)
+            if old:
+                if old.get("source") != "upload" or old.get("name") != name or old.get("output", {}).get("sha256") != digest:
+                    raise ConflictError("此上传标识已用于不同内容")
+            else:
+                self._bytes(self._path("projects", pid, "shots", request_id + ".mp4"), data)
+                self._write(path, {"project_id": pid, "shot_id": request_id, "name": name, "prompt": "用户上传视频",
+                    "mode": "upload", "source": "upload", "duration": None, "reference_ids": [], "created_at": _now(),
+                    "output": {"sha256": digest, "size_bytes": len(data)}})
+        return self.shot(account_id, workspace_id, pid, request_id)

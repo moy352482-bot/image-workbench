@@ -42,7 +42,9 @@ with tarfile.open(archive, 'r:gz') as bundle:
         path = pathlib.PurePosixPath(member.name)
         if (not member.isfile() or path.is_absolute() or '..' in path.parts or '\\' in member.name
                 or member.name in seen or not (member.name in {'requirements.txt', 'requirements-web.txt', 'RELEASE.json'}
-                or path.parts[0] == 'image_workbench')):
+                or path.parts[0] == 'image_workbench'
+                or member.name in {'config/script_models.json', 'config/script_pricing.json', 'config/script_routing.json'}
+                or (path.parts[:2] == ('skills', 'video-script-generation') and path.suffix in {'.json', '.txt', '.md'}))):
             raise ValueError('Unexpected release member')
         seen.add(member.name)
     for member in members:
@@ -60,7 +62,7 @@ python3 -m venv "$release/.venv"
 "$release/.venv/bin/python" -m pip install --disable-pip-version-check -r "$release/requirements-web.txt"
 (
     cd "$release"
-    "$release/.venv/bin/python" -c 'from image_workbench.cli import main; from image_workbench.web import create_app'
+    "$release/.venv/bin/python" -c 'from image_workbench.cli import main; from image_workbench.web import create_app; from image_workbench.script_templates import ScriptTemplateLoader; from image_workbench.script_models import ScriptModelRegistry; assert ScriptTemplateLoader().list_templates(); ScriptModelRegistry().configs()'
 )
 
 health() {

@@ -214,6 +214,8 @@ class TaskRunner:
         idempotency_key: str | None = None, expected_previous_execution_id=_ANY_PREVIOUS,
     ) -> ExecutionRecord:
         # Web Worker 使用稳定作业 ID；重发同一作业只读取已存在执行，不再次调用模型。
+        if self.storage.get_task(project_id, task_id).operation not in {"generate", "edit"}:
+            raise ValueError("文本任务请使用脚本生成服务")
         with FileLock(self.storage._path(".execution.lock")):
             if idempotency_key is not None:
                 _validate_id(idempotency_key)

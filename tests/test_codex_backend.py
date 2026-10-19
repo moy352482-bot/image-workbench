@@ -109,6 +109,35 @@ class CodexBackendTests(unittest.TestCase):
         self.assertEqual(json.loads((request.work_dir / "response.json").read_text()), payload)
         self.assertFalse(json.loads((request.work_dir / "artifact_recovery.json").read_text())["generation_retried"])
 
+    def test_relocated_cache_root_accepts_alias_and_canonical_but_rejects_nested_links_and_retarget(self):
+        def link(alias, target):
+            if os.name == "nt":
+                subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(target)],
+                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                self.addCleanup(lambda: os.rmdir(alias) if alias.exists() else None)
+            else:
+                alias.symlink_to(target, target_is_directory=True)
+                self.addCleanup(lambda: alias.unlink(missing_ok=True))
+
+        alias = self.root / "relocated-cache"
+        link(alias, self.generated_root)
+        backend = CodexImageBackend(generated_root=alias)
+        source = self.image(self.generated_root / "session" / "result.png")
+        self.assertEqual(backend._cache_source(str(alias / "session" / "result.png"), time.time()), source)
+        self.assertEqual(backend._cache_source(str(source), time.time()), source)
+        outside = self.root / "outside-cache"
+        outside.mkdir()
+        self.image(outside / "private.png")
+        nested = self.generated_root / "nested"
+        link(nested, outside)
+        with self.assertRaises(ValueError):
+            backend._cache_source(str(alias / "nested" / "private.png"), time.time())
+        with self.assertRaises(ValueError):
+            backend._cache_source(str(alias / "session" / ".." / "session" / "result.png"), time.time())
+        with mock.patch.object(Path, "resolve", return_value=outside):
+            with self.assertRaisesRegex(ValueError, "根目录.*变化"):
+                backend._cache_source(str(alias / "session" / "result.png"), time.time())
+
     def test_session_recovery_rejects_ambiguous_old_foreign_or_unfinished_images(self):
         session = "01234567-1234-1234-1234-123456789abc"
         for scenario in ("ambiguous", "old", "foreign", "unfinished", "duplicate_thread", "traversal"):

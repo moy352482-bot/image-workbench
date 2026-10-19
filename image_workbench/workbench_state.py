@@ -266,7 +266,8 @@ class WorkbenchState:
         if restore_execution_id is None and confirmed is not True:
             raise ValueError("请明确点击生成按钮后执行")
         with self.control_lock():
-            self.storage.get_task(project_id, task_id)
+            if self.storage.get_task(project_id, task_id).operation not in {"generate", "edit"}:
+                raise ValueError("文本任务请使用脚本生成服务")
             options = self.task_options(project_id, task_id)
             if options and options["state"] != "ready":
                 raise ConflictError("任务输入尚未完整保存，不能执行")
@@ -338,7 +339,7 @@ class WorkbenchState:
     def approve(self, artifact_id):
         with self.control_lock():
             artifact = self.storage.get_artifact(artifact_id)
-            if artifact.kind != "output":
+            if artifact.kind != "output" or artifact.format == "TXT":
                 raise ValueError("只能审核输出图片")
             path = self.storage.get_artifact_path(artifact_id)
             if hashlib.sha256(path.read_bytes()).hexdigest() != artifact.sha256:
@@ -362,6 +363,8 @@ class WorkbenchState:
 
     def task_view(self, project_id, task_id, *, detail=True, catalog=None):
         task = self.storage.get_task(project_id, task_id)
+        if task.operation not in {"generate", "edit"}:
+            raise ValueError("请在脚本与剧本页面查看该文本任务")
         catalog = catalog if catalog is not None else self.projects.catalog_view()
         placement = catalog["task_placements"][task_id]
         if placement["storage_project_id"] != project_id:
@@ -453,6 +456,8 @@ class WorkbenchState:
             if item["subproject_id"] not in subs:
                 continue
             try:
+                if self.storage.get_task(item["storage_project_id"], item["task_id"]).operation not in {"generate", "edit"}:
+                    continue
                 task = self.task_view(item["storage_project_id"], item["task_id"], detail=False, catalog=catalog)
             except FileNotFoundError:
                 if item["state"] == "pending":

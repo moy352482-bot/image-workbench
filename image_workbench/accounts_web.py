@@ -72,6 +72,13 @@ class AccountApplication:
         install_admin(self)
         from .video_web import install_video
         install_video(self)
+        from .script_web import install_scripts
+        install_scripts(self)
+        if remote_access:
+            from .script_remote import install_script_worker
+            install_script_worker(self)
+        from .video_pipeline import install_pipeline
+        install_pipeline(self)
 
     def scoped_app(self, account_id, workspace_id):
         key = account_id, workspace_id
@@ -104,7 +111,7 @@ class AccountApplication:
 
     async def dispatch(self, scope, receive, send):
         path = scope["path"]
-        if path.startswith("/api/worker/video/"):
+        if path.startswith(("/api/worker/video/", "/api/worker/scripts/")):
             if not self.remote_access:
                 await JSONResponse({"detail": "资源不存在"}, status_code=404)(scope, receive, send)
             else:
@@ -121,7 +128,7 @@ class AccountApplication:
             return
         session = scope.get("account_session")
         if not session:
-            response = RedirectResponse("/login", status_code=303) if path in {"/", "/admin", "/video"} else JSONResponse({"detail": "请先登录"}, status_code=401)
+            response = RedirectResponse("/login", status_code=303) if path in {"/", "/admin", "/video", "/scripts"} else JSONResponse({"detail": "请先登录"}, status_code=401)
             await response(scope, receive, send)
             return
         if path == "/admin" or path.startswith("/api/admin/"):
@@ -139,7 +146,7 @@ class AccountApplication:
             await JSONResponse({"detail": "工作空间不存在"}, status_code=404)(scope, receive, send)
             return
         scope["workspace_id"] = wid
-        if path == "/video" or path.startswith(("/api/video/", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions")):
+        if path in {"/video", "/scripts"} or path.startswith(("/api/video/", "/api/scripts/", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions")):
             await self.auth(scope, receive, send)
         else:
             with workspace_request():
@@ -252,6 +259,10 @@ class AccountApplication:
                 pid = catalog["storage_namespaces"][mid]
                 if any(job["project_id"] == pid and job["status"] in {"queued", "running", "uncertain"} for job in self.state.workbench.list_jobs()):
                     raise ConflictError("项目仍有排队、执行中或待确认任务，请结束任务后再操作")
+                if any((job.get("project_id") in {pid, mid} or job.get("main_project_id") == mid)
+                       and job.get("status") in {"queued", "running", "generating", "checking", "archiving", "uncertain"}
+                       for job in self.script_service.pending_jobs()):
+                    raise ConflictError("项目仍有脚本或剧本生成任务，请结束任务后再操作")
                 identity.change_project(aid, wid, mid, target_workspace_id=target, deleted=deleted)
             return {"ok": True, "main_project_id": mid, "workspace_id": target or wid}
 

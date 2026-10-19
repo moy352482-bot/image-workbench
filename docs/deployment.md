@@ -51,6 +51,16 @@ H3 执行器使用仓库根目录的 `h3-worker.local.json`。在已有本机配
 powershell -NoProfile -File scripts/start_h3_worker.ps1 -ConfigPath h3-worker.local.json -WorkerConfigPath deploy/remote-worker.local.json
 ```
 
+脚本/剧本执行器是独立进程，使用与图片执行器相同的私有连接配置，自动把缓存放到 `<cache_root>/script-worker`：
+
+```text
+python -X utf8 -m image_workbench.script_remote_worker --config deploy/remote-worker.local.json
+```
+
+执行机必须以自己的 ChatGPT 账号登录兼容的 Codex CLI，并具备新鲜的 `models_cache.json`。脚本模型、定价和推荐分别在 `config/script_models.json`、`config/script_pricing.json`、`config/script_routing.json`；当前账号不可用或未定价的档位不能生成。Windows 默认查找原生 `codex.exe`。运行 `python -m image_workbench doctor` 并检查各能力字段；静态检查不能代替真实图片和脚本验收。
+
+更换执行机前先准备环境，等待旧机任务完成并停止对应 worker，再启动新机。未完成任务的 identity、journal、receipt 和输出必须保留。`--once` 也会领取任务，不能用作只读连通检查；对状态不明的任务不要清缓存或自动重试。网站数据仍留在服务器，不需要迁移数据库。
+
 每个 worker 的缓存目录必须持久保留。图片缓存、H3 缓存、网站数据目录应分别使用不同位置。H3 的相对配置路径按配置文件目录解析；让访问同一 ComfyUI/GPU 的 H3 worker 共用相同的 `gpu_lock_path`。
 
 ComfyUI 地址只允许本机回环 HTTP 服务，正常部署不需要开放 ComfyUI 端口到公网。云端网站地址使用 HTTPS；HTTP 仅用于本机或 SSH 隧道联调。

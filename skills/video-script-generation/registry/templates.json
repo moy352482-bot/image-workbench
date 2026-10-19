@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "templates": [
+    {
+      "template_id": "basic_video_script",
+      "type": "script",
+      "name": "视频脚本基础结构",
+      "description": "系统基础结构，可按短视频、广告、宣传或产品需求调整；当前没有用户提供的脚本案例。",
+      "origin": "system_basic_structure",
+      "template_file": "templates/scripts/basic.txt",
+      "input_requirements": ["user_request"],
+      "output_structure": ["主题或标题", "核心创意", "按内容推进的可见事件", "对应旁白或对白", "情绪节奏", "结尾"],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true
+    },
+    {
+      "template_id": "episodic_screenplay_plaintext",
+      "type": "screenplay",
+      "name": "分场短剧剧本",
+      "description": "由用户提供的两份剧本正文提取分场格式，保留可见动作、人物对白和声音来源。",
+      "origin": "structure_extracted_from_user_references",
+      "template_file": "templates/screenplays/episodic.txt",
+      "input_requirements": ["user_request"],
+      "output_structure": ["可选作品名称与集标题", "场次：编号、时间、内外、地点", "人物", "可见动作与对白", "结尾"],
+      "example_refs": ["user_robot_boyfriend_ep1", "user_roommates_ep1"],
+      "header_policy": "template_native",
+      "enabled": true
+    }
+  ]
+}

@@ -465,8 +465,11 @@ class VideoTests(unittest.TestCase):
         admin_wid = self.identity.workspaces(self.admin)[0]["workspace_id"]
         admin = self.http_client(app, self.admin, admin_wid)
         self.assertEqual(anon.get("/api/video/projects").status_code, 401)
-        self.assertEqual(alice.put("/api/video/config", json={"rates": {"720p": 2, "1080p": 4}}).status_code, 403)
-        self.assertEqual(admin.put("/api/video/config", json={"rates": {"720p": 2, "1080p": 4}}).status_code, 200)
+        preset = self.store.config()["rates"]
+        self.assertEqual(alice.put("/api/video/config", json={"rates": {"720p": 2, "1080p": 4}}).status_code, 405)
+        self.assertEqual(admin.put("/api/video/config", json={"rates": {"720p": 2, "1080p": 4}}).status_code, 405)
+        self.assertEqual(self.store.config()["rates"], preset)
+        self.store.set_config(self.admin, {"720p": 2, "1080p": 4})  # Operator-side fixture, never a website mutation.
         self.assertEqual(bobby.get(f"/api/video/projects/{self.pid}").status_code, 404)
         self.assertEqual(alice.get(f"/api/video/projects/{self.pid}?workspace_id={self.other_wid}").status_code, 404)
         asset_response = alice.post(f"/api/video/projects/{self.pid}/assets", files={"files": ("test.png", png(), "image/png")})

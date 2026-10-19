@@ -48,6 +48,22 @@ class DeployTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             deploy.runtime_files(self.root)
 
+    def test_script_runtime_packages_required_config_and_templates_without_unrelated_files(self):
+        (self.root / "image_workbench/script_service.py").write_text("# script runtime")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        for relative in ("config/script_models.json", "config/script_pricing.json", "config/script_routing.json",
+                         "skills/video-script-generation/registry/templates.json", "skills/video-script-generation/examples/screenplays/sample.txt"):
+            path = self.root / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("{}")
+        (self.root / "config/private.json").write_text("must not upload")
+        archive, manifest = deploy.package(self.root, self.root, "20261016T000000Z-12345678")
+        self.assertIn("config/script_pricing.json", manifest["files"])
+        self.assertIn("skills/video-script-generation/registry/templates.json", manifest["files"])
+        self.assertNotIn("config/private.json", manifest["files"])
+        (self.root / "config/script_models.json").unlink()
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+
     def test_host_user_port_and_key_validation(self):
         path = self.root / "server.json"
         path.write_text(json.dumps(self.config))

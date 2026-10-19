@@ -10,9 +10,10 @@ class StorageConfig:
     data_root: Path | str | None = None
     max_image_bytes: int = 20 * 1024 * 1024
     max_image_pixels: int = 40_000_000
+    max_text_bytes: int = 1024 * 1024
 
     def __post_init__(self) -> None:
-        for name in ("max_image_bytes", "max_image_pixels"):
+        for name in ("max_image_bytes", "max_image_pixels", "max_text_bytes"):
             value = getattr(self, name)
             if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} 必须是正整数")

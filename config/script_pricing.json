@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "unit": "one_finished_txt",
+  "models": {
+    "gpt-6-astra": {"low": 30, "medium": 35, "high": 40, "xhigh": 45, "max": 50},
+    "gpt-6.1-sol": {"low": 10, "medium": 15, "high": 20, "xhigh": 25, "max": 30},
+    "gpt-6-luna": {"low": 0, "medium": 0, "high": 0, "xhigh": 5}
+  }
+}
