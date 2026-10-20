@@ -45,6 +45,9 @@ def runtime_files(root):
                 if path.name.startswith(".") or path.suffix not in {".json", ".txt", ".md"}:
                     raise ValueError("脚本模板目录含非发布文件")
                 paths.append(path)
+    if (root / "image_workbench" / "storyboard_planner.py").is_file():
+        paths.append(root / "skills" / "storyboard-planning" / "SKILL.md")
+        paths.append(root / "config" / "storyboard_pricing.json")
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):

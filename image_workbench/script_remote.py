@@ -4,35 +4,14 @@ import json
 import time
 from uuid import uuid4
 
-from fastapi import Request
-from pydantic import Field
 
 from .locking import FileLock
 from .script_models import ScriptModelRegistry
-from .script_web import ScriptBody, ID
 from .storage import _validate_id, _now
-from .workbench_state import ConflictError
+from .domain_errors import ConflictError
 
 
-class Capability(ScriptBody):
-    model_id: str = Field(max_length=100)
-    efforts: list[str] = Field(max_length=10)
-
-
-class Claim(ScriptBody):
-    worker_id: str = Field(pattern=ID)
-    models: list[Capability] = Field(max_length=20)
-
-
-class Start(ScriptBody):
-    attempt_id: str = Field(pattern=ID)
-
-
-class Complete(Start):
-    status: str = Field(pattern="^(succeeded|failed|uncertain)$")
-    text: str | None = Field(default=None, max_length=256 * 1024)
-    sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
-    error: str | None = Field(default=None, max_length=2000)
+from .contracts.script_queue import Capability, Claim, Start, Complete
 
 
 class RemoteScriptRegistry(ScriptModelRegistry):
@@ -158,30 +137,3 @@ class ScriptRemoteQueue:
                 self.service._write(job)
             self._beat(wid)
             return self.service._public(job)
-
-
-def install_script_worker(application):
-    queue = ScriptRemoteQueue(application.script_service)
-    application.script_queue = queue
-    application.script_service.registry = RemoteScriptRegistry(queue)
-    application.script_service.router.registry = application.script_service.registry
-    app = application.auth
-
-    def worker(request):
-        return (_validate_id(request.headers.get("x-worker-id", "")), _validate_id(request.headers.get("x-claim-id", "")))
-
-    @app.post("/api/worker/scripts/claim")
-    def claim(body: Claim):
-        return {"job": queue.claim(body.worker_id, [m.model_dump() for m in body.models])}
-
-    @app.post("/api/worker/scripts/tasks/{tid}/heartbeat")
-    def heartbeat(tid: str, request: Request):
-        return queue.heartbeat(tid, *worker(request))
-
-    @app.post("/api/worker/scripts/tasks/{tid}/start")
-    def start(tid: str, body: Start, request: Request):
-        return queue.start(tid, *worker(request), body.attempt_id)
-
-    @app.post("/api/worker/scripts/tasks/{tid}/complete")
-    def complete(tid: str, body: Complete, request: Request):
-        return queue.complete(tid, *worker(request), body.model_dump())

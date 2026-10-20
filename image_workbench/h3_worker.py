@@ -39,34 +39,9 @@ DEFAULT_MODELS = {
 }
 
 
-class ComfyRejected(ValueError):
-    """ComfyUI 明确拒绝了整次提交，没有接受的 prompt。"""
-
-
-class ArtifactInvalid(ValueError):
-    """生成已结束，但产物不满足交付条件。"""
-
-
-def _write(path, data):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + "." + uuid4().hex + ".tmp")
-    try:
-        with temporary.open("xb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
-def _json_write(path, value):
-    _write(path, json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8"))
-
-
-def _json_read(path):
-    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+# Compatibility aliases for worker integrations; implementations are shared.
+from .domain_errors import ComfyRejected, ArtifactInvalid
+from .atomic_files import write_bytes as _write, write_json as _json_write, read_json as _json_read
 
 
 def generation_dimensions(task):

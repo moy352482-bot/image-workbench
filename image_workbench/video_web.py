@@ -5,6 +5,7 @@ from typing import Literal
 from fastapi import HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from .storage import _validate_id
@@ -57,10 +58,9 @@ class Complete(Body):
     error: str | None = Field(default=None, max_length=2000)
 
 
-def install_video(application):
-    app = application.auth
-    store = getattr(application, "video_store", None) or VideoStore(application.storage, application.identity)
-    application.video_store = store
+def install_video(app, store):
+    directory = Path(__file__).resolve().parent
+    templates = Jinja2Templates(directory=directory / "web_templates")
 
     def owner(request):
         session = request.scope.get("account_session")
@@ -75,7 +75,10 @@ def install_video(application):
     @app.get("/video")
     def page(request: Request):
         owner(request)
-        return FileResponse(Path(__file__).parent / "web_templates" / "video.html", headers={"Cache-Control": "no-store"})
+        revision = max((directory / "web_static" / name).stat().st_mtime_ns for name in
+                       ("video.css", "pipeline.css", "storyboard.css", "video.js", "pipeline.js", "storyboard.js"))
+        return templates.TemplateResponse(request=request, name="video.html", context={"asset_version": str(revision)},
+                                          headers={"Cache-Control": "no-store"})
 
     @app.get("/api/video/config")
     def config(request: Request):

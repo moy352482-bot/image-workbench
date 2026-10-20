@@ -8,7 +8,7 @@ from pathlib import Path
 def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--manifest', type=Path, default=root / 'releases/20261016T134559Z-edaa810d.json')
+    parser.add_argument('--manifest', type=Path, default=root / 'releases/20261020T103920Z-8d69b7a2.json')
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding='utf-8-sig'))
     failures = []

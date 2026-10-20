@@ -554,7 +554,7 @@ class ProjectManager:
 
     def create_task(self, subproject_id, operation, prompt, base_artifact_id=None, *, name=None, description="", task_id=None):
         _text(prompt, "提示词")
-        if operation not in {"generate", "edit", "script", "screenplay"} or (operation == "generate" and base_artifact_id is not None):
+        if operation not in {"generate", "edit", "asset", "script", "screenplay", "storyboard", "video"} or (operation == "generate" and base_artifact_id is not None):
             raise ValueError("任务类型或基底不正确")
         tid = _validate_id(task_id) if task_id else uuid4().hex
         title = name if name is not None else (prompt.strip().splitlines()[0][:120] or "未命名任务")
@@ -587,8 +587,8 @@ class ProjectManager:
         for task, placement in entries:
             stamps.extend((task.created_at, placement.updated_at))
             for artifact in self.storage.list_task_artifacts(task.project_id, task.task_id):
-                inputs += artifact.kind == "input" and artifact.format != "TXT"
-                outputs += artifact.kind == "output" and artifact.format != "TXT"
+                inputs += artifact.kind == "input" and artifact.format in {"PNG", "JPEG", "WEBP"}
+                outputs += artifact.kind == "output" and artifact.format in {"PNG", "JPEG", "WEBP"}
                 stamps.append(artifact.created_at)
             execution = runner.get_execution(task.project_id, task.task_id)
             if execution:

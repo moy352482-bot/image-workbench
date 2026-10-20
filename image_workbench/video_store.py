@@ -4,16 +4,15 @@ import io
 import os
 from pathlib import Path
 import re
-import struct
 import time
-from uuid import uuid4
+from uuid import uuid4, uuid5, NAMESPACE_URL
 
 from PIL import Image
 
 from .accounts import IdentityStore
 from .locking import FileLock
 from .storage import _now, _validate_id
-from .workbench_state import ConflictError
+from .domain_errors import ConflictError
 
 
 RATIOS = {"landscape": (1280, 720), "portrait": (720, 1280), "square": (720, 720)}
@@ -24,7 +23,7 @@ RESOLUTIONS = {
 DEFAULT_RATES = {"720p": 40, "1080p": 80}
 REBUILD_REASON = "旧版低分辨率分镜不能按高清价格运行，请新建高清分镜"
 DISABLED_RESOLUTION_REASON = "1080p暂不可用，请新建720p分镜"
-MAX_OUTPUT_BYTES = 40 * 1024 * 1024
+from .media_validation import MAX_OUTPUT_BYTES
 FORMATS = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}
 ACTIVE = {"queued", "running", "uncertain"}
 
@@ -35,33 +34,7 @@ def _string(value, label, limit, *, empty=False):
     return value
 
 
-def inspect_mp4(data):
-    """检查 ISO BMFF 盒边界和 MP4 标识；真实编码检查由 H3 执行器负责。"""
-    if not isinstance(data, bytes) or not 24 <= len(data) <= MAX_OUTPUT_BYTES:
-        raise ValueError("视频大小无效或超过40 MiB")
-    offset, boxes = 0, {}
-    while offset < len(data):
-        if len(data) - offset < 8:
-            raise ValueError("MP4盒头不完整")
-        size, kind = struct.unpack_from(">I4s", data, offset)
-        header = 8
-        if size == 1:
-            if len(data) - offset < 16:
-                raise ValueError("MP4扩展盒头不完整")
-            size = struct.unpack_from(">Q", data, offset + 8)[0]
-            header = 16
-        elif size == 0:
-            size = len(data) - offset
-        if size < header or size > len(data) - offset:
-            raise ValueError("MP4盒长度无效")
-        boxes.setdefault(kind, []).append(data[offset + header:offset + size])
-        offset += size
-    ftyp = boxes.get(b"ftyp", [b""])[0]
-    brands = {ftyp[:4], *(ftyp[i:i + 4] for i in range(8, len(ftyp), 4))}
-    if len(ftyp) < 8 or not brands.intersection({b"isom", b"iso2", b"iso4", b"iso5", b"iso6", b"mp41", b"mp42", b"avc1"}):
-        raise ValueError("只接受MP4视频")
-    if not any(boxes.get(b"moov", [])) or not any(boxes.get(b"mdat", [])):
-        raise ValueError("MP4缺少视频元数据或媒体数据")
+from .media_validation import inspect_mp4
 
 
 class VideoStore:
@@ -118,6 +91,11 @@ class VideoStore:
                 "enabled_resolutions": self._enabled_resolutions(),
                 "worker_online": online, "modes": ["T2V", "I2V", "R2V"],
                 "durations": {"min": 4, "max": 15},
+                "video_models": [{"model_id": "h3", "display_name": "H3",
+                                  "supported_durations_ms": list(range(4000, 15001, 1000)),
+                                  "min_duration_ms": 4000, "max_duration_ms": 15000, "duration_step_ms": 1000,
+                                  "supported_durations": list(range(4, 16)), "min_duration": 4,
+                                  "max_duration": 15, "duration_step": 1}],
                 "ratios": {key: {"width": value[0], "height": value[1]} for key, value in RATIOS.items()},
                 "resolutions": {resolution: {ratio: {"width": size[0], "height": size[1]} for ratio, size in ratios.items()}
                                 for resolution, ratios in RESOLUTIONS.items()},
@@ -179,6 +157,32 @@ class VideoStore:
                          "name": name, "script": script, "created_at": _now()}
                 self._write(path, value)
         return self.project(account_id, workspace_id, request_id)
+
+    def pipeline_project(self, account_id, workspace_id, project_id):
+        """Read a pipeline binding after enforcing account/workspace ownership."""
+        with self.lock():
+            return self._project(account_id, workspace_id, project_id)
+
+    @property
+    def max_image_bytes(self):
+        """Public import limit for cross-feature image transfers."""
+        return self.storage.config.max_image_bytes
+
+    def ensure_pipeline_binding(self, account_id, workspace_id, project_id, create_link):
+        """Create the link once under the same lock as other video mutations."""
+        with self.lock():
+            project = self._project(account_id, workspace_id, project_id)
+            if not project.get("pipeline"):
+                project["pipeline"] = create_link(project)
+                self._write(self._project_path(project_id), project)
+            return project
+
+    def set_pipeline_script(self, account_id, workspace_id, project_id, *, text, task_id, version_id):
+        with self.lock():
+            project = self._project(account_id, workspace_id, project_id)
+            project.update(script=text, script_task_id=task_id, script_version_id=version_id, updated_at=_now())
+            self._write(self._project_path(project_id), project)
+        return self.project(account_id, workspace_id, project_id)
 
     def projects(self, account_id, workspace_id):
         self.identity.require_workspace(account_id, workspace_id)
@@ -258,6 +262,46 @@ class VideoStore:
         self._verify_file(path, asset)
         return path, {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}[asset["format"]]
 
+    def associate_artifact(self, account_id, workspace_id, pid, asset_id, artifact_id):
+        """Keep the original image identity when importing an existing Artifact."""
+        from .workspace_scope import WorkspaceProjects
+        with self.lock():
+            project = self._project(account_id, workspace_id, pid)
+            projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
+            artifact = self.storage.get_artifact(_validate_id(artifact_id))
+            placement = projects.get_task_placement(artifact.task_id)
+            sub = projects.get_subproject(placement.subproject_id)
+            if sub.main_project_id != project.get("pipeline", {}).get("main_project_id") or artifact.format not in FORMATS:
+                raise ValueError("图片 Artifact 不属于当前视频项目")
+            asset = self._asset(pid, asset_id)
+            if (asset["sha256"], asset["size_bytes"]) != (artifact.sha256, artifact.size_bytes):
+                raise ValueError("参考图与原 Artifact 内容不匹配")
+            self._verify_file(self.storage.get_artifact_path(artifact_id),
+                              {"sha256": artifact.sha256, "size_bytes": artifact.size_bytes})
+            asset["artifact_id"] = artifact_id
+            self._write(self._path("projects", pid, "assets", asset_id + ".json"), asset)
+            return self._asset_view(asset, workspace_id)
+
+    def _validate_storyboard_inputs(self, account_id, workspace_id, pid, shot):
+        if not shot.get("storyboard_id"):
+            return
+        from .workspace_scope import WorkspaceProjects
+        projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
+        projects.get_subproject(shot["subproject_id"])
+        references = list(shot.get("reference_artifact_ids", []))
+        references.extend(shot[k] for k in ("start_frame_artifact_id", "end_frame_artifact_id") if shot.get(k))
+        for reference in set(references):
+            try:
+                artifact = self.storage.get_artifact(reference)
+                if artifact.project_id != shot["storage_project_id"] or artifact.format not in FORMATS:
+                    raise ValueError("引用图片不属于当前分镜项目")
+                self._verify_file(self.storage.get_artifact_path(reference),
+                                  {"sha256": artifact.sha256, "size_bytes": artifact.size_bytes})
+            except FileNotFoundError as exc:
+                raise ValueError("引用图片 Artifact 缺失：" + reference) from exc
+        for asset_id in shot["reference_ids"]:
+            self.asset_file(account_id, workspace_id, pid, asset_id)
+
     def _shot(self, pid, sid):
         value = self._read(self._path("projects", _validate_id(pid), "shots", _validate_id(sid) + ".json"))
         if (value.get("project_id"), value.get("shot_id")) != (pid, sid):
@@ -265,7 +309,7 @@ class VideoStore:
         return value
 
     def create_shot(self, account_id, workspace_id, pid, *, request_id, name, prompt, mode, duration, aspect_ratio, reference_ids,
-                    resolution="720p"):
+                    resolution="720p", storyboard_binding=None):
         _validate_id(request_id)
         _string(name, "分镜名称", 120)
         _string(prompt, "分镜提示词", 12000)
@@ -287,6 +331,11 @@ class VideoStore:
         payload = {"project_id": pid, "shot_id": request_id, "name": name, "prompt": prompt, "mode": mode,
                    "duration": duration, "aspect_ratio": aspect_ratio, "reference_ids": reference_ids,
                    "resolution": resolution, "width": width, "height": height}
+        if storyboard_binding is not None:
+            # Only StoryboardService calls this bridge; the general HTTP Shot body rejects these fields.
+            for field in ("storyboard_id", "storyboard_shot_id", "storyboard_artifact_id", "storage_project_id", "subproject_id"):
+                _validate_id(storyboard_binding.get(field))
+            payload.update(storyboard_binding)
         with self.lock():
             self._project(account_id, workspace_id, pid)
             for directory in self._path("projects").iterdir():
@@ -339,7 +388,8 @@ class VideoStore:
         if not job:
             return None
         keys = ("job_id", "project_id", "task_id", "status", "credit_status", "credit_cost", "credits_per_second",
-                "resolution", "duration", "created_at", "started_at", "finished_at", "updated_at", "error")
+                "resolution", "duration", "created_at", "started_at", "finished_at", "updated_at", "error",
+                "storyboard_id", "storyboard_version", "storyboard_shot_id", "output_artifact_id", "video_version")
         return {key: job[key] for key in keys if key in job}
 
     @staticmethod
@@ -367,7 +417,8 @@ class VideoStore:
         return {**shot, "status": job["status"] if job else "draft", "current_job": self.public_job(job),
                 "estimated_credit": shot["duration"] * rate if rate is not None else None,
                 "requires_rebuild": not supported, "run_blocked_reason": blocked_reason,
-                "output_url": base if completed else None, "download_url": base + "&download=1" if completed else None}
+                "output_url": base if completed else None, "download_url": base + "&download=1" if completed else None,
+                "artifact_id": job.get("output_artifact_id") if job else None}
 
     def shot(self, account_id, workspace_id, pid, sid):
         self._project(account_id, workspace_id, pid)
@@ -410,6 +461,7 @@ class VideoStore:
                 raise ConflictError("已有失败记录，请确认后显式重试")
             if not job and retry_of is not None:
                 raise ConflictError("重试任务不存在")
+            self._validate_storyboard_inputs(account_id, workspace_id, pid, shot)
             rate = self.config()["rates"][shot["resolution"]]
             cost = shot["duration"] * rate
             if expected_credit != cost:
@@ -419,6 +471,9 @@ class VideoStore:
                    "duration": shot["duration"], "resolution": shot["resolution"], "credits_per_second": rate,
                    "status": "queued", "created_at": _now(),
                    "started_at": None, "finished_at": None, "error": None, "attempt_id": None, "prompt_id": None}
+            if shot.get("storyboard_id"):
+                job.update({key: shot[key] for key in ("storyboard_id", "storyboard_version", "storyboard_shot_id",
+                            "storyboard_artifact_id", "shot_fingerprint", "storage_project_id", "subproject_id")})
             job = self.identity.reserve(job, {"account_id": account_id, "workspace_id": workspace_id}, cost)
             self._save_job(job)
             return self.public_job(job)
@@ -557,10 +612,26 @@ class VideoStore:
                 if not job.get("attempt_id") or not job.get("output") or sha256 != job["output"]["sha256"]:
                     raise ValueError("视频输出尚未上传或校验值不匹配")
                 self._verify_file(self._path("outputs", job_id + ".mp4"), job["output"])
+                if job.get("storyboard_id"):
+                    self._register_storyboard_output(job)
             job.update(status=target, error=error, finished_at=_now() if target in {"completed", "failed"} else None)
             self._save_job(job)
             self._beat(worker_id)
             return self.public_job(job)
+
+    def _register_storyboard_output(self, job):
+        """Archive through StorageManager before settling a successful video job."""
+        from .workspace_scope import WorkspaceProjects
+        projects = WorkspaceProjects(self.storage, self.identity, job["account_id"], job["workspace_id"])
+        tid = uuid5(NAMESPACE_URL, "storyboard-video-task:" + job["job_id"]).hex
+        artifact_id = uuid5(NAMESPACE_URL, "storyboard-video-artifact:" + job["job_id"]).hex
+        task = projects.create_task(job["subproject_id"], "video", "分镜视频结果",
+                                    job["storyboard_artifact_id"], task_id=tid)
+        data = self._path("outputs", job["job_id"] + ".mp4").read_bytes()
+        artifact = self.storage.register_output_document(task.project_id, tid, data, artifact_id=artifact_id, format="MP4")
+        job.update(output_artifact_id=artifact.artifact_id, video_version={"version": 1, "artifact_id": artifact.artifact_id,
+                   "storyboard_id": job["storyboard_id"], "storyboard_version": job["storyboard_version"],
+                   "shot_id": job["storyboard_shot_id"], "created_at": artifact.created_at})
 
     def output_file(self, account_id, workspace_id, pid, sid):
         self._project(account_id, workspace_id, pid)

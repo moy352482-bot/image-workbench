@@ -1,10 +1,7 @@
 """Web 的作业、提交去重和人工审核附加记录；项目/任务/图片仍由 StorageManager 管理。"""
 
-from dataclasses import asdict
-from datetime import datetime, timezone
 import hashlib
 import json
-import math
 import time
 from pathlib import Path
 from uuid import uuid4
@@ -18,53 +15,11 @@ from .accounts import IdentityStore, CreditCostCalculator
 from .scheduling import SchedulingPolicy
 
 
-class ConflictError(ValueError):
-    pass
+from .domain_errors import ConflictError
 
 
-STATUS_LABELS = {"draft": "待开始", "queued": "等待执行", "generating": "生成中", "checking": "检查产物",
-                 "awaiting_review": "等待审核", "approved": "已通过", "failed": "执行失败", "uncertain": "状态待确认"}
-FAILURE_MESSAGES = {
-    "prepare_failed": "输入或任务准备失败，请检查图片和提示词。",
-    "codex_launch_failed": "无法启动本地 Codex，请检查本地安装和登录状态。",
-    "codex_timeout": "本次 Codex 执行超时，日志已保留；不会自动重新生成。",
-    "codex_execution_failed": "Codex 未完成图片生成或未提供可登记产物，请核查本地日志后手动重试。",
-    "artifact_not_found": "未找到本次生成的图片文件，执行记录已保留。",
-    "artifact_invalid": "返回图片未通过文件校验，未将其作为有效结果。",
-    "register_failed": "图片登记失败，候选文件保留；可尝试仅恢复归档。",
-    "state_update_failed": "执行记录写入失败，已保留可用证据，请先检查本地存储。",
-    "interrupted": "执行状态需要确认；不会自动重放或再次消耗额度。",
-    "unexpected_exception": "执行遇到异常，请查看本地日志；系统不会自动重试。",
-}
-
-
-def _seconds_between(start, end):
-    if not start or not end:
-        return None
-    try:
-        seconds = (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds()
-    except (TypeError, ValueError):
-        return None
-    return seconds if math.isfinite(seconds) and seconds >= 0 else None
-
-
-def _execution_timing(status, latest, job):
-    """列表与详情共用本次执行计时；任务创建与排队时间不算执行耗时。"""
-    value, source = None, None
-    if status in {"generating", "checking"}:
-        start = job.get("started_at") if job else (latest.created_at if latest else None)
-        value = _seconds_between(start, datetime.now(timezone.utc).isoformat())
-        source = "running" if value is not None else None
-    elif status not in {"draft", "queued", "uncertain"}:
-        matching = latest and (not job or job.get("execution_id") == latest.execution_id)
-        # 远端记录只计服务端归档，恢复归档记录则累计了先前尝试；两者采用本次作业时钟。
-        use_record = matching and not latest.backend.startswith("remote-") and not (job and job.get("action") == "restore")
-        if use_record and isinstance(latest.total_seconds, (int, float)) and math.isfinite(latest.total_seconds) and latest.total_seconds >= 0:
-            value, source = latest.total_seconds, "execution_record"
-        elif job:
-            value = _seconds_between(job.get("started_at"), job.get("finished_at"))
-            source = "job_clock" if value is not None else None
-    return {"execution_seconds": value, "execution_timing_source": source, "elapsed_seconds": value}
+from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between
+from .image_queries import ImageQueries
 
 
 class WorkbenchState:
@@ -339,7 +294,7 @@ class WorkbenchState:
     def approve(self, artifact_id):
         with self.control_lock():
             artifact = self.storage.get_artifact(artifact_id)
-            if artifact.kind != "output" or artifact.format == "TXT":
+            if artifact.kind != "output" or artifact.format not in {"PNG", "JPEG", "WEBP"}:
                 raise ValueError("只能审核输出图片")
             path = self.storage.get_artifact_path(artifact_id)
             if hashlib.sha256(path.read_bytes()).hexdigest() != artifact.sha256:
@@ -351,130 +306,13 @@ class WorkbenchState:
             return self.artifact_dto(artifact)
 
     def artifact_dto(self, artifact, *, catalog=None):
-        catalog = catalog if catalog is not None else self.projects.catalog_view()
-        placement = catalog["task_placements"][artifact.task_id]
-        sub = catalog["subprojects"][placement["subproject_id"]]
-        values = {key: value for key, value in asdict(artifact).items() if key not in {"relative_path", "original_filename", "sha256"}}
-        workspace_id = getattr(self.projects, "workspace_id", None)
-        suffix = f"?workspace_id={workspace_id}" if workspace_id else ""
-        return {**values, "main_project_id": sub["main_project_id"], "subproject_id": sub["subproject_id"],
-                "url": f"/api/artifacts/{artifact.artifact_id}{suffix}",
-                "download_url": f"/api/artifacts/{artifact.artifact_id}{suffix}{'&' if suffix else '?'}download=1", **self.review(artifact)}
+        return ImageQueries(self).artifact_dto(artifact, catalog=catalog)
 
     def task_view(self, project_id, task_id, *, detail=True, catalog=None):
-        task = self.storage.get_task(project_id, task_id)
-        if task.operation not in {"generate", "edit"}:
-            raise ValueError("请在脚本与剧本页面查看该文本任务")
-        catalog = catalog if catalog is not None else self.projects.catalog_view()
-        placement = catalog["task_placements"][task_id]
-        if placement["storage_project_id"] != project_id:
-            raise ValueError("任务逻辑归属与物理定位不一致")
-        sub = catalog["subprojects"][placement["subproject_id"]]
-        main = catalog["main_projects"][sub["main_project_id"]]
-        artifacts = self.storage.list_task_artifacts(project_id, task_id)
-        inputs = [item for item in artifacts if item.kind == "input"]
-        outputs = [item for item in artifacts if item.kind == "output"]
-        records = self.runner.list_executions(project_id, task_id)
-        latest = records[-1] if records else None
-        job, options = self.get_job(project_id, task_id), self.task_options(project_id, task_id)
-        status, failure = "awaiting_review" if outputs else "draft", None
-        if latest:
-            status = {"running": "generating", "archiving": "checking", "succeeded": "awaiting_review", "interrupted": "failed"}.get(latest.status, "failed")
-            failure = latest.failure_type
-        if job:
-            if job["status"] == "queued":
-                status, failure = "queued", None
-            elif job["status"] == "uncertain":
-                status, failure = "uncertain", "interrupted"
-            elif job["status"] == "running":
-                status = "checking" if latest and latest.status == "archiving" else "generating"
-            elif job["status"] == "failed":
-                status, failure = "failed", job.get("failure_type") or failure
-        if options and options["state"] != "ready":
-            status, failure = "failed", "prepare_failed"
-        if status == "awaiting_review" and outputs and all(self.review(item)["review_status"] == "approved" for item in outputs):
-            status = "approved"
-        if status in {"generating", "checking"} and (not job or not self.worker_running(job.get("worker_id"))):
-            status = "uncertain"  # CLI 历史活动记录也不能冒充网页 Worker 正在运行。
-            failure = "interrupted"
-        confirmed_interruption = status == "failed" and failure == "interrupted" and latest and latest.status == "interrupted"
-        updated_at = max([task.created_at, placement["updated_at"],
-                          *(item.created_at for item in artifacts),
-                          *([latest.updated_at] if latest else []),
-                          *([job.get("updated_at", job["created_at"])] if job else [])])
-        result = {**asdict(task), "status": status, "status_label": "已中断" if confirmed_interruption else STATUS_LABELS[status],
-                  "main_project_id": main["main_project_id"], "subproject_id": sub["subproject_id"],
-                  "main_project_name": main["name"], "subproject_name": sub["name"],
-                  "name": placement["name"], "description": placement["description"], "updated_at": updated_at,
-                  "input_count": len(inputs), "output_count": len(outputs),
-                  "execution_backend": latest.backend if latest else None,
-                  "preview_artifact": self.artifact_dto(outputs[0], catalog=catalog) if outputs else None}
-        result.update(_execution_timing(status, latest, job))
-        if self.identity:
-            result.update(self.identity.task_credit(task_id))
-            # 下一次执行的报价与已有预约的冻结/结算金额分开；复用本次已校验的输入。
-            result["estimated_credit"] = CreditCostCalculator.calculate(task.operation, self.backend, 1, len(inputs) + bool(task.base_artifact_id))
-            result["workspace_id"] = self.identity.ownership(main["main_project_id"])["workspace_id"]
-            if result["credit_status"] == "credit_insufficient":
-                result.update(status="credit_insufficient", status_label="积分不足")
-        if not detail:
-            return result
-        valid_options = not options or options["state"] == "ready"
-        result.update(
-            inputs=[self.artifact_dto(item, catalog=catalog) for item in inputs], outputs=[self.artifact_dto(item, catalog=catalog) for item in outputs],
-            base_image=self.artifact_dto(self.storage.get_artifact(task.base_artifact_id), catalog=catalog) if task.base_artifact_id else None,
-            aspect_ratio=options["aspect_ratio"] if options else "auto",
-            current_job={key: job[key] for key in ("job_id", "status", "created_at", "started_at", "finished_at")} if job else None,
-            last_execution_id=latest.execution_id if latest else None,
-            can_generate=status == "draft" and valid_options,
-            can_retry=status == "failed" and valid_options,
-            can_restore=status == "failed" and bool(latest and latest.candidates),
-            error_summary=("本次执行已中断，不会自动重试或提交新的生成请求。" if confirmed_interruption else
-                           FAILURE_MESSAGES.get(failure, "执行失败，请检查本地日志。") if failure else None),
-            failure_type=failure,
-            timings={key: getattr(latest, key) for key in ("prepare_seconds", "backend_seconds", "codex_seconds", "validate_seconds", "register_seconds", "total_seconds")} if latest else None,
-            executions=[{key: getattr(record, key) for key in ("execution_id", "status", "created_at", "failure_type", "total_seconds")} for record in reversed(records)],
-        )
-        return result
+        return ImageQueries(self).task_view(project_id, task_id, detail=detail, catalog=catalog)
 
     def logical_task_view(self, task_id, *, detail=True, main_project_id=None):
-        placement = self.projects.get_task_placement(task_id, main_project_id=main_project_id)
-        return self.task_view(placement.storage_project_id, task_id, detail=detail)
+        return ImageQueries(self).logical_task_view(task_id, detail=detail, main_project_id=main_project_id)
 
     def project_views(self, main_project_id=None):
-        """在同一逻辑快照中汇总，避免主/子分别维护计数或完整任务列表。"""
-        catalog = self.projects.catalog_view()
-        if main_project_id is not None:
-            self.projects._required(catalog["main_projects"], main_project_id, "主项目")
-        empty = lambda item: {**item, "task_count": 0, "image_count": 0, "input_count": 0,
-                              "output_count": 0, "counts_by_status": {}}
-        mains = {key: {**empty(item), "subproject_count": 0, "subprojects": []}
-                 for key, item in catalog["main_projects"].items() if main_project_id is None or key == main_project_id}
-        subs = {key: empty(item) for key, item in catalog["subprojects"].items() if item["main_project_id"] in mains}
-        tasks = []
-        for item in catalog["task_placements"].values():
-            if item["subproject_id"] not in subs:
-                continue
-            try:
-                if self.storage.get_task(item["storage_project_id"], item["task_id"]).operation not in {"generate", "edit"}:
-                    continue
-                task = self.task_view(item["storage_project_id"], item["task_id"], detail=False, catalog=catalog)
-            except FileNotFoundError:
-                if item["state"] == "pending":
-                    continue
-                raise
-            tasks.append(task)
-            for target in (subs[item["subproject_id"]], mains[task["main_project_id"]]):
-                target["task_count"] += 1
-                target["input_count"] += task["input_count"]
-                target["output_count"] += task["output_count"]
-                target["image_count"] += task["input_count"] + task["output_count"]
-                target["updated_at"] = max(target["updated_at"], task["updated_at"])
-                statuses = target["counts_by_status"]
-                statuses[task["status"]] = statuses.get(task["status"], 0) + 1
-        for sub in sorted(subs.values(), key=lambda item: (item["created_at"], item["subproject_id"])):
-            main = mains[sub["main_project_id"]]
-            main["subprojects"].append(sub)
-            main["subproject_count"] += 1
-            main["updated_at"] = max(main["updated_at"], sub["updated_at"])
-        return mains, subs, sorted(tasks, key=lambda item: (item["updated_at"], item["task_id"]), reverse=True)
+        return ImageQueries(self).project_views(main_project_id)

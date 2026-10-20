@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import urllib.request
 
-from .codex_backend import _codex_home, _codex_executable
+from .codex_runtime import _codex_home, _codex_executable
 
 CONFIG_ROOT = Path(__file__).resolve().parent.parent / "config"
 

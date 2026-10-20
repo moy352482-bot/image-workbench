@@ -7,7 +7,7 @@ import subprocess
 import time
 from uuid import uuid4
 
-from .codex_backend import _codex_executable, _child_environment, _stop_process, _DISABLED_FEATURES
+from .codex_runtime import _codex_executable, _child_environment, _stop_process, _DISABLED_FEATURES
 
 
 class ScriptGenerationError(ValueError):

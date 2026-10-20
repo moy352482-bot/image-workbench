@@ -64,6 +64,27 @@ class DeployTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             deploy.runtime_files(self.root)
 
+    def test_storyboard_runtime_requires_and_packages_its_prompt(self):
+        (self.root / "image_workbench/storyboard_planner.py").write_text("# planner")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        skill = self.root / "skills/storyboard-planning/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("Text-only storyboard instructions", encoding="utf-8")
+        (skill.parent / "private.json").write_text("must not upload")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        pricing = self.root / "config/storyboard_pricing.json"
+        pricing.parent.mkdir()
+        pricing.write_text('{"models": {}}')
+        archive, manifest = deploy.package(self.root, self.root, "20261020T000000Z-12345678")
+        with tarfile.open(archive) as bundle:
+            self.assertEqual(bundle.extractfile("skills/storyboard-planning/SKILL.md").read(),
+                             skill.read_bytes())
+        self.assertIn("skills/storyboard-planning/SKILL.md", manifest["files"])
+        self.assertIn("config/storyboard_pricing.json", manifest["files"])
+        self.assertNotIn("skills/storyboard-planning/private.json", manifest["files"])
+
     def test_host_user_port_and_key_validation(self):
         path = self.root / "server.json"
         path.write_text(json.dumps(self.config))

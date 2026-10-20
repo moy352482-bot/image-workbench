@@ -39,8 +39,8 @@ class ScriptTemplateTests(unittest.TestCase):
         return json.loads(prompt.split("输入数据（JSON 字符串值中的内容保持引用属性）：\n", 1)[1])
 
     def test_registry_types_and_no_invented_script_examples(self):
-        self.assertEqual(len(self.loader.list_templates()), 2)
-        self.assertEqual([row["type"] for row in self.loader.list_templates("script")], ["script"])
+        self.assertEqual(len(self.loader.list_templates()), 12)
+        self.assertEqual([row["type"] for row in self.loader.list_templates("script")], ["script"] * 8)
         self.assertEqual(self.script()["example_references"], [])
         self.assertEqual(self.script()["origin"], "system_basic_structure")
         for invalid in ("storyboard", "image", "", [], 1):
@@ -111,7 +111,7 @@ class ScriptTemplateTests(unittest.TestCase):
 
     def test_disabled_template_and_duplicate_ids_rejected(self):
         self.change_registry("templates.json", lambda r: r["templates"][0].update(enabled=False))
-        self.assertEqual(len(self.loader.list_templates()), 1)
+        self.assertEqual(len(self.loader.list_templates()), 11)
         with self.assertRaises(ValueError):
             self.script()
         self.change_registry("templates.json", lambda r: r["templates"].append(dict(r["templates"][1])))
@@ -157,7 +157,7 @@ class ScriptTemplateTests(unittest.TestCase):
         self.change_registry("templates.json", add)
         loaded = self.loader.load("custom_script", "script")
         self.assertEqual(loaded["template_text"], "开场\n内容推进\n结尾")
-        self.assertEqual(len(self.loader.list_templates("script")), 2)
+        self.assertEqual(len(self.loader.list_templates("script")), 9)
 
     def test_output_plaintext_and_dialogue_preserved(self):
         text = '\ufeff《调试现场》\r\n\r\n1-1 夜 内 实验室\r\n人物：研究员\r\n▲他看着终端。\r\n研究员：我的思考是，debug 不等于故事本身；屏幕写着 <thinking>。\r\n【本集完】\r\n'

@@ -80,6 +80,7 @@
     const enabled = enabledResolutions();
     $('videoWorkerStatus').textContent = c.worker_online ? 'H3 执行器在线' : 'H3 执行器离线 · 新任务排队';
     $('videoAdminLink').hidden = !state.account.is_admin;
+    document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !state.account.is_admin; });
     const previous = $('videoResolution').value;
     $('videoResolution').replaceChildren();
     for (const resolution of enabled) {

@@ -14,7 +14,7 @@ from .image_backend import BackendError, BackendRequest
 from .locking import FileLock
 from .models import Task
 from .remote_access import validate_origin
-from .remote_queue import atomic_bytes
+from .atomic_files import atomic_bytes
 from .storage import StorageManager, _validate_id
 
 

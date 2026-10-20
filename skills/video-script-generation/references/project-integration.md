@@ -14,6 +14,16 @@
 
 Loader 仅读取已登记 ID、受限相对路径、对应类型目录内的 `.txt`，检查 UTF-8、大小和案例 SHA-256。模板或案例数据更新后，调用时重新加载；Task 保存当次 template_reference 与 example_references 的 hash，不用历史任务自动继承新文件内容。
 
+## 独立创作资源
+
+`script_resources.ScriptResourceStore` 管理 account + workspace 私有案例、模板草稿和不可覆盖的版本；`script_engine.resolve_resources()` 统一解析系统模板、个人模板、独立风格和多个案例。`template_id="none"` 表示自由生成。原有缺省模板选择保持兼容。
+
+`list_styles()` 读取独立风格配置。每次提交保存 `resource_references` 与私有 `creative_snapshot`，版本记录保留同一份来源引用；执行读取提交时已编译的 Prompt。个人模板更新、案例分析确认和停用均产生新版本。`script_resource_web` 承载上传、规则分析、推荐、模板草稿和管理接口，沿用当前鉴权和 CSRF。
+
+`RuleExampleAnalyzer` 为免费规则实现；`MockExampleAnalyzer` 是可注入测试替身。真实轻量模型尚未接入本轮资源分析，不新增收费项目。分析是待审核建议；确认后才纳入案例引用。结构检查为提示，不触发自动模型重试。
+
+完整 Schema、HTTP 和大小限制以 [创作资源契约](../../../docs/script_creative_contract.md) 为准，实施与验证见 [交付报告](../../../docs/script_template_style_engine.md)。
+
 ## 模型、价格与任务
 
 配置入口分别为仓库 `config/script_models.json`、`config/script_pricing.json`、`config/script_routing.json`。模型支持档位和可用性由宿主实际发现；价格独立配置，未定价组合不可提交。手动模型选择不得被推荐覆盖。

@@ -2,57 +2,26 @@
 
 from dataclasses import asdict
 import hashlib
-import os
 from pathlib import Path
-import tempfile
 import time
 from uuid import UUID, uuid4, uuid5
 
-from fastapi import Request, Response
-from pydantic import BaseModel, ConfigDict, Field
-from starlette.concurrency import run_in_threadpool
 
 from .locking import FileLock
 from .storage import _now, _validate_id
 from .task_runner import CandidateRecord, ExecutionRecord
 from .scheduling import ACTIVE_STATUSES
-from .workbench_state import ConflictError, FAILURE_MESSAGES
+from .domain_errors import ConflictError
+from .image_status import FAILURE_MESSAGES
 
 ID = r"^[0-9a-f]{32}$"
 HASH = r"^[0-9a-f]{64}$"
 
 
-def atomic_bytes(storage, path, data):
-    storage._check_path(path)
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".upload-", delete=False) as stream:
-            temporary = Path(stream.name)
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None:
-            storage._cleanup(temporary)
+from .atomic_files import atomic_bytes
 
 
-class Claim(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    worker_id: str = Field(pattern=ID)
-    backend: str = Field(pattern=r"^(codex|local)$")
-
-
-class Complete(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    status: str = Field(pattern=r"^(succeeded|failed|uncertain)$")
-    hashes: list[str] = Field(default_factory=list, max_length=32)
-    failure_type: str | None = None
-
-
-class Start(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    attempt_id: str = Field(pattern=ID)
+from .contracts.image_queue import Claim, Start, Complete
 
 
 class RemoteQueue:
@@ -241,38 +210,3 @@ class RemoteQueue:
             job["finished_at"] = _now() if job["status"] != "uncertain" else None
             self.state.save_job(job)
             return {"status": job["status"]}
-
-
-def install_routes(app, state):
-    queue = RemoteQueue(state)
-    app.state.remote_queue = queue
-
-    def identity(request):
-        return (_validate_id(request.headers.get("x-worker-id", "")),
-                _validate_id(request.headers.get("x-claim-id", "")))
-
-    @app.post("/api/worker/claim")
-    def claim(payload: Claim):
-        return {"job": queue.claim(payload.worker_id, payload.backend)}
-
-    @app.post("/api/worker/jobs/{job_id}/heartbeat")
-    def heartbeat(job_id: str, request: Request):
-        queue.beat(job_id, *identity(request))
-        return {"ok": True}
-
-    @app.post("/api/worker/jobs/{job_id}/start")
-    def start(job_id: str, payload: Start, request: Request):
-        return queue.start(job_id, *identity(request), payload.attempt_id)
-
-    @app.get("/api/worker/jobs/{job_id}/assets/{artifact_id}")
-    def asset(job_id: str, artifact_id: str, request: Request):
-        return Response(queue.asset(job_id, *identity(request), artifact_id), media_type="application/octet-stream")
-
-    @app.put("/api/worker/jobs/{job_id}/outputs/{index}")
-    async def upload(job_id: str, index: int, request: Request):
-        digest = await run_in_threadpool(queue.upload, job_id, *identity(request), index, await request.body())
-        return {"sha256": digest}
-
-    @app.post("/api/worker/jobs/{job_id}/complete")
-    def complete(job_id: str, payload: Complete, request: Request):
-        return queue.complete(job_id, *identity(request), payload)

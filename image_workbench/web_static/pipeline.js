@@ -5,23 +5,62 @@
   const p = { id: null, data: null, config: null, quote: null, imageRequest: uuid(), scriptRequest: uuid(), quoteBody: '', loading: false, imageRefs: [], runRequests: new Map(), revision: 0 };
   const labels = { queued: '排队中', running: '生成中', archiving: '保存中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
   const stages = ['image', 'script', 'video'];
+  const panels = ['pipelineImages', 'pipelineScripts', 'pipelineVideos'];
+  const stageLinks = [...document.querySelectorAll('[data-pipeline-step]')];
+  const stageFromURL = () => stages[panels.indexOf(location.hash.slice(1))] || 'image';
+  let initialProjectView = true;
   let currentStage = 'image';
-  function showStage(stage) {
+  function showStage(stage, updateURL = true) {
     const index = stages.indexOf(stage); if (index < 0) return;
     currentStage = stage;
-    for (const [i, id] of ['pipelineImages', 'pipelineScripts', 'pipelineVideos'].entries()) $(id).hidden = i !== index;
+    for (const [i, id] of panels.entries()) $(id).hidden = i !== index;
     $('videoResults').hidden = stage !== 'video';
-    for (const link of document.querySelectorAll('[data-pipeline-step]')) {
+    for (const link of stageLinks) {
       if (link.dataset.pipelineStep === stage) link.setAttribute('aria-current', 'step'); else link.removeAttribute('aria-current');
+    }
+    if (updateURL && location.hash !== `#${panels[index]}`) {
+      const url = new URL(location.href); url.hash = panels[index];
+      history.replaceState(null, '', url);
     }
     $('pipelinePrevious').disabled = index === 0;
     $('pipelineNext').hidden = index === 2;
     $('pipelineNext').textContent = index === 0 ? '下一步：脚本' : '下一步：视频';
     $('pipelineStepLabel').textContent = `第 ${index + 1} 步，共 3 步`;
   }
-  for (const link of document.querySelectorAll('[data-pipeline-step]')) link.addEventListener('click', event => { event.preventDefault(); showStage(link.dataset.pipelineStep); });
-  $('pipelinePrevious').addEventListener('click', () => showStage(stages[stages.indexOf(currentStage) - 1]));
-  $('pipelineNext').addEventListener('click', () => showStage(stages[stages.indexOf(currentStage) + 1]));
+  for (const [index, link] of stageLinks.entries()) {
+    link.addEventListener('click', event => { event.preventDefault(); showStage(link.dataset.pipelineStep); });
+    link.addEventListener('keydown', event => {
+      const next = { ArrowRight: (index + 1) % stages.length, ArrowLeft: (index + stages.length - 1) % stages.length, Home: 0, End: stages.length - 1 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault(); showStage(stages[next]); stageLinks[next].focus();
+    });
+  }
+  function adjacentStage(offset) {
+    showStage(stages[stages.indexOf(currentStage) + offset]);
+    stageLinks[stages.indexOf(currentStage)].focus();
+  }
+  $('pipelinePrevious').addEventListener('click', () => adjacentStage(-1));
+  $('pipelineNext').addEventListener('click', () => adjacentStage(1));
+  window.addEventListener('hashchange', () => showStage(stageFromURL(), false));
+  showStage(stageFromURL(), false);
+
+  // Read the same task snapshots already used by the cards; navigation never manages jobs.
+  function taskIndicator(stage, tasks) {
+    const groups = [
+      ['生成中', new Set(['running', 'generating'])],
+      ['保存中', new Set(['archiving', 'checking'])],
+      ['排队中', new Set(['queued'])],
+      ['待确认', new Set(['uncertain'])]
+    ];
+    const summary = groups.map(([label, statuses]) => {
+      const count = tasks.filter(task => statuses.has(task.status || task.current_job?.status)).length;
+      return count ? `${label} ${count}` : '';
+    }).filter(Boolean).join(' · ');
+    const link = stageLinks[stages.indexOf(stage)], badge = link.querySelector('.pipeline-nav-status');
+    badge.hidden = !summary; badge.textContent = summary;
+    const name = link.querySelector('.pipeline-nav-title>span').textContent;
+    link.title = `切换到${name}${summary ? `（${summary}）` : ''}`;
+  }
   async function ensurePipeline() {
     const project = await ensureProject();
     if (!p.data) await reload(true);
@@ -71,8 +110,10 @@
     const result = { subproject_id: p.data.subproject_id, generation_type: $('pipelineScriptType').value,
       template_id: $('pipelineScriptTemplate').value, input_request: $('pipelineScriptRequest').value.trim(), selection_mode: choice === 'recommended' ? 'recommended' : 'manual' };
     if (choice !== 'recommended') { result.model_id = choice; result.thinking_level = $('pipelineScriptThinking').value; }
+    const storyboard = window.IWStoryboard?.options('pipeline'); if (storyboard) result.storyboard_options = { ...storyboard, video_project_id: p.id };
     return result;
   }
+  window.IWStoryboard?.mountScript({ api, getContext: () => ({ video_project_id: p.id, subproject_id: p.data?.subproject_id, workspace_id: state.account?.workspace_id, account_id: state.account?.account_id }), invalidate: invalidateQuote, anchor: $('pipelineScriptPrice'), prefix: 'pipeline' });
   function refs(project) {
     const signature = JSON.stringify(project.assets);
     if (p.refSignature === signature) return;
@@ -121,9 +162,11 @@
       const card = el('article', 'pipeline-task'), selected = data.active_script_task_id === task.task_id;
       const name = task.source === 'upload' ? '上传脚本' : task.generation_type === 'screenplay' ? '剧情剧本' : '视频脚本';
       card.append(el('h3', '', `${name}${task.output_version ? ' · v' + task.output_version : ''}${selected ? ' · 当前使用' : ''}`), el('p', '', `${labels[task.status] || task.status} · ${task.model || '手动保存'}${task.thinking_level ? ' / ' + task.thinking_level : ''} · ${task.price} 积分`));
+      const storyboardStage=el('div','storyboard-linked-stage'); card.append(storyboardStage); window.IWStoryboard?.linkedStage(task,storyboardStage,'pipeline');
       if (task.error) card.append(el('p', '', task.error));
       const actions = el('div', 'pipeline-task-actions');
       if (task.status === 'completed') {
+        actions.append(action('为此版本规划分镜', async () => { const detail = await api(`/api/scripts/tasks/${task.task_id}`); if (p.id !== id) return; window.IWStoryboard?.planScript(detail, 'pipeline'); }));
         actions.append(action(selected ? '查看当前脚本' : '预览脚本', async () => {
           const result = await api(`/api/scripts/tasks/${task.task_id}`);
           const old = card.querySelector('pre'); if (old) old.remove(); else card.append(el('pre', 'pipeline-script-text', result.text));
@@ -144,6 +187,8 @@
       const data = await api(`/api/video/projects/${id}/pipeline`, initial ? { method: 'POST', body: '{}' } : {});
       if (p.id !== id || p.revision !== revision) return;
       p.data = data;
+      taskIndicator('image', data.image_tasks);
+      taskIndicator('script', data.script_tasks);
       const imageSignature = JSON.stringify(data.image_tasks);
       const scriptSignature = JSON.stringify([data.script_tasks, data.active_script_task_id]);
       if (p.imageSignature !== imageSignature) { renderImages(data, id); p.imageSignature = imageSignature; }
@@ -155,17 +200,19 @@
   function resetProject(preserveDraft = false) {
     p.revision++; p.id = null; p.data = null; p.loading = false; p.imageRefs = []; p.imageRequest = uuid();
     p.refSignature = ''; p.imageSignature = ''; p.scriptSignature = '';
-    if (!preserveDraft) { $('pipelineImageForm').reset(); $('pipelineScriptForm').reset(); showStage('image'); document.querySelector('[data-pipeline-tab="image"][data-mode="upload"]').click(); }
+    if (!preserveDraft) { $('pipelineImageForm').reset(); $('pipelineScriptForm').reset(); showStage(initialProjectView ? stageFromURL() : 'image', !initialProjectView); document.querySelector('[data-pipeline-tab="image"][data-mode="upload"]').click(); }
     invalidateQuote(); $('pipelineImageReferences').replaceChildren();
     $('pipelineImageTasks').replaceChildren(); $('pipelineScriptTasks').replaceChildren();
+    for (const stage of stages) taskIndicator(stage, []);
   }
   document.addEventListener('video-project-cleared', () => resetProject());
   function loadScriptConfig() { api('/api/scripts/config').then(config => { p.config = config; models(); }).catch(error => notice(error.message, true)); }
-  document.addEventListener('video-ready', loadScriptConfig);
+  document.addEventListener('video-ready', () => { initialProjectView = false; loadScriptConfig(); });
   document.addEventListener('video-project-view', event => {
     const project = event.detail.project;
     const changed = p.id !== project.project_id;
     if (changed) { resetProject(event.detail.preserveDraft); p.id = project.project_id; }
+    taskIndicator('video', project.shots);
     refs(project);
     reload(changed || !p.data).catch(error => notice(error.message, true));
     loadScriptConfig();
@@ -209,9 +256,9 @@
     p.quote = null; $('pipelineScriptGenerate').disabled = true;
     const result = await api('/api/scripts/quote', { method: 'POST', body: JSON.stringify(input) });
     if (p.id !== id || JSON.stringify(body()) !== JSON.stringify(input)) return;
-    p.quote = result; p.quoteBody = JSON.stringify(input);
+    p.quote = result; p.quoteBody = JSON.stringify(input); window.IWStoryboard?.showQuote('pipeline', result.storyboard_quote);
     notice('');
-    $('pipelineScriptPrice').textContent = `${result.display_name} / ${result.thinking_level} · 本次 ${result.price} 积分${result.shortfall ? ' · 积分不足，还差 ' + result.shortfall : ''}`;
+    $('pipelineScriptPrice').textContent = `TXT 阶段：${result.display_name} / ${result.thinking_level} · 本次 ${result.price} 积分${result.shortfall ? ' · 积分不足，还差 ' + result.shortfall : ''}`;
     $('pipelineScriptWarning').hidden = !result.warnings.length; $('pipelineScriptWarning').querySelector('span').textContent = result.warnings.join(' ') + ' 我已了解，仍按当前模型生成。';
     $('pipelineScriptWarningsAccepted').checked = false;
     $('pipelineScriptGenerate').textContent = `生成 TXT · ${result.price} 积分`;
@@ -222,7 +269,7 @@
     event.preventDefault(); busy(event.submitter, async () => {
       if (!p.quote || JSON.stringify(body()) !== p.quoteBody) throw new Error('请先查看当前需求的报价');
       const id = p.id;
-      await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...body(), request_id: p.scriptRequest, quote_signature: p.quote.quote_signature, warnings_confirmed: $('pipelineScriptWarningsAccepted').checked }) });
+      await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...body(), request_id: p.scriptRequest, quote_signature: p.quote.quote_signature, warnings_confirmed: $('pipelineScriptWarningsAccepted').checked, storyboard_confirmed: Boolean(body().storyboard_options) }) });
       invalidateQuote(); notice('脚本已提交。完成后可预览，并点击“用于当前项目”。'); if (p.id === id) await reload(); await refresh();
     }).finally(() => { if (!p.quote) $('pipelineScriptGenerate').disabled = true; });
   });

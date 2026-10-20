@@ -13,7 +13,8 @@ from .image_backend import LocalFileBackend
 from .locking import LockBusyError
 from .storage import StorageManager, _now
 from .task_runner import StateUpdateError
-from .workbench_state import WorkbenchState, ConflictError
+from .domain_errors import ConflictError
+from .workbench_state import WorkbenchState
 
 
 class LocalWorker:

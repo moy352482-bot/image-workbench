@@ -19,7 +19,7 @@ from uuid import uuid4
 from .locking import FileLock, LockBusyError
 from .storage import StorageManager, _now, _validate_id
 from .config import StorageConfig
-from .workbench_state import ConflictError
+from .domain_errors import ConflictError
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +40,7 @@ def file_sha(path):
 
 
 def source_fingerprint(root):
-    """报告同时绑定运行代码与验收代码；不读取业务数据、配置或密钥。"""
+    """报告同时绑定运行代码与验收输入；不读取业务数据或部署凭据。"""
     root = Path(root).resolve()
     paths = []
     for directory, pattern in (("image_workbench", "*"), ("tests", "*.py"), ("scripts", "*.py"), ("scripts", "*.sh")):
@@ -49,6 +49,11 @@ def source_fingerprint(root):
             if path.is_file() and "__pycache__" not in path.parts and not path.name.startswith(".") and path.suffix not in {".pyc", ".pyo"}:
                 paths.append(path)
     paths.extend(path for path in (root / "requirements.txt", root / "requirements-web.txt") if path.is_file())
+    # Architecture rules, frozen HTTP contracts and JS behavior tests also
+    # determine whether a report certifies this source revision.
+    paths.extend(path for path in (root / "architecture.json",) if path.is_file())
+    for folder, pattern in (("tests/contracts", "*.json"), ("tests/frontend", "*.js")):
+        paths.extend((root / folder).glob(pattern))
     digest = hashlib.sha256()
     for path in sorted(set(paths)):
         if path.is_symlink() or not path.resolve().is_relative_to(root):

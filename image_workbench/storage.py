@@ -21,6 +21,7 @@ from PIL import Image, UnidentifiedImageError
 from .config import StorageConfig
 from .locking import FileLock
 from .models import Artifact, Project, Task
+from .atomic_files import replace_with_retry
 
 
 class MetadataError(ValueError):
@@ -29,8 +30,9 @@ class MetadataError(ValueError):
 
 _ID = re.compile(r"[0-9a-f]{32}")
 _IMAGE_FORMATS = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}
-_FORMATS = {**_IMAGE_FORMATS, "TXT": ".txt"}
+_FORMATS = {**_IMAGE_FORMATS, "TXT": ".txt", "JSON": ".json", "MP4": ".mp4"}
 _TEXT_OPERATIONS = {"script", "screenplay"}
+_DOCUMENT_OPERATIONS = {"storyboard": "JSON", "video": "MP4"}
 _CHUNK_BYTES = 1024 * 1024
 _metadata_reads = ContextVar("storage_metadata_reads", default=None)
 
@@ -133,7 +135,7 @@ class StorageManager:
         try:
             with tempfile.NamedTemporaryFile(
                 mode="w", encoding="utf-8", newline="\n", prefix=".tmp-",
-                suffix=".json", dir=path.parent, delete=False,
+                suffix=".tmp", dir=path.parent, delete=False,
             ) as stream:
                 temporary = Path(stream.name)
                 json.dump(payload, stream, ensure_ascii=False, indent=2)
@@ -141,7 +143,7 @@ class StorageManager:
                 stream.flush()
                 os.fsync(stream.fileno())
             self._check_path(path)
-            os.replace(temporary, path)
+            replace_with_retry(temporary, path)
         finally:
             if temporary is not None:
                 self._cleanup(temporary)
@@ -180,7 +182,7 @@ class StorageManager:
             elif isinstance(record, Task):
                 _validate_id(record.task_id)
                 _text(record.prompt, "prompt")
-                if record.operation not in {"generate", "edit", *_TEXT_OPERATIONS}:
+                if record.operation not in {"generate", "edit", "asset", *_TEXT_OPERATIONS, *_DOCUMENT_OPERATIONS}:
                     raise ValueError("未知任务操作")
                 if record.operation == "generate" and record.base_artifact_id is not None:
                     raise ValueError("generate 不接受基底图片")
@@ -202,7 +204,7 @@ class StorageManager:
                     raise ValueError("未知图片格式")
                 if type(record.size_bytes) is not int or record.size_bytes <= 0:
                     raise ValueError("size_bytes 必须为正整数")
-                if record.format == "TXT":
+                if record.format in {"TXT", "JSON", "MP4"}:
                     if record.kind != "output":
                         raise ValueError("TXT 仅支持文本输出")
                     if any(type(value) is not int or value != 0 for value in (record.width, record.height)):
@@ -285,7 +287,7 @@ class StorageManager:
     ) -> Task:
         self.get_project(project_id)
         _text(prompt, "prompt")
-        if operation not in {"generate", "edit", *_TEXT_OPERATIONS}:
+        if operation not in {"generate", "edit", "asset", *_TEXT_OPERATIONS, *_DOCUMENT_OPERATIONS}:
             raise ValueError("operation 必须为 generate、edit、script 或 screenplay")
         if operation == "generate" and base_artifact_id is not None:
             raise ValueError("generate 任务不能指定 base_artifact_id")
@@ -293,6 +295,9 @@ class StorageManager:
             self._require_source(project_id, base_artifact_id)
         elif operation in _TEXT_OPERATIONS and base_artifact_id is not None:
             self._require_text_source(project_id, base_artifact_id, operation)
+        elif operation in _DOCUMENT_OPERATIONS and base_artifact_id is not None:
+            if self.get_artifact(base_artifact_id).project_id != project_id:
+                raise ValueError("来源产物必须属于同一项目")
         task = Task(uuid4().hex if task_id is None else _validate_id(task_id), project_id, operation, prompt, base_artifact_id, _now())
         final = self._task_dir(project_id, task.task_id)
         if final.exists():
@@ -365,6 +370,9 @@ class StorageManager:
             artifact = self._decode_record(Artifact, entry)
             if (artifact.format == "TXT") != (task.operation in _TEXT_OPERATIONS):
                 raise MetadataError("产物格式与所属任务类型不匹配")
+            expected = _DOCUMENT_OPERATIONS.get(task.operation)
+            if (expected and artifact.format != expected) or (artifact.format in {"JSON", "MP4"} and artifact.format != expected):
+                raise MetadataError("结构化/视频产物格式与任务不匹配")
             if artifact.project_id != project_id or artifact.task_id != task_id:
                 raise MetadataError("图片的项目或任务 ID 与目录不匹配")
             if artifact.artifact_id in seen:
@@ -548,7 +556,7 @@ class StorageManager:
         role: str = "reference",
     ) -> Artifact:
         task = self.get_task(project_id, task_id)
-        if task.operation not in {"generate", "edit"}:
+        if task.operation not in {"generate", "edit", "asset"}:
             raise ValueError("文本任务不接受图片输入")
         _text(role, "role")
         return self._store_image(project_id, task_id, source_path, "input", role, None)
@@ -591,6 +599,56 @@ class StorageManager:
             if source_artifact_id is not None:
                 self._require_text_source(project_id, source_artifact_id, task.operation)
             return self._store_text(project_id, task_id, source_path, source_artifact_id, artifact_id=artifact_id)
+
+    def register_output_document(self, project_id, task_id, data, *, artifact_id, format):
+        """Immutable structured/video outputs; no generation and no implicit file paths."""
+        _validate_id(artifact_id)
+        task = self.get_task(project_id, task_id)
+        if _DOCUMENT_OPERATIONS.get(task.operation) != format or not isinstance(data, bytes):
+            raise ValueError("结构化产物与任务类型不匹配")
+        if format == "JSON":
+            if not 0 < len(data) <= self.config.max_text_bytes:
+                raise ValueError("分镜 JSON 超过大小限制")
+            value = json.loads(data.decode("utf-8"))
+            if not isinstance(value, dict):
+                raise ValueError("分镜 JSON 必须是对象")
+        else:
+            from .media_validation import inspect_mp4
+            inspect_mp4(data)
+        with FileLock(self._path(".document-artifacts.lock"), timeout=30):
+            digest = hashlib.sha256(data).hexdigest()
+            matches = self._find_artifacts(artifact_id)
+            if matches:
+                old = self.get_artifact(artifact_id)
+                if (old.project_id, old.task_id, old.format, old.sha256, old.size_bytes) != (project_id, task_id, format, digest, len(data)):
+                    raise ValueError("已有产物与本次内容不匹配")
+                if self.get_artifact_path(artifact_id).read_bytes() != data:
+                    raise ValueError("已有产物文件校验失败")
+                return old
+            relative = "/".join(("projects", project_id, "tasks", task_id, "outputs", artifact_id + _FORMATS[format]))
+            artifact = Artifact(artifact_id, project_id, task_id, "output", None, artifact_id + _FORMATS[format],
+                                format, 0, 0, len(data), digest, relative, _now(), task.base_artifact_id)
+            final = self._artifact_file(artifact, must_exist=False)
+            if final.exists():
+                if final.read_bytes() != data:
+                    raise ValueError("未归档文件与本次内容不匹配")
+            else:
+                temporary = self._check_path(final.parent / (".document-" + uuid4().hex + ".tmp"))
+                try:
+                    with temporary.open("xb") as writer:
+                        writer.write(data)
+                        writer.flush()
+                        os.fsync(writer.fileno())
+                    os.replace(temporary, final)
+                finally:
+                    self._cleanup(temporary)
+            records = self.list_task_artifacts(project_id, task_id)
+            prior_signature = self._artifact_index_signature
+            self._write_json(self._task_dir(project_id, task_id) / "artifacts.json",
+                             {"schema_version": 1, "artifacts": [asdict(a) for a in [*records, artifact]]})
+            self._advance_cached_write(prior_signature,
+                                       {f"artifacts.json:{project_id}:{task_id}", f"task:{project_id}:{task_id}"}, artifact)
+            return artifact
 
     def _inspect_text(self, path: Path) -> str:
         info = path.stat()

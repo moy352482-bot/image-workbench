@@ -8,8 +8,6 @@
     account: null, showArchived: false,
   };
   const storageKeys = { project: 'image-workbench.project', subproject: 'image-workbench.subproject', task: 'image-workbench.task', pendingSave: 'image-workbench.pending-task-request', pendingProject: 'image-workbench.pending-project-request' };
-  let imageViewVersion = 0;
-  let imagePreviewTrigger = null;
   const ui = {
     projectList: $('#projectList'), projectName: $('#activeProjectName'), heading: $('#pageHeading'),
     taskList: $('#taskList'), taskCount: $('#taskCount'), prompt: $('#promptInput'), promptCount: $('#promptCount'),
@@ -23,6 +21,18 @@
     mainOverview: $('#mainOverview'), welcome: $('#welcomeRow'), workspace: $('#workspaceGrid'), mainName: $('#activeMainName'), childCrumb: $('#breadcrumbChild'),
     taskEditDialog: $('#taskEditDialog'), moveTaskDialog: $('#moveTaskDialog'),
   };
+
+  const { formatDate, formatBytes, formatSeconds, executionDuration, executionTimingText, statusText, artifactLabel, statusClass, modeName } = window.WorkbenchFormat;
+  const { closeImagePreviews, openLightbox } = window.WorkbenchPreview.create({ query: $, dialog: ui.imageDialog });
+  const api = window.WorkbenchApi.create({
+    getWorkspaceId: () => state.account?.workspace_id,
+    getCsrfToken: () => state.csrf,
+    onUnauthorized: () => { closeImagePreviews(); location.replace('/login'); },
+  });
+  const { accountDialog, refreshAccount } = window.WorkbenchAccounts.create({
+    query: $, api, appendText, formatDate, toast, closeImagePreviews, loadProjects,
+    getAccount: () => state.account, onAccountChanged: account => { state.account = account; },
+  });
 
   function requestId() {
     const bytes = new Uint8Array(16);
@@ -57,75 +67,6 @@
     renderFiles();
     updateEditHelp();
   }
-  async function api(path, options = {}) {
-    const headers = new Headers(options.headers || {});
-    if (state.account) headers.set('X-Workspace-ID', state.account.workspace_id);
-    if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-    if (options.method && options.method !== 'GET') headers.set('X-Workbench-CSRF', state.csrf);
-    let response;
-    try {
-      response = await fetch(path, { ...options, headers, cache: 'no-store' });
-    } catch (error) {
-      throw new Error('无法连接本地工作台，请确认服务仍在运行后重试。');
-    }
-    if (!response.ok) {
-      if (response.status === 401) { closeImagePreviews(); location.replace('/login'); throw new Error('请重新登录'); }
-      let message = `请求失败（${response.status}）`;
-      try {
-        const payload = await response.json();
-        if (typeof payload.detail === 'string') message = payload.detail;
-      } catch (error) { /* Keep the readable status when the response is not JSON. */ }
-      throw new Error(message);
-    }
-    if (response.status === 204) return null;
-    return response.json();
-  }
-  function formatDate(value, compact = false) {
-    if (!value) return '时间未知';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '时间未知';
-    return new Intl.DateTimeFormat('zh-CN', compact ? { month: 'numeric', day: 'numeric' } : { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
-  }
-  function formatBytes(value) {
-    const bytes = Number(value) || 0;
-    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  function formatSeconds(value) {
-    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
-    if (Number(value) > 0 && Number(value) < 1) return '不足 1 秒';
-    const seconds = Math.max(0, Math.round(Number(value)));
-    return seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
-  }
-  function executionDuration(detail) {
-    // 老服务仍可读取详情计时；新服务的显式 null 不得回退成上一次执行的耗时。
-    if (Object.hasOwn(detail, 'execution_seconds')) return detail.execution_seconds;
-    return detail.timings?.total_seconds ?? detail.elapsed_seconds ?? null;
-  }
-  function executionTimingText(detail) {
-    if (detail.status === 'queued') return '等待执行 · 尚未开始计时';
-    if (['generating', 'checking'].includes(detail.status)) return `${statusText(detail.status)} · 已运行 ${formatSeconds(detail.elapsed_seconds)}`;
-    if (detail.status === 'uncertain') return '执行状态待确认 · 最终耗时暂不可用';
-    const seconds = executionDuration(detail);
-    if (seconds !== null && seconds !== undefined) return `${detail.status === 'failed' ? '执行失败' : '本次执行完成'} · 本次执行耗时 ${formatSeconds(seconds)}`;
-    return detail.status === 'failed' ? '执行失败 · 耗时未记录' : '';
-  }
-  function statusText(status, label) {
-    const names = { draft: '待开始', queued: '等待执行', generating: '生成中', checking: '检查产物', awaiting_review: '等待审核', approved: '已通过', failed: '执行失败', uncertain: '状态待确认', running: '执行中', archiving: '归档中', succeeded: '已完成', archive_failed: '归档失败' };
-    if (label && !/^[a-z][a-z0-9_-]*$/i.test(label)) return label;
-    if (names[status]) return names[status];
-    return '状态未知';
-  }
-  function artifactLabel(artifact) {
-    if (artifact.review_status === 'approved') return '已审核';
-    if (artifact.review_status === 'pending' && (artifact.kind === 'output' || artifact.role === 'output')) return '待审核';
-    const names = { output: '候选图', candidate: '候选图', input: '参考图', reference: '参考图', base: '基底图' };
-    return names[artifact.kind] || names[artifact.role] || '结果图片';
-  }
-  function statusClass(status) {
-    return ['draft', 'queued', 'generating', 'checking', 'awaiting_review', 'approved', 'failed', 'uncertain'].includes(status) ? `status-${status}` : 'status-neutral';
-  }
-  function modeName(operation) { return operation === 'edit' ? '图片修改' : '图片生成'; }
   function appendText(parent, tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -632,39 +573,6 @@
       ui.details.append(section);
     }
   }
-  function closeImagePreviews() {
-    imageViewVersion += 1;
-    window.WorkbenchImageViewer?.close();
-    window.WorkbenchImageComparison?.close();
-    if (ui.imageDialog.open) ui.imageDialog.close();
-    $('#lightboxImage').removeAttribute('src');
-    $('#lightboxDownload').removeAttribute('href');
-  }
-  async function openLightbox(artifact, trigger) {
-    closeImagePreviews();
-    const version = imageViewVersion;
-    try {
-      if (await window.WorkbenchImageViewer?.open(artifact, { trigger })) return;
-    } catch (error) { /* The original preview remains available if the viewer cannot load. */ }
-    if (version !== imageViewVersion) return;
-    imagePreviewTrigger = trigger;
-    const image = $('#lightboxImage');
-    const status = $('#lightboxStatus');
-    status.hidden = false;
-    status.textContent = '正在加载图片…';
-    image.onload = () => { status.hidden = true; };
-    image.onerror = () => { status.hidden = false; status.textContent = '图片加载失败，请关闭预览后刷新页面，确认登录状态。'; };
-    image.src = artifact.url;
-    $('#lightboxTitle').textContent = '结果图片预览';
-    $('#lightboxMeta').textContent = `${artifact.width || '—'} × ${artifact.height || '—'} · ${String(artifact.format || '').toUpperCase()}`;
-    const download = $('#lightboxDownload');
-    download.href = artifact.download_url;
-    download.setAttribute('download', '');
-    ui.imageDialog.showModal();
-    if (Number(artifact.width) > 3000 || Number(artifact.height) > 3000) {
-      $('#lightboxMeta').append(document.createTextNode(' · 超大图片，可下载原图查看细节'));
-    }
-  }
   async function runTask(detail) {
     if (writesBlocked()) { toast('已有数据需要先完成项目层级迁移。', true); return; }
     if (state.busy) return;
@@ -1036,43 +944,7 @@
     }
   }
 
-  function accountDialog(title) {
-    $('#accountDialogTitle').textContent = title; const content = $('#accountDialogContent'); content.replaceChildren(); $('#accountDialog').showModal(); return content;
-  }
-  async function refreshAccount() {
-    const account = await api('/api/auth/me'); state.account = account;
-    $('#accountName').textContent = `${account.username}${account.is_admin ? ' · 管理员' : ''}`;
-    $('#adminLink').hidden = !account.is_admin;
-    const credits = account.credits;
-    $('#creditSummary').textContent = credits.is_unlimited ? '积分额度：无限' : `可用 ${credits.remaining_credit} 积分 · 冻结 ${credits.frozen_credit}`;
-    const select = $('#workspaceSelect'); select.replaceChildren();
-    for (const workspace of account.workspaces) { const option = appendText(select, 'option', '', workspace.name); option.value = workspace.workspace_id; option.selected = workspace.workspace_id === account.workspace_id; }
-  }
-  $('#closeAccountDialog').addEventListener('click', () => $('#accountDialog').close());
-  $('#workspaceSelect').addEventListener('change', async event => { closeImagePreviews(); try { await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:event.target.value})}); location.reload(); } catch(error) { toast(error.message, true); } });
-  $('#logoutButton').addEventListener('click', async () => { closeImagePreviews(); try { await api('/api/auth/logout', {method:'POST'}); location.replace('/login'); } catch(error) { toast(error.message, true); } });
   $('#archiveFilter').addEventListener('click', async () => { state.showArchived = !state.showArchived; $('#archiveFilter').textContent = state.showArchived ? '返回进行中项目' : '查看已归档项目'; await loadProjects(); });
-  $('#newWorkspaceButton').addEventListener('click', () => {
-    const content = accountDialog('新建工作空间'); const form = appendText(content, 'form', '', '');
-    const label = appendText(form, 'label', 'field-label', '工作空间名称'); label.htmlFor = 'workspaceNameInput';
-    const input = appendText(form, 'input', 'workspace-destination', ''); input.id = 'workspaceNameInput'; input.required = true; input.maxLength = 120;
-    const submit = appendText(form, 'button', 'primary-button', '创建工作空间'); submit.type = 'submit';
-    form.addEventListener('submit', async event => { event.preventDefault(); submit.disabled = true; try { const workspace = await api('/api/workspaces', {method:'POST', body:JSON.stringify({name:input.value.trim()})}); await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:workspace.workspace_id})}); location.reload(); } catch(error) { toast(error.message, true); submit.disabled = false; } }); input.focus();
-  });
-  $('#creditHistoryButton').addEventListener('click', async () => {
-    try { const payload = await api('/api/credits'); await refreshAccount(); const content = accountDialog('积分记录');
-      appendText(content, 'p', 'dialog-summary', payload.credits.is_unlimited ? '管理员无限额度' : `可用 ${payload.credits.remaining_credit} · 已使用 ${payload.credits.used_credit} · 冻结 ${payload.credits.frozen_credit}`);
-      const list = appendText(content, 'div', 'ledger-list', ''); const names = {initial_grant:'初始赠送', freeze:'冻结', consume:'扣除', refund:'退回'};
-      for (const entry of payload.transactions) { const row = appendText(list, 'div', 'ledger-row', ''); appendText(row, 'span', '', `${names[entry.type] || entry.type} · ${formatDate(entry.created_at, true)}`); appendText(row, 'strong', '', `${entry.amount} 积分`); }
-    } catch(error) { toast(error.message, true); }
-  });
-  $('#deletedProjectsButton').addEventListener('click', async () => {
-    try { const payload = await api('/api/project-actions/deleted'); const content = accountDialog('项目回收站');
-      if (!payload.projects.length) appendText(content, 'p', 'dialog-summary', '回收站为空。');
-      for (const project of payload.projects) { const row = appendText(content, 'div', 'deleted-row', ''); appendText(row, 'span', '', project.name); const button = appendText(row, 'button', 'secondary-button', '恢复'); button.type = 'button'; button.addEventListener('click', async () => { try { await api(`/api/project-actions/${project.main_project_id}/restore`, {method:'POST'}); row.remove(); await loadProjects(); toast('项目已恢复'); } catch(error) { toast(error.message, true); } }); }
-    } catch(error) { toast(error.message, true); }
-  });
-  window.setInterval(() => { if (state.account) refreshAccount().catch(() => {}); }, 15000);
   ui.form.addEventListener('submit', saveTask);
   ui.prompt.addEventListener('input', () => { ui.promptCount.textContent = `${ui.prompt.value.length} / 4000`; });
   ui.imageInput.addEventListener('change', event => addFiles(event.target.files));
@@ -1092,15 +964,6 @@
   document.querySelectorAll('.close-move-dialog').forEach(button => button.addEventListener('click', () => ui.moveTaskDialog.close()));
   $('#refreshButton').addEventListener('click', refreshAll);
   $('#clearBaseImage').addEventListener('click', clearBaseArtifact);
-  $('#closeImageDialog').addEventListener('click', () => ui.imageDialog.close());
-  ui.imageDialog.addEventListener('click', event => { if (event.target === ui.imageDialog) ui.imageDialog.close(); });
-  ui.imageDialog.addEventListener('close', () => {
-    $('#lightboxImage').removeAttribute('src');
-    $('#lightboxDownload').removeAttribute('href');
-    if (imagePreviewTrigger?.isConnected) imagePreviewTrigger.focus({ preventScroll: true });
-    imagePreviewTrigger = null;
-  });
-  window.addEventListener('pagehide', closeImagePreviews);
   for (const eventName of ['dragenter', 'dragover']) $('.dropzone').addEventListener(eventName, event => { event.preventDefault(); $('.dropzone').classList.add('dragover'); });
   for (const eventName of ['dragleave', 'drop']) $('.dropzone').addEventListener(eventName, event => { event.preventDefault(); $('.dropzone').classList.remove('dragover'); });
   $('.dropzone').addEventListener('drop', event => addFiles(event.dataTransfer.files));

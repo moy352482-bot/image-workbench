@@ -2,60 +2,21 @@
 
 from pathlib import Path
 import traceback
-from typing import Literal
 from urllib.parse import quote
 
 from fastapi import BackgroundTasks, HTTPException, Query, Request
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 
 from .storage import _now, _validate_id
 
 
-ID = r"^[0-9a-f]{32}$"
+from .contracts.scripts import ID, ScriptBody, ScriptRequest, ScriptSubmission, ScriptRevision
 
 
-class ScriptBody(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-class ScriptRequest(ScriptBody):
-    subproject_id: str = Field(pattern=ID)
-    generation_type: Literal["script", "screenplay"]
-    template_id: str | None = Field(default=None, max_length=120)
-    input_request: str = Field(min_length=1, max_length=20000)
-    selection_mode: Literal["recommended", "manual"] = "recommended"
-    model_id: str | None = Field(default=None, max_length=100)
-    thinking_level: str | None = Field(default=None, max_length=60)
-    duration: str | StrictInt | None = None
-    aspect_ratio: str | None = Field(default=None, max_length=120)
-    target_audience: str | None = Field(default=None, max_length=4000)
-    tone: str | None = Field(default=None, max_length=4000)
-    characters: str | None = Field(default=None, max_length=10000)
-    product_ip: str | None = Field(default=None, max_length=4000)
-    constraints: str | None = Field(default=None, max_length=12000)
-    parent_version_id: str | None = Field(default=None, pattern=ID)
-    change_reason: str | None = Field(default=None, max_length=4000)
-
-
-class ScriptSubmission(ScriptRequest):
-    request_id: str = Field(pattern=ID)
-    quote_signature: str = Field(min_length=1, max_length=256)
-    warnings_confirmed: StrictBool = False
-
-
-class ScriptRevision(ScriptBody):
-    request_id: str = Field(pattern=ID)
-    text: str = Field(min_length=1, max_length=200000)
-    change_reason: str = Field(min_length=1, max_length=2000)
-
-
-def install_scripts(application):
-    from .script_service import ScriptService
-
-    app = application.auth
-    application.script_service = getattr(application, "script_service", None) or ScriptService(application.storage, application.identity)
+def install_scripts(app, get_service, storage, *, remote_mode=False):
+    from .script_resource_web import install_script_resources
+    install_script_resources(app, get_service)
     directory = Path(__file__).resolve().parent
     templates = Jinja2Templates(directory=directory / "web_templates")
 
@@ -67,7 +28,7 @@ def install_scripts(application):
 
     def log_error(exc):
         try:
-            path = application.storage._path(".workbench", "web-errors.log")
+            path = storage._path(".workbench", "web-errors.log")
             with path.open("a", encoding="utf-8") as stream:
                 stream.write(f"\n{_now()}\n{''.join(traceback.format_exception(exc))}\n")
         except OSError:
@@ -75,7 +36,7 @@ def install_scripts(application):
 
     def invoke(method, *args):
         try:
-            return getattr(application.script_service, method)(*args)
+            return getattr(get_service(), method)(*args)
         except (ValueError, FileNotFoundError, HTTPException):
             raise
         except Exception as exc:
@@ -86,7 +47,7 @@ def install_scripts(application):
         # Service persists failures and releases the reservation. An unexpected
         # failure still receives the same local diagnostic record as Web errors.
         try:
-            application.script_service.run(account_id, workspace_id, task_id)
+            get_service().run(account_id, workspace_id, task_id)
         except Exception as exc:
             log_error(exc)
 
@@ -94,7 +55,7 @@ def install_scripts(application):
     def page(request: Request):
         owner(request)
         revision = max((directory / "web_static" / name).stat().st_mtime_ns
-                       for name in ("workbench.css", "accounts.css", "scripts.css", "scripts.js"))
+                       for name in ("workbench.css", "accounts.css", "scripts.css", "scripts.js", "storyboard.css", "storyboard.js"))
         return templates.TemplateResponse(request=request, name="scripts.html", context={"asset_version": str(revision)},
                                           headers={"Cache-Control": "no-store"})
 
@@ -114,7 +75,7 @@ def install_scripts(application):
     def submit(body: ScriptSubmission, request: Request, background_tasks: BackgroundTasks):
         account_id, workspace_id = owner(request)
         result = invoke("submit", account_id, workspace_id, body.model_dump(exclude_none=True))
-        if result.get("status") == "queued" and not application.remote_access:
+        if result.get("status") == "queued" and not remote_mode:
             background_tasks.add_task(execute, account_id, workspace_id, result["task_id"])
         return result
 
@@ -134,7 +95,7 @@ def install_scripts(application):
     def resume(task_id: str, body: ScriptBody, request: Request, background_tasks: BackgroundTasks):
         account_id, workspace_id = owner(request)
         result = invoke("detail", account_id, workspace_id, _validate_id(task_id))
-        if result.get("status") == "queued" and not application.remote_access:
+        if result.get("status") == "queued" and not remote_mode:
             background_tasks.add_task(execute, account_id, workspace_id, task_id)
         return result
 

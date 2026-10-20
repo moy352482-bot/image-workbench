@@ -142,7 +142,7 @@ class WorkspaceStorage:
         return [item for item in self.raw.list_projects() if item.project_id in allowed]
 
     def __getattr__(self, name):
-        project_methods = {"get_project", "create_task", "get_task", "list_tasks", "list_task_artifacts", "add_input_image", "register_output_image", "register_output_text", "_require_source", "_require_text_source", "_project_dir", "_task_dir"}
+        project_methods = {"get_project", "create_task", "get_task", "list_tasks", "list_task_artifacts", "add_input_image", "register_output_image", "register_output_text", "register_output_document", "_require_source", "_require_text_source", "_project_dir", "_task_dir"}
         if name in project_methods:
             def checked(project_id, *args, **kwargs):
                 self.projects.require_namespace(project_id)

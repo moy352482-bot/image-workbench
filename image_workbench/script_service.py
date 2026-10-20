@@ -10,10 +10,12 @@ from .accounts import CreditInsufficient
 from .locking import FileLock, LockBusyError
 from .storage import _validate_id, _now
 from .workspace_scope import WorkspaceProjects
-from .workbench_state import ConflictError
+from .domain_errors import ConflictError
 from .script_models import ScriptModelRegistry, DemandRouter, signature
 from .script_templates import ScriptTemplateLoader, build_prompt, validate_generated_text
 from .script_adapter import CodexTextAdapter, ScriptGenerationError
+from .script_resources import ScriptResourceStore, roles
+from .script_engine import resolve_resources, resource_summary, creative_snapshot, check_structure
 
 
 class ScriptService:
@@ -21,8 +23,10 @@ class ScriptService:
         self.storage, self.identity = storage, identity
         self.registry = registry or ScriptModelRegistry()
         self.templates = templates or ScriptTemplateLoader()
+        self.resources = ScriptResourceStore(storage, identity)
         self.adapter = adapter or CodexTextAdapter()
         self.router = DemandRouter(self.registry)
+        self.storyboards = None
         self.root = storage._path(".workbench", "script-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
 
@@ -71,6 +75,17 @@ class ScriptService:
         path = self.storage._path(".workbench", "script-versions.json")
         return self.storage._read_json(path) if path.exists() else {"schema_version": 1, "versions": {}}
 
+    def _task_paths(self):
+        # StorageManager stages atomic replacements as .tmp-*.json. They may
+        # coexist with a committed task during history polling or queue recovery.
+        return (path for path in self.root.glob("*.json") if not path.name.startswith(".tmp-"))
+
+    def completed_storyboard_dependencies(self):
+        """Durable second-stage intents, consumed by the independent planner at startup."""
+        return [job for path in self._task_paths() if
+                (job := self._load(path.stem)).get("status") == "completed"
+                and job.get("storyboard_options") and job.get("storyboard_confirmed")]
+
     def _parent(self, aid, wid, version_id, sid=None, generation_type=None):
         if not version_id:
             return None
@@ -90,7 +105,8 @@ class ScriptService:
 
     def _normalize(self, body):
         keys = ("subproject_id", "generation_type", "template_id", "input_request", "selection_mode", "model_id", "thinking_level",
-                "duration", "aspect_ratio", "target_audience", "tone", "characters", "product_ip", "constraints", "parent_version_id", "change_reason")
+                "duration", "aspect_ratio", "target_audience", "tone", "characters", "product_ip", "constraints", "parent_version_id", "change_reason",
+                "template_version", "style_ids", "example_refs", "variables", "conflicts_confirmed")
         req = {key: body[key] for key in keys if body.get(key) not in (None, "")}
         req.setdefault("selection_mode", "recommended")
         if req.get("generation_type") not in {"script", "screenplay"} or req["selection_mode"] not in {"manual", "recommended"}:
@@ -103,36 +119,81 @@ class ScriptService:
         if not isinstance(req.get("input_request"), str) or not req["input_request"].strip() or len(req["input_request"]) > 20000:
             raise ValueError("请填写 1–20000 字的生成需求")
         for key, value in req.items():
+            if key in {"style_ids", "example_refs", "variables", "conflicts_confirmed"}:
+                continue
             if not isinstance(value, (str, int)) or isinstance(value, bool) or len(str(value)) > 20000:
                 raise ValueError("生成参数格式无效或过长")
+        if "template_version" in req and (type(req["template_version"]) is not int or req["template_version"] < 1):
+            raise ValueError("模板版本必须为正整数")
+        styles = req.get("style_ids", [])
+        if not isinstance(styles, list) or len(styles) > 4 or any(not isinstance(s, str) or len(s) > 64 for s in styles) or len(styles) != len(set(styles)):
+            raise ValueError("最多选择四个不同风格")
+        examples = req.get("example_refs", [])
+        if not isinstance(examples, list) or len(examples) > 6:
+            raise ValueError("最多引用六个案例")
+        seen = set()
+        for item in examples:
+            if not isinstance(item, dict) or set(item) - {"example_id", "version", "reference_roles"} or not isinstance(item.get("example_id"), str):
+                raise ValueError("案例引用格式无效")
+            if item["example_id"] in seen:
+                raise ValueError("案例不能重复引用")
+            seen.add(item["example_id"])
+            roles(item.get("reference_roles"))
+            if "version" in item and (type(item["version"]) is not int or item["version"] < 1):
+                raise ValueError("案例版本必须为正整数")
+        variables = req.get("variables", {})
+        if not isinstance(variables, dict) or len(variables) > 30 or any(not isinstance(k, str) or len(k) > 64 or not isinstance(v, str) or len(v) > 2000 for k, v in variables.items()):
+            raise ValueError("模板变量必须为不超过 30 项的文本映射")
+        if "conflicts_confirmed" in req and type(req["conflicts_confirmed"]) is not bool:
+            raise ValueError("冲突确认必须为布尔值")
+        # Normalize optional HTTP defaults and direct-service calls identically;
+        # preserve pre-engine request fingerprints for retries of existing jobs.
+        for key in ("style_ids", "example_refs", "variables", "conflicts_confirmed"):
+            if key in req and not req[key]:
+                req.pop(key)
         _validate_id(req.get("subproject_id"))
         if req.get("parent_version_id") and not str(req.get("change_reason", "")).strip():
             raise ValueError("生成修改版本时请填写修改原因")
+        if body.get("storyboard_options") is not None:
+            if self.storyboards is None:
+                raise ValueError("独立分镜服务尚未装配")
+            req["storyboard_options"] = self.storyboards.normalize_options(body["storyboard_options"])
         return req
 
     def config(self, account_id, workspace_id):
         self.identity.require_workspace(account_id, workspace_id)
-        return {"models": self.registry.models(), "templates": self.templates.list_templates(),
+        return {"models": self.registry.models(), "templates": self.templates.list_templates() + self.resources.list(account_id, workspace_id, "personal"),
+                "styles": self.templates.list_styles(), "analysis_provider": self.resources.analyzer.provider,
                 "generation_types": [{"id": "script", "name": "脚本"}, {"id": "screenplay", "name": "剧本"}],
                 "credits": self.identity.wallet(account_id)}
 
-    def quote(self, account_id, workspace_id, body):
+    def quote(self, account_id, workspace_id, body, *, _prepared=None):
         req = self._normalize(body)
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
         projects.get_subproject(req["subproject_id"])
         self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
-        template = self.templates.load(req.get("template_id"), req["generation_type"])
+        template = _prepared if _prepared is not None else resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
         choice, reason, spec = self.router.route(req, template)
         warnings = []
         if req["selection_mode"] == "manual" and self.router.classify(req)["complexity"] == "complex" and choice["thinking_level"] in {"none", "low", "medium"}:
             warnings.append("当前模型/思考强度可能无法充分满足该需求。请选择继续生成或返回修改。")
         remaining = self.identity.wallet(account_id)["remaining_credit"]
         shortfall = max(0, choice["price"] - remaining) if remaining is not None else 0
-        refs = {"template": template["template_reference"], "examples": [{k: v for k, v in item.items() if k != "text"} for item in template["example_references"]]}
+        refs = resource_summary(template)
         quoted = {**choice, "reason": reason, "demand_spec": spec, "remaining_credit": remaining,
-                  "shortfall": shortfall, "warnings": warnings, "can_generate": shortfall == 0,
+                  "shortfall": shortfall, "warnings": warnings,
+                  "conflicts": template.get("conflicts", []),
+                  "can_generate": shortfall == 0 and (not template.get("conflicts") or req.get("conflicts_confirmed") is True),
                   "pricing_status": "priced"}
         quoted["quote_signature"] = signature({"request": req, "choice": choice, "references": refs})
+        if req.get("storyboard_options"):
+            planning = self.storyboards.quote_options(account_id, workspace_id, req["storyboard_options"], request=req)
+            combined = choice["price"] + (planning["price"] or 0)
+            quoted["storyboard_quote"] = planning
+            quoted["total_estimated_credit"] = combined if planning["price"] is not None else None
+            quoted["can_generate"] = quoted["can_generate"] and planning["can_generate"] and (remaining is None or remaining >= combined)
+            quoted["shortfall"] = max(0, combined - remaining) if remaining is not None else 0
+            quoted["quote_signature"] = signature({"script": quoted["quote_signature"], "storyboard": planning["quote_signature"]})
         return quoted
 
     def _transaction_id(self, job_id, kind):
@@ -162,17 +223,24 @@ class ScriptService:
                     old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
                     self._write(old)
                 return self._public(self._reconcile(old))
-            quote = self.quote(account_id, workspace_id, req)
+            template = resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
+            quote = self.quote(account_id, workspace_id, req, _prepared=template)
             if quote["shortfall"]:
-                raise CreditInsufficient(quote["price"], quote["remaining_credit"])
+                raise CreditInsufficient(quote.get("total_estimated_credit") or quote["price"], quote["remaining_credit"])
             if body.get("quote_signature") != quote["quote_signature"]:
                 raise ConflictError("报价或生成参数已变化，请重新预览报价")
             if quote["warnings"] and body.get("warnings_confirmed") is not True:
                 raise ConflictError("请先确认当前模型/思考强度的质量提示")
+            if quote["conflicts"] and req.get("conflicts_confirmed") is not True:
+                raise ConflictError("请先修改或明确确认模板与风格的冲突")
+            if req.get("storyboard_options"):
+                if body.get("storyboard_confirmed") is not True:
+                    raise ConflictError("请分别确认脚本与分镜阶段的报价")
+                if not quote["can_generate"]:
+                    raise ValueError(quote["storyboard_quote"].get("blocked_reason") or "两阶段报价暂不可执行")
             projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
             sub = projects.get_subproject(req["subproject_id"])
             parent = self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
-            template = self.templates.load(req["template_id"], req["generation_type"])
             parent_text = self._read_artifact(parent["artifact_id"])[0].decode("utf-8") if parent else None
             prompt = build_prompt(req, template, parent_text=parent_text)
             task = projects.create_task(req["subproject_id"], req["generation_type"], req["input_request"], parent["artifact_id"] if parent else None, task_id=tid)
@@ -185,7 +253,10 @@ class ScriptService:
                    "document_id": parent["document_id"] if parent else uuid4().hex,
                    "template_reference": template["template_reference"],
                    "example_references": [{k: v for k, v in item.items() if k != "text"} for item in template["example_references"]],
+                   "resource_references": resource_summary(template), "creative_snapshot": creative_snapshot(template),
                    "generation_prompt": prompt, "demand_spec": quote["demand_spec"], "route_reason": quote["reason"]}
+            if req.get("storyboard_options"):
+                job.update(storyboard_quote=quote["storyboard_quote"], storyboard_confirmed=True)
             job = self.identity.reserve(job, {"account_id": account_id, "workspace_id": workspace_id}, quote["price"])
             if job.get("kind") != "script":
                 raise ConflictError("该请求标识已用于其他类型任务")
@@ -255,11 +326,25 @@ class ScriptService:
                            "artifact_id": artifact.artifact_id, "task_id": job["task_id"], "model": job["model"],
                            "model_id": job["model_id"], "thinking_level": job["thinking_level"],
                            "prompt": job["generation_prompt"], "created_at": artifact.created_at,
-                           "generation_type": job["generation_type"], "source": job.get("source", "codex")}
+                           "generation_type": job["generation_type"], "source": job.get("source", "codex"),
+                           "resource_references": job.get("resource_references", {}),
+                           "price": job.get("price", 0), "credit_transaction_id": job.get("credit_transaction_id")}
                 value["versions"][job["version_id"]] = version
                 self.storage._write_json(self.storage._path(".workbench", "script-versions.json"), value)
+            job["validation_report"] = {**check_structure(data.decode("utf-8"), job.get("creative_snapshot", {})),
+                                        "file_exists": candidate.is_file(), "artifact_registered": True,
+                                        "version_registered": True, "artifact_id": artifact.artifact_id,
+                                        "version_id": version["version_id"]}
             job.update(output_version=version["version"], status="completed", completed_at=_now(), finished_at=_now(), error=None)
             self._write(job, settle=bool(job.get("job_id")))
+        # The script has already been committed and settled. Its downstream stage
+        # cannot turn a valid TXT into a failed script, including remote completion.
+        if self.storyboards and job.get("storyboard_options") and job.get("source") != "manual_edit":
+            try:
+                self.storyboards.dependency_completed(job)
+            except Exception:
+                # The durable options remain available for stage recovery.
+                pass
 
     def run(self, account_id, workspace_id, task_id):
         try:
@@ -321,7 +406,7 @@ class ScriptService:
     def pending_jobs(self):
         # Include the SQLite outbox even when publication of the JSON job was interrupted.
         values = {j["task_id"]: j for j in self.identity.pending_jobs() if j.get("kind") == "script"}
-        for path in self.root.glob("*.json"):
+        for path in self._task_paths():
             job = self._load(path.stem)
             if job["status"] in {"queued", "running", "archiving", "uncertain"}:
                 values[job["task_id"]] = job
@@ -343,16 +428,20 @@ class ScriptService:
             self._write(job)
             return self._public(job)
 
-    @staticmethod
-    def _public(job):
-        return {k: v for k, v in job.items() if k not in {"generation_prompt", "request_fingerprint", "claim_id", "worker_id", "attempt_id"}}
+    def _public(self, job):
+        value = {k: v for k, v in job.items() if k not in {"generation_prompt", "request_fingerprint", "claim_id", "worker_id", "attempt_id", "creative_snapshot"}}
+        if self.storyboards and job.get("storyboard_options"):
+            stage = self.storyboards.dependency_task(job["account_id"], job["workspace_id"], job)
+            value["storyboard_task"] = stage
+            value["storyboard_task_id"] = stage["task_id"] if stage else None
+        return value
 
     def list_tasks(self, account_id, workspace_id, subproject_id=None):
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
         if subproject_id:
             projects.get_subproject(subproject_id)
         result = []
-        for path in self.root.glob("*.json"):
+        for path in self._task_paths():
             try:
                 job = self._authorized(account_id, workspace_id, path.stem)
             except FileNotFoundError:
@@ -426,6 +515,8 @@ class ScriptService:
                            "price": 0, "credit_cost": 0, "credit_status": "not_applicable", "credit_transaction_id": None,
                            "output_artifact_id": uuid4().hex, "version_id": uuid4().hex, "output_version": None,
                            "parent_version_id": parent["version_id"], "change_reason": reason, "generation_prompt": reason}
+                    for field in ("storyboard_options", "storyboard_confirmed", "storyboard_quote"):
+                        job.pop(field, None)
                     self._write(job, settle=False)
             if job["status"] != "completed":
                 self._publish_candidate(job, text)
