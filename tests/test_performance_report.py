@@ -116,7 +116,9 @@ class PerformanceReportTests(unittest.TestCase):
             result = json.loads((root / "out" / "performance_report.json").read_text(encoding="utf-8"))
             self.assertEqual(result["record_count"], 1)
             self.assertEqual(result["overall"]["success"]["durations_seconds"]["total"]["mean"], 100)
-            self.assertEqual(result["source_files"][0]["path"], str(selected))
+            # Windows CI may expose TEMP through an 8.3 alias; reports use the
+            # canonical path returned by load_manifest's strict resolution.
+            self.assertEqual(result["source_files"][0]["path"], str(selected.resolve(strict=True)))
             self.assertTrue((root / "out" / "performance_summary.md").is_file())
 
     def test_empty_manifest_says_no_data(self):
