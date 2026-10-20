@@ -121,7 +121,7 @@ class DemandRouter:
         except Exception as exc:
             raise ValueError("需求分析服务暂不可用；请补充需求或手动选择模型") from exc
 
-    def route(self, request, template):
+    def route(self, request, template, *, allow_external=True):
         if request.get("selection_mode", "recommended") == "manual":
             choice = self.registry.resolve(request.get("model_id"), request.get("thinking_level"), request["generation_type"])
             return choice, "使用用户明确选择", None
@@ -130,6 +130,8 @@ class DemandRouter:
             return choice, "使用模板默认模型与思考强度", None
         spec = self.classify(request)
         if spec["complexity"] == "unknown":
+            if not allow_external:
+                raise ValueError("请补充创作需求或手动选择模型；积分展示不会调用外部模型")
             spec = (self.fallback or self._flash)(request)
             if not isinstance(spec, dict) or spec.get("complexity") not in {"simple", "standard", "complex"} or type(spec.get("confidence")) not in {int, float} or not 0.7 <= spec["confidence"] <= 1:
                 raise ValueError("需求分析仍不明确；请补充需求或手动选择模型")

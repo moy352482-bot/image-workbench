@@ -70,6 +70,37 @@
   async function pollScript(m,id,context) { const t=await m.api('/api/storyboards/tasks/'+id); if(context!==JSON.stringify(m.getContext()))return; m.quoteElement.textContent=`独立分镜任务：${t.status} · ${t.task_id}${t.error ? ' · '+t.error : ''}`; if(['queued','running','generating','checking'].includes(t.status)){setTimeout(()=>pollScript(m,id,context).catch(err=>{if(context===JSON.stringify(m.getContext()))m.quoteElement.textContent=err.message;}),2000);return;} m.pollTask=null;if(['failed','cancelled'].includes(t.status))forgetRequest(t.request_id);if(t.storyboard_id){const record=await m.api('/api/storyboards/'+t.storyboard_id);if(context!==JSON.stringify(m.getContext()))return;m.resultLink?.remove();if(record.video_project_id){const a=node('a','在视频工作台查看此分镜','text-button');a.href='/video?project='+encodeURIComponent(record.video_project_id)+'#pipelineVideos';m.panel.append(a);m.resultLink=a;}} }
   window.IWStoryboard = { mountScript, options: prefix => { const m = mounts.get(prefix); return m?.checkbox.checked ? m.controls.body() : null; }, showQuote: (prefix,q) => { const m=mounts.get(prefix); if (m) m.quoteElement.textContent = m.checkbox.checked ? quoteText(q) : '分镜阶段：未启用'; }, scriptDetail, planScript, linkedStage };
   let editor;
+  window.IWStoryboard.assetTarget = () => {
+    const e = editor;
+    if (!e?.record || !e.root.offsetParent || !e.selected) return null;
+    if (document.activeElement?.closest('#videoShotForm') && e.boundShot !== e.selected) return null;
+    return {project_id:e.project, storyboard_id:e.record.storyboard_id, shot_id:e.selected, version:e.record.version};
+  };
+  window.IWStoryboard.attachAssets = (assets, target, purpose='storyboard') => {
+    const e = editor;
+    if (!e?.record || !target || e.project !== target.project_id || e.record.storyboard_id !== target.storyboard_id || e.selected !== target.shot_id || e.record.version !== target.version) throw new Error('分镜选择已改变；图片已保存，请在目标镜头重新选择');
+    if (e.record.version !== e.latest || !e.fieldValues) throw new Error('历史分镜版本只读，请选择最新版本');
+    const ids = [...new Set(assets.map(a=>a.artifact_id))];
+    if (ids.some(id=>!/^[a-f0-9]{32}$/.test(id || ''))) throw new Error('图片缺少有效素材标识，请从项目素材库重新选择');
+    const frame = purpose==='first' ? 'start_frame_artifact_id' : purpose==='last' ? 'end_frame_artifact_id' : null;
+    if (frame && (ids.length !== 1 || (e.fieldValues[frame].value && e.fieldValues[frame].value !== ids[0]))) throw new Error('该帧已有图片；请先在分镜中取消原选择，再添加新图片');
+    const selected = new Set(e.referenceChecks.filter(i=>i.checked).map(i=>i.value));
+    if (!frame && new Set([...selected,...ids]).size > 9) throw new Error('每个分镜最多使用9张参考图，请先减少选择');
+    for (const asset of assets) {
+      if (!e.assets.some(a=>a.artifact_id===asset.artifact_id)) e.assets.push(asset);
+      let cb=e.referenceChecks.find(i=>i.value===asset.artifact_id);
+      if (!cb) {
+        const label=node('label',undefined,'storyboard-check'); cb=node('input'); cb.type='checkbox';cb.value=asset.artifact_id;
+        label.append(cb,node('span',asset.title || asset.filename || asset.artifact_id));e.referenceContainer.append(label);e.referenceChecks.push(cb);
+      }
+      if (!frame) cb.checked=true;
+      for (const key of ['start_frame_artifact_id','end_frame_artifact_id']) {
+        const select=e.fieldValues[key]; if (![...select.options].some(o=>o.value===asset.artifact_id)) { const option=node('option',asset.title || asset.filename || asset.artifact_id);option.value=asset.artifact_id;select.append(option); }
+      }
+    }
+    if (frame) e.fieldValues[frame].value=ids[0];
+    e.dirty=true;e.host.notice('图片已加入选中分镜，其他编辑已保留。点击“保存选中镜头”保存引用。');
+  };
   function mountVideo() {
     if (editor || !window.IWVideo) return; const host = window.IWVideo;
     const root = node('section',undefined,'storyboard-panel'); root.append(node('h3','AI 分镜规划与审核')); const message = node('p','选择项目后读取分镜。','field-hint'); message.setAttribute('role','status'); root.append(message);
@@ -78,6 +109,7 @@
     const preview = node('div',undefined,'storyboard-preview'); root.append(preview); $('videoShotForm').before(root);
     editor = { host, root, message, toolbar, listSelect, versionSelect, content, planning, controls, reason, scope, planQuote, preview, project:null, record:null, assets:[], selected:null, epoch:0, loading:false, task:null, pendingQuote:null, selectedIds:new Set(), dirty:false, formDirty:false };
     const e = editor; controls.load(host.api);
+    window.IWImageInput?.bind({zone:root,purpose:'storyboard'});
     content.addEventListener('input',event=>{if(!event.target.dataset.replanSelect && event.target.type !== 'checkbox')e.dirty=true;});
     content.addEventListener('change',event=>{if(!event.target.dataset.replanSelect && !event.target.dataset.draftTest)e.dirty=true;});
     $('videoShotForm').addEventListener('input',()=>{if(e.boundShot)e.formDirty=true;});
@@ -123,12 +155,18 @@
       const rows=node('div',undefined,'storyboard-shots'); content.append(rows);
       for (const [i,s] of (r.shots || []).entries()) { const row=node('div',undefined,'storyboard-shot'); row.draggable=!readonly; row.dataset.shotId=s.shot_id;
         const multiLabel=node('label',undefined,'storyboard-multi-select'); const multi=node('input'); multi.type='checkbox';multi.dataset.replanSelect='true';multi.setAttribute('aria-label',`局部规划镜头 ${i+1}`);multi.checked=e.selectedIds.has(s.shot_id);multi.disabled=readonly;multi.addEventListener('change',()=>{if(multi.checked)e.selectedIds.add(s.shot_id);else e.selectedIds.delete(s.shot_id);clearPreview();planQuote.textContent=`已勾选 ${e.selectedIds.size} 个镜头，请重新报价。`;});multiLabel.append(multi);row.append(multiLabel);
-        const b=button(`${i+1}. ${s.title || '镜头'} · ${s.narrative_duration_ms/1000}s / 生成 ${s.generation_duration_ms/1000}s`,()=>{e.selected=s.shot_id; fillVideo(s); render();}); b.setAttribute('aria-pressed',String(e.selected===s.shot_id)); row.append(b); if (!readonly) {row.append(button('↑',()=>reorder(s.shot_id,-1)),button('↓',()=>reorder(s.shot_id,1)));} row.addEventListener('dragstart',event=>event.dataTransfer.setData('text/plain',s.shot_id)); row.addEventListener('dragover',event=> {if (!readonly) event.preventDefault();}); row.addEventListener('drop',event=> {event.preventDefault(); if(readonly)return; const ids=r.shots.map(s=>s.shot_id), from=ids.indexOf(event.dataTransfer.getData('text/plain')),to=ids.indexOf(s.shot_id); if(from<0 || from===to)return; ids.splice(to,0,ids.splice(from,1)[0]); edit('reorder',{shot_ids:ids}).catch(err=>message.textContent=err.message);}); rows.append(row); }
+        const b=button(`${i+1}. ${s.title || '镜头'} · ${s.narrative_duration_ms/1000}s / 生成 ${s.generation_duration_ms/1000}s`,()=>{e.selected=s.shot_id; fillVideo(s); render();}); b.setAttribute('aria-pressed',String(e.selected===s.shot_id)); row.append(b); if (!readonly) {row.append(button('↑',()=>reorder(s.shot_id,-1)),button('↓',()=>reorder(s.shot_id,1)));} row.addEventListener('dragstart',event=>event.dataTransfer.setData('text/plain',s.shot_id)); row.addEventListener('dragover',event=> {if (!readonly) event.preventDefault();}); row.addEventListener('drop',event=> {event.preventDefault(); if(readonly)return; const ids=r.shots.map(s=>s.shot_id), from=ids.indexOf(event.dataTransfer.getData('text/plain')),to=ids.indexOf(s.shot_id); if(from<0 || from===to)return; ids.splice(to,0,ids.splice(from,1)[0]); edit('reorder',{shot_ids:ids}).catch(err=>message.textContent=err.message);}); if (!readonly && window.IWAssetActions) window.IWAssetActions.dropzone(row, async asset=>{
+          if(asset.media_type!=='image' || asset.project_id!==e.project || asset.workspace_id!==host.state.account.workspace_id || asset.subproject_id!==r.subproject_id) throw new Error('只能引用当前项目和工作空间的图片');
+          if(e.dirty && e.selected!==s.shot_id) throw new Error('请先保存当前分镜的编辑，再向其他镜头添加素材');
+          if(e.selected!==s.shot_id) {e.selected=s.shot_id;fillVideo(s);render();} else e.boundShot=s.shot_id;
+          window.IWStoryboard.attachAssets([e.assets.find(a=>a.artifact_id===asset.artifact_id) || asset],window.IWStoryboard.assetTarget());
+        },host.notice); rows.append(row); }
       const s=selected(); if (!s) { if (!readonly) content.append(button('添加镜头',()=>edit('add',{changes:{title:'新镜头',narrative_duration_ms:5000,generation_duration_ms:5000,video_model_id:'h3',aspect_ratio:'16:9'}}))); return; }
       if(s.duration_compatibility?.message) content.append(node('p',s.duration_compatibility.message,s.duration_compatibility.supported === false ? 'storyboard-conflict' : 'field-hint'));
       const fields=node('div',undefined,'storyboard-options'); const values={}; for(const [k,label] of [['title','标题'],['scene_id','场景 ID'],['visual_description','画面'],['action','动作'],['camera_framing','景别'],['camera_movement','运镜'],['emotion','情绪'],['dialogue','对白'],['voiceover','旁白'],['image_prompt','图片提示词'],['video_prompt','视频提示词'],['duration_reason','时长依据'],['aspect_ratio','比例'],['video_model_id','视频模型']]) values[k]=field(fields,label,k,s[k] || '',['visual_description','video_prompt','image_prompt','dialogue','voiceover'].includes(k)?'textarea':'text'); values.narrative_duration_ms=field(fields,'叙事时长（秒）','narrative_duration_ms',s.narrative_duration_ms/1000,'number'); values.generation_duration_ms=field(fields,'生成时长（秒）','generation_duration_ms',s.generation_duration_ms/1000,'number');
       const refs=node('div',undefined,'storyboard-options'); fields.append(refs); const checked=[]; for (const a of e.assets) { const label=node('label',undefined,'storyboard-check');const cb=node('input');cb.type='checkbox';cb.checked=(s.reference_artifact_ids || []).includes(a.artifact_id);cb.value=a.artifact_id;label.append(cb,node('span',a.title || a.filename || a.artifact_id));refs.append(label);checked.push(cb); }
       for(const k of ['start_frame_artifact_id','end_frame_artifact_id']) {const choices=[['','无'],...e.assets.map(a=>[a.artifact_id,a.title || a.filename || a.artifact_id])]; if(s[k] && !e.assets.some(a=>a.artifact_id===s[k])) choices.push([s[k],'素材缺失 · '+s[k]]); values[k]=select(fields,k==='start_frame_artifact_id'?'首帧 Artifact':'尾帧 Artifact',k,choices);values[k].value=s[k] || '';}
+      e.fieldValues=values;e.referenceContainer=refs;e.referenceChecks=checked;
       const missing=(s.reference_artifact_ids || []).filter(id=>!e.assets.some(a=>a.artifact_id===id && a.available!==false)); if(missing.length) fields.append(node('p','参考图缺失，保存时保留原引用：'+missing.join('、'),'storyboard-conflict'));
       for(const input of fields.querySelectorAll('input,textarea,select')) input.disabled=readonly; content.append(fields); const actions=node('div',undefined,'storyboard-toolbar');content.append(actions);
       if(!readonly) { actions.append(button('保存选中镜头',()=>{const changes={};for(const [k,input] of Object.entries(values)) changes[k]=k.endsWith('_duration_ms')?Math.round(Number(input.value)*1000):input.value; changes.reference_artifact_ids=[...checked.filter(i=>i.checked).map(i=>i.value),...missing];return edit('update',{shot_id:s.shot_id,changes});}),button('添加镜头',()=>edit('add',{changes:{title:'新镜头',narrative_duration_ms:5000,generation_duration_ms:5000,video_model_id:s.video_model_id,aspect_ratio:s.aspect_ratio}})),button('删除选中镜头',()=>edit('delete',{shot_id:s.shot_id})),button('均分为两镜头',()=>edit('split',{shot_id:s.shot_id,parts:[{narrative_duration_ms:Math.floor(s.narrative_duration_ms/2)},{narrative_duration_ms:s.narrative_duration_ms-Math.floor(s.narrative_duration_ms/2)}]})));

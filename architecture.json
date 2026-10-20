@@ -17,7 +17,8 @@
         "atomic_files",
         "image_status",
         "scheduling",
-        "media_validation"
+        "media_validation",
+        "video_models"
       ],
       "may_import": [
         "foundation"
@@ -67,7 +68,8 @@
         "foundation",
         "storage",
         "identity",
-        "image_backend"
+        "image_backend",
+        "assets"
       ]
     },
     "projects": {
@@ -101,7 +103,8 @@
         "image_backend",
         "execution",
         "projects",
-        "images"
+        "images",
+        "assets"
       ]
     },
     "scripts": {
@@ -154,7 +157,8 @@
       ],
       "may_import": [
         "foundation",
-        "storage"
+        "storage",
+        "assets"
       ]
     },
     "operations": {
@@ -192,7 +196,8 @@
         "pipeline",
         "operations",
         "http",
-        "storyboards"
+        "storyboards",
+        "assets"
       ]
     },
     "accounts_http": {
@@ -233,6 +238,16 @@
         "projects",
         "scripts",
         "storyboards"
+      ]
+    },
+    "assets": {
+      "modules": [
+        "asset_library",
+        "image_references"
+      ],
+      "may_import": [
+        "foundation",
+        "storage"
       ]
     }
   },

@@ -5,7 +5,7 @@
     return async function api(path, options = {}) {
       const headers = new Headers(options.headers || {});
       const workspaceId = getWorkspaceId();
-      if (workspaceId) headers.set('X-Workspace-ID', workspaceId);
+      if (workspaceId && !headers.has('X-Workspace-ID')) headers.set('X-Workspace-ID', workspaceId);
       if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
       if (options.method && options.method !== 'GET') headers.set('X-Workbench-CSRF', getCsrfToken());
       let response;

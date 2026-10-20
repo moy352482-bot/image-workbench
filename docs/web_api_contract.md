@@ -26,3 +26,11 @@ ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size
 持久化请求ID：保存任务的request_id跨网络重试不变；请求进行时禁用按钮。多个标签页即使request_id不同，后端也会按task_id去重执行。失败重试使用当前job_id（历史任务无job时使用last_execution_id）作为retry_of。
 
 点击任意输出“基于此图继续修改”：切换到该图所属项目，建立新的编辑草稿，将artifact_id放入base_artifact_id并展示基底预览；不直接执行。所有历史版本都可作为分支基底。
+# Asset UX 补充（2026-10-20）
+
+- `GET/POST /api/subprojects/{subproject_id}/assets` 列出或上传当前子项目图片。上传使用 multipart `files`；后台校验图片内容、每张配置上限、每批 1–9 张与 40 MiB 总量。同子项目相同内容返回已有 Artifact ID。权限仍由当前 Account/Workspace 校验。
+- `POST /api/video/projects/from-subproject` 用 `subproject_id` 获取或创建指向同一 MainProject/SubProject 的视频项目。
+- `GET/POST /api/video/projects/{project_id}/tray` 读取或调整暂存引用。POST 字段为 `artifact_id`、`media_type`、`action`（`add`/`remove`）及可选 `shot_id`；移出不删除原素材。
+- `POST /api/video/projects/{project_id}/shots/{shot_id}/clip` 以 `source_shot_id`、`artifact_id` 绑定同项目已完成视频；不能覆盖正在执行或已有成片的镜头。
+- `POST /api/scripts/tasks` 的 `quote_signature` 可省略。服务端仍从当前 Registry 计算真实价格并执行额度、模型可用性和幂等校验；若传入签名，继续校验签名有效性。旧客户端行为兼容，客户端提交的未知价格字段仍被拒绝。
+

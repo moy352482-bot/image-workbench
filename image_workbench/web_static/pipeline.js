@@ -2,7 +2,7 @@
   'use strict';
   const { state, api, refresh, notice, busy, mediaURL, el, uuid, ensureProject } = window.IWVideo;
   const $ = id => document.getElementById(id);
-  const p = { id: null, data: null, config: null, quote: null, imageRequest: uuid(), scriptRequest: uuid(), quoteBody: '', loading: false, imageRefs: [], runRequests: new Map(), revision: 0 };
+  const p = { id: null, data: null, config: null, quote: null, imageRequest: uuid(), scriptRequest: uuid(), quoteBody: '', quoteSequence: 0, loading: false, imageRefs: [], runRequests: new Map(), revision: 0 };
   const labels = { queued: '排队中', running: '生成中', archiving: '保存中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
   const stages = ['image', 'script', 'video'];
   const panels = ['pipelineImages', 'pipelineScripts', 'pipelineVideos'];
@@ -74,13 +74,51 @@
   function option(select, value, text, disabled = false) {
     const item = el('option', '', text); item.value = value; item.disabled = disabled; select.append(item);
   }
+  function localScriptEstimate() {
+    return window.IWScriptPricing.estimate(p.config, $('pipelineScriptModel').value, $('pipelineScriptThinking').value, state.account?.credits, $('pipelineScriptType').value);
+  }
+  function scriptReady() { return Boolean(p.config && $('pipelineScriptRequest').value.trim() && $('pipelineScriptTemplate').value); }
+  function updateScriptPrice() {
+    let input; try { input = body(); } catch (_) { input = null; }
+    const current = input && p.quoteBody === JSON.stringify(input) ? p.quote : null;
+    const estimate = localScriptEstimate(), needsQuote = !estimate || Boolean(input?.storyboard_options);
+    $('pipelineScriptPrice').textContent = current ? `${current.display_name} / ${current.thinking_level} · 本次 1 条：${window.IWScriptPricing.priceText(current.price)} · 当前余额：${current.remaining_credit === null ? '无限' : current.remaining_credit + ' 积分'}${current.storyboard_quote ? ' · 分镜：' + window.IWScriptPricing.priceText(current.storyboard_quote.price) : ''}${current.shortfall ? '。积分不足，本次需要 ' + (current.total_estimated_credit ?? current.price) + ' 积分，当前剩余 ' + current.remaining_credit + ' 积分。' : ''}` : window.IWScriptPricing.summary(estimate);
+    const allowed = estimate ? estimate.can_generate && (!current || current.can_generate) : current?.can_generate;
+    $('pipelineScriptGenerate').disabled = Boolean(p.scriptBusy || !scriptReady() || !allowed || (needsQuote && !current?.can_generate) || (current?.warnings?.length && !$('pipelineScriptWarningsAccepted').checked));
+    $('pipelineScriptGenerate').textContent = p.scriptBusy ? '正在提交…' : '开始生成';
+  }
   function invalidateQuote() {
-    notice('');
-    p.quote = null; p.quoteBody = ''; p.scriptRequest = uuid();
-    $('pipelineScriptGenerate').disabled = true;
-    $('pipelineScriptGenerate').textContent = '生成 TXT';
-    $('pipelineScriptPrice').textContent = '填写需求后查看报价';
+    // A textarea blur emits change after input; unchanged data must not disable the clicked button.
+    try { if (p.quote && p.quoteBody === JSON.stringify(body())) { updateScriptPrice(); return; } } catch (_) {}
+    notice(''); p.quote = null; p.quoteBody = ''; p.quoteSequence = (p.quoteSequence || 0) + 1; clearTimeout(p.quoteTimer);
     $('pipelineScriptWarning').hidden = true; $('pipelineScriptWarningsAccepted').checked = false;
+    updateScriptPrice();
+    if (scriptReady() && p.data) p.quoteTimer = setTimeout(() => requestScriptQuote().catch(error => notice(error.message,true)),450);
+  }
+  async function requestScriptQuote() {
+    if (!scriptReady() || !p.data) return null;
+    const input = body(), id = p.id, sequence = ++p.quoteSequence;
+    try {
+      const result = await api('/api/scripts/quote', { method: 'POST', body: JSON.stringify(input) });
+      if (p.id !== id || sequence !== p.quoteSequence || JSON.stringify(body()) !== JSON.stringify(input)) return null;
+      p.quote = result; p.quoteBody = JSON.stringify(input); window.IWStoryboard?.showQuote('pipeline', result.storyboard_quote);
+      $('pipelineScriptWarning').hidden = !result.warnings.length;
+      $('pipelineScriptWarning').querySelector('span').textContent = result.warnings.join(' ') + ' 我已了解，仍按当前模型生成。';
+      updateScriptPrice(); return result;
+    } catch(error) {
+      if (p.id !== id || sequence !== p.quoteSequence) return null;
+      updateScriptPrice();
+      if (!localScriptEstimate() || input.storyboard_options) $('pipelineScriptPrice').textContent = error.message;
+      return null;
+    }
+  }
+  function scriptPendingId(input) {
+    const key = 'video-script.pending.' + state.account.account_id + '.' + state.account.workspace_id + '.' + p.id;
+    const fingerprint = JSON.stringify(input); let pending;
+    try { pending = JSON.parse(localStorage.getItem(key)); } catch (_) {}
+    if (!pending || pending.fingerprint !== fingerprint) pending = {fingerprint,request_id:uuid()};
+    try { localStorage.setItem(key,JSON.stringify(pending)); } catch (_) {}
+    return {key,request_id:pending.request_id};
   }
   function templates() {
     const previous = $('pipelineScriptTemplate').value;
@@ -94,15 +132,15 @@
     const model = p.config?.models.find(m => m.model_id === $('pipelineScriptModel').value);
     select.disabled = !model;
     if (!model) { option(select, '', '根据需求推荐'); return; }
-    for (const level of model.thinking_levels) option(select, level.id, `${level.display_name} · ${level.price == null ? '暂未定价' : level.price + ' 积分'}`);
+    for (const level of model.thinking_levels) option(select, level.id, `${level.display_name} · ${window.IWScriptPricing.priceText(level.price)}`, model.available === false || !Number.isInteger(level.price));
     select.value = [...select.options].some(o => o.value === previous) ? previous : [...select.options].some(o => o.value === 'high') ? 'high' : select.options[0]?.value || '';
   }
   function models() {
     const select = $('pipelineScriptModel'), previous = select.value;
     select.replaceChildren(); option(select, 'recommended', '系统推荐');
-    for (const model of p.config?.models || []) option(select, model.model_id, model.display_name + (model.available ? '' : ' · 暂不可用'));
+    for (const model of p.config?.models || []) option(select, model.model_id, model.display_name + (model.available ? '' : ' · 当前模型不可用'), model.available === false);
     select.value = [...select.options].some(o => o.value === previous) ? previous : 'recommended';
-    efforts(); templates();
+    efforts(); templates(); updateScriptPrice();
   }
   function body() {
     if (!p.data) throw new Error('项目正在初始化，请稍候');
@@ -148,10 +186,11 @@
       for (const artifact of task.outputs || []) {
         const block = el('div', 'pipeline-image-result'), image = el('img'); image.src = mediaURL(artifact.url); image.alt = task.name || '生成图片';
         const download = el('a', 'text-button', '下载图片'); download.href = mediaURL(artifact.download_url);
+        image.addEventListener('click', () => window.IWAssetActions.preview({...artifact,media_type:'image'}));
         block.append(image, action('加入参考图', async () => {
           await api(`/api/video/projects/${id}/images/from-artifact`, { method: 'POST', body: JSON.stringify({ artifact_id: artifact.artifact_id }) });
           notice('图片已加入项目参考图库，可用于 H3 视频生成。'); if (p.id === id) await refresh();
-        }), download); card.append(block);
+        }), download, imageActions(artifact)); card.append(block);
       }
       list.append(card);
     }
@@ -176,6 +215,11 @@
           notice('已保存为当前项目脚本，可以继续第三步视频创作。'); if (p.id === id) await refresh();
         }, false));
         const download = el('a', 'text-button', '下载 TXT'); download.href = mediaURL(`/api/scripts/tasks/${task.task_id}/download`); actions.append(download);
+        const editor = `/scripts?${new URLSearchParams({workspace_id:state.account.workspace_id,main_project_id:data.main_project_id,subproject_id:data.subproject_id,task_id:task.task_id,action:'edit'})}`;
+        actions.append(window.IWAssetActions.menu([{label:'继续修改',href:editor},
+          ...(window.IWStoryboard ? [{label:'生成分镜',run:()=>window.IWStoryboard.planScript(task,'pipeline')}] : []),
+          ...(p.config?.capabilities?.creative_resources ? [{label:'保存为模板',href:editor.replace('action=edit','action=template')}] : []),
+          {label:'下载 TXT',href:download.href}],notice));
       }
       card.append(actions); list.append(card);
     }
@@ -187,6 +231,9 @@
       const data = await api(`/api/video/projects/${id}/pipeline`, initial ? { method: 'POST', body: '{}' } : {});
       if (p.id !== id || p.revision !== revision) return;
       p.data = data;
+      updateScriptPrice();
+      await reloadTray();
+      await requestedAsset();
       taskIndicator('image', data.image_tasks);
       taskIndicator('script', data.script_tasks);
       const imageSignature = JSON.stringify(data.image_tasks);
@@ -199,7 +246,7 @@
   }
   function resetProject(preserveDraft = false) {
     p.revision++; p.id = null; p.data = null; p.loading = false; p.imageRefs = []; p.imageRequest = uuid();
-    p.refSignature = ''; p.imageSignature = ''; p.scriptSignature = '';
+    p.refSignature = ''; p.imageSignature = ''; p.scriptSignature = ''; p.traySignature = ''; p.tray = []; $('assetTrayGrid').replaceChildren(); $('assetTrayCount').textContent = '0';
     if (!preserveDraft) { $('pipelineImageForm').reset(); $('pipelineScriptForm').reset(); showStage(initialProjectView ? stageFromURL() : 'image', !initialProjectView); document.querySelector('[data-pipeline-tab="image"][data-mode="upload"]').click(); }
     invalidateQuote(); $('pipelineImageReferences').replaceChildren();
     $('pipelineImageTasks').replaceChildren(); $('pipelineScriptTasks').replaceChildren();
@@ -231,47 +278,200 @@
       notice('生图任务已保存。核对下方积分后点击“生成图片”。'); if (p.id === id) await reload();
     });
   });
-  $('pipelineImageReferenceFiles').addEventListener('change', async event => {
-    const input = event.target, files = [...input.files];
-    if (!files.length) return;
-    input.disabled = true;
-    try {
-      if (files.length > 9 || files.some(f => f.size > 20 * 1024 * 1024) || files.reduce((n, f) => n + f.size, 0) > 40 * 1024 * 1024) throw new Error('最多上传 9 张，单张 20 MB，本次合计 40 MB');
+  function assetContext() {
+    const storyboard = currentStage === 'video' ? window.IWStoryboard?.assetTarget() : null;
+    return { storyboard, id: state.project?.project_id, workspace: state.account?.workspace_id, revision: state.draftRevision,
+      purpose: storyboard ? 'storyboard' : currentStage === 'image' ? (document.querySelector('[data-pipeline-pane="image:generate"]').hidden ? 'library' : 'reference') : currentStage === 'video' && !document.querySelector('[data-pipeline-pane="video:generate"]').hidden ? 'video' : null };
+  }
+  function sameAssetContext(context, id) { return state.account?.workspace_id === context.workspace && state.project?.project_id === id && state.draftRevision === context.revision; }
+  async function attachAssets(assets, purpose, context, id) {
+    if (!sameAssetContext(context, id)) return notice('图片已保存到原项目；当前页面的素材选择未改变。');
+    if (purpose === 'storyboard' || (context.storyboard && ['video','first','last'].includes(purpose))) { window.IWStoryboard.attachAssets(assets,context.storyboard,purpose); return; }
+    const ids = assets.map(asset => asset.asset_id || asset.artifact_id);
+    if (purpose === 'reference') {
+      const next = [...new Set([...p.imageRefs, ...ids])];
+      if (next.length > 8) throw new Error('最多选择 8 张生图参考；图片已入库，请减少选择后重试');
+      p.imageRefs = next; p.imageRequest = uuid(); p.refSignature = ''; refs(state.project);
+    } else if (['video', 'first', 'last'].includes(purpose)) {
+      const order = [...state.referenceOrder];
+      if (purpose === 'first' || purpose === 'last') {
+        const index = purpose === 'first' ? 0 : 1;
+        if (ids.length !== 1 || (order[index] && order[index] !== ids[0])) throw new Error('首尾帧一次只能指定一张；已有图片不会覆盖，请先取消对应选择');
+        if (index === 1 && !order[0]) throw new Error('请先选择首帧，再设置尾帧；图片已保存到项目素材库');
+        if (order.includes(ids[0]) && order[index] !== ids[0]) throw new Error('同一张图片已用于另一帧，请选择其他素材');
+        if (order.length > 2) throw new Error('当前已选多张参考图，请先减少选择再设置首尾帧');
+        order[index] = ids[0]; $('videoMode').value = 'I2V';
+      } else {
+        for (const value of ids) if (!order.includes(value)) order.push(value);
+        const max = $('videoMode').value === 'I2V' ? 2 : 9;
+        if (order.length > max) throw new Error(`当前模式最多选择 ${max} 张图片；图片已保存，请减少选择后重试`);
+        if ($('videoMode').value === 'T2V') $('videoMode').value = 'R2V';
+      }
+      state.referenceOrder = order; state.shotRequest = uuid(); window.IWVideo.renderAssets(state.project);
+    }
+    notice(purpose === 'library' ? '图片已保存到项目素材库。' : '图片已添加到当前任务，已有素材已保留。');
+  }
+  window.IWImageInput.configure({ notice, context: assetContext,
+    limits: () => ({count: 9, single: state.config?.max_asset_bytes || 20*1024*1024, total: 40*1024*1024}),
+    async receive(files, purpose, context) {
+      if (state.draftRevision !== context.revision || state.project?.project_id !== context.id) throw new Error('项目已切换，请在当前项目重新添加');
       const id = await ensurePipeline();
-      const form = new FormData(); for (const file of files) form.append('files', file);
-      const result = await api(`/api/video/projects/${id}/assets`, { method: 'POST', body: form });
-      if (p.id === id) { p.imageRefs = [...new Set([...p.imageRefs, ...result.assets.map(a => a.asset_id)])].slice(0, 8); p.imageRequest = uuid(); p.refSignature = ''; await refresh(); }
-      notice('参考图已上传并勾选，可用于本次生图，也可用于后续视频。');
-    } catch (error) { notice(error.message, true); } finally { input.disabled = false; input.value = ''; }
+      if (context.id == null) context.revision = state.draftRevision;
+      if (!sameAssetContext(context, id)) throw new Error('项目已切换，请重新添加');
+      const form = new FormData(); files.forEach(file => form.append('files', file));
+      const result = await api(`/api/video/projects/${id}/assets`, {method:'POST',body:form,headers:{'X-Workspace-ID':context.workspace}});
+      if (sameAssetContext(context,id)) {
+        const project = await api(`/api/video/projects/${id}`);
+        if (sameAssetContext(context,id)) { state.project = project; window.IWVideo.renderAssets(project); refs(project); await attachAssets(result.assets,purpose,context,id); }
+      } else notice('图片已保存到原项目。当前页面的素材选择未改变。');
+    }
   });
+  window.IWImageInput.bind({input:$('videoAssets'),zone:document.querySelector('[data-pipeline-pane="image:upload"]'),purpose:'library'});
+  window.IWImageInput.bind({input:$('pipelineImageReferenceFiles'),zone:$('pipelineImageForm'),purpose:'reference'});
+  window.IWImageInput.bind({zone:$('videoShotForm'),purpose:'video'});
+  $('pipelineChooseImages').addEventListener('click', async () => {
+    try {
+      const id = await ensurePipeline(), context = assetContext();
+      const result = await api(`/api/subprojects/${p.data.subproject_id}/assets`);
+      const assets = await window.IWImageInput.selectAssets(result.assets);
+      if (!sameAssetContext(context,id) || !assets.length) return;
+      for (const artifact of assets) await api(`/api/video/projects/${id}/images/from-artifact`,{method:'POST',body:JSON.stringify({artifact_id:artifact.artifact_id})});
+      const project = await api(`/api/video/projects/${id}`);
+      if (!sameAssetContext(context,id)) return;
+      state.project = project; window.IWVideo.renderAssets(project); p.refSignature=''; refs(project);
+      await attachAssets(assets,context.purpose || 'library',context,id);
+    } catch(error) { notice(error.message,true); }
+  });
+  const assetKey = asset => asset.artifact_id || asset.asset_id;
+  function imageView(asset) { return {...asset, artifact_id:assetKey(asset), media_type:'image', filename:asset.filename || '项目图片', url:mediaURL(asset.url), download_url:mediaURL(asset.download_url || asset.url)}; }
+  async function useImage(asset, purpose) {
+    const id = await ensurePipeline(), context = assetContext();
+    if (asset.subproject_id && asset.subproject_id !== p.data.subproject_id) throw new Error('素材不属于当前子项目');
+    if (!asset.asset_id || asset.artifact_id) await api(`/api/video/projects/${id}/images/from-artifact`,{method:'POST',body:JSON.stringify({artifact_id:assetKey(asset)})});
+    const project = await api(`/api/video/projects/${id}`);
+    if (!sameAssetContext(context,id)) return;
+    state.project = project; window.IWVideo.renderAssets(project); p.refSignature=''; refs(project);
+    await attachAssets([asset],purpose,context,id);
+    if (purpose === 'reference') { showStage('image'); document.querySelector('[data-pipeline-tab="image"][data-mode="generate"]').click(); }
+    else if (purpose !== 'library') { showStage('video'); document.querySelector('[data-pipeline-tab="video"][data-mode="generate"]').click(); }
+  }
+  function imageEditorURL(asset, purpose='edit') {
+    const url = new URL('/', location.origin);
+    url.search = new URLSearchParams({workspace_id:state.account.workspace_id,main_project_id:p.data.main_project_id,subproject_id:p.data.subproject_id,asset_id:assetKey(asset),asset_action:purpose});
+    return url.pathname + url.search;
+  }
+  async function canonicalVideo(asset) {
+    if (asset.media_type !== 'video' || asset.artifact_id) return asset;
+    await reloadTray();
+    const found=p.tray.find(item=>item.media_type==='video' && item.shot_id===asset.shot_id);
+    if (!found) throw new Error('视频素材尚未就绪，请刷新后重试');
+    return {...asset,artifact_id:found.artifact_id};
+  }
+  async function trayChange(asset, actionName) {
+    asset=await canonicalVideo(asset);
+    const id=p.id; if (!id) return;
+    await api(`/api/video/projects/${id}/tray`,{method:'POST',body:JSON.stringify({artifact_id:assetKey(asset),media_type:asset.media_type || 'image',action:actionName,...(asset.shot_id ? {shot_id:asset.shot_id}: {})})});
+    if(p.id===id) await reloadTray();
+    notice(actionName==='remove' ? '已移出暂存区，原始素材仍在项目中。' : '素材已加入暂存区。');
+  }
+  function imageActions(asset, inTray=false) {
+    const item=imageView(asset);
+    const actions=[{label:'预览',run:()=>window.IWAssetActions.preview(item)}];
+    if(asset.artifact_id) actions.push({label:'继续修改',run:async()=>{await ensurePipeline(); location.assign(imageEditorURL(asset));}}, {label:'设为参考图',run:()=>useImage(asset,'reference')});
+    actions.push({label:'用于视频生成',run:()=>useImage(asset,'video')},{label:'设为首帧',run:()=>useImage(asset,'first')},{label:'设为尾帧',run:()=>useImage(asset,'last')});
+    if(asset.artifact_id) actions.push({label:inTray?'移出暂存区':'加入素材暂存区',run:()=>trayChange(item,inTray?'remove':'add')});
+    actions.push({label:'下载',href:item.download_url});
+    return window.IWAssetActions.menu(actions,notice);
+  }
+  async function bindVideo(asset) {
+    asset=await canonicalVideo(asset);
+    const id=p.id, context=assetContext();
+    const targets=state.project.shots.filter(shot=>shot.shot_id!==asset.shot_id && shot.status==='draft' && !shot.bound_clip);
+    if(!targets.length) throw new Error('请先保存一个尚未生成、未绑定视频的镜头，再绑定片段');
+    const sid=await window.IWImageInput.choose('选择要绑定视频的镜头',targets.map(shot=>({value:shot.shot_id,label:shot.name})));
+    if(!sid || !sameAssetContext(context,id)) return;
+    await api(`/api/video/projects/${id}/shots/${sid}/clip`,{method:'POST',body:JSON.stringify({source_shot_id:asset.shot_id,artifact_id:asset.artifact_id})});
+    await refresh(); notice('视频片段已绑定到镜头，未复制原文件。');
+  }
+  function videoActions(asset,inTray=false) {
+    return window.IWAssetActions.menu([
+      {label:'预览',run:()=>window.IWAssetActions.preview(asset)},
+      ...[false,true].map(last=>({label:last?'提取尾帧':'提取首帧',run:async()=>{
+        const context=assetContext(),id=p.id;
+        const file=await window.IWAssetActions.extractFrame(asset,last);
+        if(!sameAssetContext(context,id)) throw new Error('项目已切换，请重新提取画面');
+        await window.IWImageInput.receive([file],'library');
+      }})),
+      {label:'绑定镜头',run:()=>bindVideo(asset)},
+      {label:inTray?'移出暂存区':'加入素材暂存区',run:()=>trayChange(asset,inTray?'remove':'add')},
+      {label:'下载',href:asset.download_url}
+    ],notice);
+  }
+  async function reloadTray() {
+    const id=p.id,revision=p.revision; if(!id || !p.data) return;
+    const result=await api(`/api/video/projects/${id}/tray`);
+    if(id!==p.id || revision!==p.revision) return;
+    p.tray=result.assets;
+    const signature=JSON.stringify(result); if(signature===p.traySignature) return;
+    p.traySignature=signature; $('assetTrayCount').textContent=String(result.assets.length); $('assetTrayGrid').replaceChildren();
+    for(const asset of result.assets) {
+      const card=el('article','asset-tray-card'); card.dataset.artifactId=asset.artifact_id;
+      const preview=el('button'); preview.type='button'; preview.setAttribute('aria-label',`预览 ${asset.filename}`);
+      if(asset.media_type==='image') { const img=el('img'); img.src=mediaURL(asset.url); img.alt=asset.filename; img.loading='lazy'; preview.append(img); }
+      else preview.textContent='▶ 视频片段';
+      preview.addEventListener('click',()=>window.IWAssetActions.preview(asset));
+      card.append(preview,el('p','',asset.filename),asset.media_type==='image'?imageActions(asset,true):videoActions(asset,true));
+      window.IWAssetActions.draggable(card,asset,{project_id:id,subproject_id:p.data.subproject_id,workspace_id:state.account.workspace_id});
+      $('assetTrayGrid').append(card);
+    }
+    if(!result.assets.length) $('assetTrayGrid').append(el('p','field-hint','上传、生成或主动加入的素材会出现在这里。'));
+  }
+  async function droppedAsset(asset,purpose) {
+    if(asset.workspace_id!==state.account.workspace_id || asset.project_id!==p.id || asset.subproject_id!==p.data?.subproject_id) throw new Error('只能引用当前项目和工作空间的素材');
+    const item=p.tray.find(item=>item.artifact_id===asset.artifact_id);
+    if(!item || item.media_type!=='image') throw new Error('此输入区只接受当前项目图片');
+    await useImage(item,purpose);
+  }
+  window.IWAssetActions.dropzone($('pipelineImageReferences'),asset=>droppedAsset(asset,'reference'),notice);
+  window.IWAssetActions.dropzone($('videoReferenceChoices'),asset=>droppedAsset(asset,'video'),notice);
+  document.addEventListener('asset-library-change',()=>reloadTray().catch(error=>notice(error.message,true)));
+  let handoffDone=false;
+  async function requestedAsset() {
+    if(handoffDone || !p.data) return;
+    const params=new URL(location.href).searchParams, aid=params.get('asset_id'); if(!aid) return;
+    handoffDone=true;
+    const asset=p.tray.find(item=>item.artifact_id===aid && item.media_type==='image');
+    if(!asset) return notice('传入的图片不属于当前项目，请从暂存区重新选择。',true);
+    const purpose=params.get('asset_action'); await useImage(asset,['video','first','last','reference'].includes(purpose)?purpose:'video');
+  }
+  window.IWAssetTray={imageActions,videoActions};
   $('pipelineScriptType').addEventListener('change', templates);
   $('pipelineScriptModel').addEventListener('change', efforts);
   $('pipelineScriptForm').addEventListener('input', event => { if (event.target !== $('pipelineScriptWarningsAccepted')) invalidateQuote(); });
   $('pipelineScriptForm').addEventListener('change', event => { if (event.target !== $('pipelineScriptWarningsAccepted')) invalidateQuote(); });
-  $('pipelineScriptQuote').addEventListener('click', event => busy(event.currentTarget, async () => {
-    if (!$('pipelineScriptRequest').value.trim()) throw new Error('请填写脚本创作需求');
-    await ensurePipeline();
-    const input = body(), id = p.id;
-    if (!input.input_request) throw new Error('请填写脚本创作需求');
-    p.quote = null; $('pipelineScriptGenerate').disabled = true;
-    const result = await api('/api/scripts/quote', { method: 'POST', body: JSON.stringify(input) });
-    if (p.id !== id || JSON.stringify(body()) !== JSON.stringify(input)) return;
-    p.quote = result; p.quoteBody = JSON.stringify(input); window.IWStoryboard?.showQuote('pipeline', result.storyboard_quote);
-    notice('');
-    $('pipelineScriptPrice').textContent = `TXT 阶段：${result.display_name} / ${result.thinking_level} · 本次 ${result.price} 积分${result.shortfall ? ' · 积分不足，还差 ' + result.shortfall : ''}`;
-    $('pipelineScriptWarning').hidden = !result.warnings.length; $('pipelineScriptWarning').querySelector('span').textContent = result.warnings.join(' ') + ' 我已了解，仍按当前模型生成。';
-    $('pipelineScriptWarningsAccepted').checked = false;
-    $('pipelineScriptGenerate').textContent = `生成 TXT · ${result.price} 积分`;
-    $('pipelineScriptGenerate').disabled = !result.can_generate || result.warnings.length > 0;
-  }));
-  $('pipelineScriptWarningsAccepted').addEventListener('change', () => { $('pipelineScriptGenerate').disabled = !p.quote?.can_generate || (p.quote.warnings.length > 0 && !$('pipelineScriptWarningsAccepted').checked); });
-  $('pipelineScriptForm').addEventListener('submit', event => {
-    event.preventDefault(); busy(event.submitter, async () => {
-      if (!p.quote || JSON.stringify(body()) !== p.quoteBody) throw new Error('请先查看当前需求的报价');
-      const id = p.id;
-      await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...body(), request_id: p.scriptRequest, quote_signature: p.quote.quote_signature, warnings_confirmed: $('pipelineScriptWarningsAccepted').checked, storyboard_confirmed: Boolean(body().storyboard_options) }) });
+  $('pipelineScriptWarningsAccepted').addEventListener('change', updateScriptPrice);
+  $('pipelineScriptForm').addEventListener('submit', async event => {
+    event.preventDefault(); if (p.scriptBusy || !$('pipelineScriptForm').reportValidity()) return;
+    p.scriptBusy = true; clearTimeout(p.quoteTimer);
+    const controls = [...$('pipelineScriptForm').querySelectorAll('input,textarea,select,button')]; controls.forEach(control => control.disabled = true); updateScriptPrice();
+    try {
+      await ensurePipeline();
+      const input = body(), id = p.id;
+      let current = p.quoteBody === JSON.stringify(input) ? p.quote : null;
+      if (input.selection_mode !== 'manual' || input.storyboard_options) {
+        if (!current) current = await requestScriptQuote();
+        if (!current?.can_generate) return;
+      } else if (!localScriptEstimate()?.can_generate) return;
+      if (current && !current.can_generate) return;
+      if (current?.warnings?.length && !$('pipelineScriptWarningsAccepted').checked) { $('pipelineScriptWarning').hidden = false; return; }
+      const pending = scriptPendingId(input);
+      await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...input, request_id: pending.request_id,
+        ...(current?.quote_signature ? {quote_signature:current.quote_signature} : {}), warnings_confirmed: $('pipelineScriptWarningsAccepted').checked,
+        storyboard_confirmed: Boolean(input.storyboard_options) }) });
+      try { localStorage.removeItem(pending.key); } catch (_) {}
       invalidateQuote(); notice('脚本已提交。完成后可预览，并点击“用于当前项目”。'); if (p.id === id) await reload(); await refresh();
-    }).finally(() => { if (!p.quote) $('pipelineScriptGenerate').disabled = true; });
+    } catch(error) { notice(error.message,true); await requestScriptQuote(); }
+    finally { p.scriptBusy = false; controls.forEach(control => control.disabled = false); $('pipelineScriptThinking').disabled = $('pipelineScriptModel').value === 'recommended'; updateScriptPrice(); }
   });
   async function uploadFile(input, stage) {
     const file = input.files[0]; if (!file) return;

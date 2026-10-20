@@ -9,7 +9,7 @@ from ..workbench_state import WorkbenchState
 from .guard import LocalRequestGuard
 from ..contracts.images import MAX_UPLOAD_BYTES
 from .errors import install_error_handlers
-from . import projects, tasks, artifacts
+from . import projects, tasks, artifacts, assets
 
 def create_workspace_app(storage: StorageManager | None = None, *, backend="codex", remote_access=None, state=None, guarded=True) -> FastAPI:
     storage = storage or StorageManager()
@@ -27,7 +27,7 @@ def create_workspace_app(storage: StorageManager | None = None, *, backend="code
     templates = Jinja2Templates(directory=directory / "web_templates")
     app.mount("/static", StaticFiles(directory=directory / "web_static"), name="static")
     install_error_handlers(app, storage)
-    for routes in (projects, tasks, artifacts):
+    for routes in (projects, tasks, artifacts, assets):
         routes.install_routes(app, state, storage)
 
     @app.get("/")
@@ -37,7 +37,8 @@ def create_workspace_app(storage: StorageManager | None = None, *, backend="code
         revision = max((directory / "web_static" / name).stat().st_mtime_ns
                        for name in ("workbench.js", "workbench.css", "accounts.css", "image-viewer.js",
                                     "image-viewer.css", "image-comparison.js", "image-comparison.css",
-                                    "workbench-format.js", "workbench-api.js", "workbench-preview.js", "workbench-accounts.js"))
+                                    "workbench-format.js", "workbench-api.js", "workbench-preview.js", "workbench-accounts.js",
+                                    "asset-input.css", "asset-input.js", "asset-actions.js"))
         return templates.TemplateResponse(request=request, name="index.html",
                                           context={"asset_version": str(revision), "remote_mode": state.execution_mode == "remote"},
                                           headers={"Cache-Control": "no-store"})

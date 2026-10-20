@@ -6,17 +6,25 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
-
-def replace_with_retry(source, destination):
-    """Windows readers can briefly deny delete-sharing during an atomic rename."""
-    for attempt in range(8):
+def replace_file(source, destination):
+    """Keep replacement atomic while a Windows reader briefly holds the target."""
+    deadline = time.monotonic() + 1.0
+    delay = 0.01
+    while True:
         try:
             os.replace(source, destination)
             return
         except PermissionError as exc:
-            if os.name != "nt" or getattr(exc, "winerror", None) not in {5, 32, 33} or attempt == 7:
+            # Windows may deny replacement while JSON is being read. Permanent
+            # permissions and errors on other platforms must still surface.
+            if getattr(exc, "winerror", None) not in {5, 32, 33} or time.monotonic() >= deadline:
                 raise
-            time.sleep(min(0.02 * (2 ** attempt), 0.08))
+            time.sleep(delay)
+            delay = min(delay * 2, 0.1)
+
+# Retain the shared helper name used by the concurrently maintained modules.
+replace_with_retry = replace_file
+
 
 def write_bytes(path, data):
     path = Path(path)
@@ -27,7 +35,7 @@ def write_bytes(path, data):
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        replace_file(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -49,7 +57,7 @@ def atomic_bytes(storage, path, data):
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        replace_file(temporary, path)
     finally:
         if temporary is not None:
             storage._cleanup(temporary)

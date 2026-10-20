@@ -19,4 +19,6 @@ jobs:
         with:
           node-version: '24'
       - run: python -m pip install -r requirements-dev.txt
+      - run: python -m playwright install chromium
+      - run: choco install ffmpeg --no-progress -y
       - run: python -X utf8 scripts/verify.py

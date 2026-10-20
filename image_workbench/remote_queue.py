@@ -13,6 +13,7 @@ from .task_runner import CandidateRecord, ExecutionRecord
 from .scheduling import ACTIVE_STATUSES
 from .domain_errors import ConflictError
 from .image_status import FAILURE_MESSAGES
+from .image_references import task_input_artifacts
 
 ID = r"^[0-9a-f]{32}$"
 HASH = r"^[0-9a-f]{64}$"
@@ -51,7 +52,7 @@ class RemoteQueue:
 
     def _manifest(self, job):
         task = self.storage.get_task(job["project_id"], job["task_id"])
-        inputs = [item for item in self.storage.list_task_artifacts(task.project_id, task.task_id) if item.kind == "input"]
+        inputs = task_input_artifacts(self.storage, task.project_id, task.task_id)
         def asset(item):
             return {key: getattr(item, key) for key in ("artifact_id", "sha256", "size_bytes", "format")}
         return {"schema_version": 1, "job_id": job["job_id"], "claim_id": job["claim_id"],

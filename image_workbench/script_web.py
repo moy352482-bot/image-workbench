@@ -55,7 +55,7 @@ def install_scripts(app, get_service, storage, *, remote_mode=False):
     def page(request: Request):
         owner(request)
         revision = max((directory / "web_static" / name).stat().st_mtime_ns
-                       for name in ("workbench.css", "accounts.css", "scripts.css", "scripts.js", "storyboard.css", "storyboard.js"))
+                       for name in ("workbench.css", "accounts.css", "scripts.css", "scripts.js", "storyboard.css", "storyboard.js", "script-pricing.js"))
         return templates.TemplateResponse(request=request, name="scripts.html", context={"asset_version": str(revision)},
                                           headers={"Cache-Control": "no-store"})
 

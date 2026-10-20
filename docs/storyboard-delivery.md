@@ -106,6 +106,8 @@ Shot 包含稳定 `shot_id`、独立 `order`、场景、标题、画面、动作
 
 本轮日志、源码指纹与浏览器截图保留在 `work/storyboard-followup-20261020/`。浏览器在独立临时数据中验证了：只改画幅产生新版本、T2V 切换 I2V 保存首帧 Artifact、不同分镜候选切换后恢复、放弃候选后相同输入产生新任务，以及 v3 指定镜头进入原 VideoStore 草稿。控制台无警告或错误，未启动真实视频任务。
 
+本轮临时服务已关闭，8784 端口不再监听。自动批准审查拒绝递归清理临时目录（仅返回“策略阻止”），因此保留 `C:/Users/win/AppData/Local/Temp/tmpji1rdbzb`；其中仅有本轮 Mock 测试数据，不是生产项目。未重试删除或改用其他工具绕过限制。
+
 初版两阶段 smoke 的 TXT 与分镜均完成，JS/HTTP 错误均为 0；其证据仍保留在 `work/storyboard-planning-20261020/`。初版清理曾被自动批准审查拒绝（仅返回“策略阻止”），`C:/Users/win/AppData/Local/Temp/iw-storyboard-qa-vv69bhjd` 中的旧 Mock 测试数据因此保留，本轮没有重复清理该目录。
 
 追加修改文件为 `storyboard_planner.py`、`storyboard_service.py`、`web_static/storyboard.js`、`tests/test_storyboard_followup.py`、`tests/frontend/storyboard.test.js`、`tests/test_frontend_modules.py`、`scripts/verify.py` 及三份分镜文档。脚本模型、路由和价格配置与初版备份的 SHA-256 均一致。

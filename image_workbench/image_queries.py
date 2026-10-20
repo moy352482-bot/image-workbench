@@ -2,6 +2,7 @@
 from dataclasses import asdict
 from .accounts import CreditCostCalculator
 from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing
+from .image_references import task_input_artifacts
 
 
 class ImageQueries:
@@ -30,7 +31,7 @@ class ImageQueries:
         sub = catalog["subprojects"][placement["subproject_id"]]
         main = catalog["main_projects"][sub["main_project_id"]]
         artifacts = self.state.storage.list_task_artifacts(project_id, task_id)
-        inputs = [item for item in artifacts if item.kind == "input"]
+        inputs = task_input_artifacts(self.state.storage, project_id, task_id)
         outputs = [item for item in artifacts if item.kind == "output"]
         records = self.state.runner.list_executions(project_id, task_id)
         latest = records[-1] if records else None
@@ -77,7 +78,7 @@ class ImageQueries:
                 result.update(status="credit_insufficient", status_label="积分不足")
         if not detail:
             return result
-        valid_options = not options or options["state"] == "ready"
+        valid_options = not options or (options["state"] == "ready" and not options.get("asset_library"))
         result.update(
             inputs=[self.artifact_dto(item, catalog=catalog) for item in inputs], outputs=[self.artifact_dto(item, catalog=catalog) for item in outputs],
             base_image=self.artifact_dto(self.state.storage.get_artifact(task.base_artifact_id), catalog=catalog) if task.base_artifact_id else None,
@@ -115,6 +116,8 @@ class ImageQueries:
                 continue
             try:
                 if self.state.storage.get_task(item["storage_project_id"], item["task_id"]).operation not in {"generate", "edit"}:
+                    continue
+                if (self.state.task_options(item["storage_project_id"], item["task_id"]) or {}).get("asset_library"):
                     continue
                 task = self.task_view(item["storage_project_id"], item["task_id"], detail=False, catalog=catalog)
             except FileNotFoundError:

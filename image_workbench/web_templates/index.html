@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/static/vendor/photoswipe/photoswipe.css">
   <link rel="stylesheet" href="/static/image-viewer.css?v={{ asset_version }}">
   <link rel="stylesheet" href="/static/image-comparison.css?v={{ asset_version }}">
-</head>
+<link rel="stylesheet" href="/static/asset-input.css?v={{ asset_version }}"></head>
 <body>
   <div class="app-shell">
     <aside class="sidebar" aria-label="工作台导航">
@@ -73,7 +73,7 @@
                 <div id="referenceUploadPanel" class="upload-panel">
                   <div class="field-label-row"><span class="field-label">参考图片 <span class="optional">可选 · 最多 8 张</span></span><span id="uploadSizeHint" class="field-hint">PNG、JPG、WEBP</span></div>
                   <label class="dropzone" for="imageInput"><span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v4a1 1 0 001 1h14a1 1 0 001-1v-4"/></svg></span><span><strong>添加图片</strong><small>点击浏览或拖放到这里</small></span><span class="dropzone-limit">单张最大 20 MB</span><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple></label>
-                  <div id="filePreviewList" class="file-preview-list"></div>
+                  <p class="asset-input-help">可在此粘贴图片（Ctrl+V / Cmd+V）或拖拽上传。</p><button type="button" id="chooseProjectImages" class="text-button">选择项目已有图片</button><div id="filePreviewList" class="file-preview-list"></div>
                 </div>
                 <div class="form-footer"><span id="formMessage" class="form-message" role="status"></span><button id="saveTaskButton" class="primary-button" type="submit"><span>保存任务</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4"/></svg></button></div>
               </form>
@@ -106,6 +106,7 @@
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script src="/static/image-viewer.js?v={{ asset_version }}" defer></script>
   <script src="/static/image-comparison.js?v={{ asset_version }}" defer></script>
+  <script src="/static/asset-input.js?v={{ asset_version }}" defer></script><script src="/static/asset-actions.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-format.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-api.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-preview.js?v={{ asset_version }}" defer></script>

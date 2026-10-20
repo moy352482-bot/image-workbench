@@ -2,9 +2,10 @@
   'use strict';
 
   const $ = (selector, root = document) => root.querySelector(selector);
+  const requestedParams = new URL(location.href).searchParams;
   const state = {
     config: null, csrf: '', projects: [], subprojects: [], tasks: [], projectId: '', subprojectId: '', taskId: '', detail: null,
-    overview: null, files: [], baseArtifact: null, polling: 0, busy: false, selectionVersion: 0, projectsLoadVersion: 0,
+    overview: null, files: [], referenceArtifacts: [], baseArtifact: null, polling: 0, busy: false, selectionVersion: 0, projectsLoadVersion: 0,
     account: null, showArchived: false,
   };
   const storageKeys = { project: 'image-workbench.project', subproject: 'image-workbench.subproject', task: 'image-workbench.task', pendingSave: 'image-workbench.pending-task-request', pendingProject: 'image-workbench.pending-project-request' };
@@ -25,7 +26,7 @@
   const { formatDate, formatBytes, formatSeconds, executionDuration, executionTimingText, statusText, artifactLabel, statusClass, modeName } = window.WorkbenchFormat;
   const { closeImagePreviews, openLightbox } = window.WorkbenchPreview.create({ query: $, dialog: ui.imageDialog });
   const api = window.WorkbenchApi.create({
-    getWorkspaceId: () => state.account?.workspace_id,
+    getWorkspaceId: () => state.account?.workspace_id || (/^[0-9a-f]{32}$/.test(requestedParams.get('workspace_id') || '') ? requestedParams.get('workspace_id') : null),
     getCsrfToken: () => state.csrf,
     onUnauthorized: () => { closeImagePreviews(); location.replace('/login'); },
   });
@@ -58,7 +59,7 @@
   function writesBlocked() { return Boolean(state.config?.project_migration_required); }
   function clearDraftMedia() {
     state.baseArtifact = null;
-    state.files = [];
+    state.files = []; state.referenceArtifacts = [];
     ui.imageInput.value = '';
     ui.basePanel.hidden = true;
     ui.refUpload.hidden = false;
@@ -560,6 +561,19 @@
     const branch = appendText(actions, 'button', 'secondary-button', '基于此图继续修改');
     branch.type = 'button';
     branch.addEventListener('click', () => startEditFromArtifact(artifact));
+    const sendToVideo = async (purpose, navigate=true) => {
+      const project = await api('/api/video/projects/from-subproject',{method:'POST',body:JSON.stringify({subproject_id:artifact.subproject_id})});
+      await api(`/api/video/projects/${project.project_id}/tray`,{method:'POST',body:JSON.stringify({artifact_id:artifact.artifact_id,media_type:'image',action:'add'})});
+      if(navigate) location.assign(`/video?${new URLSearchParams({workspace_id:state.account.workspace_id,project:project.project_id,asset_id:artifact.artifact_id,asset_action:purpose})}#pipelineVideos`);
+      else toast('已加入当前子项目的素材暂存区。');
+    };
+    actions.append(window.IWAssetActions.menu([
+      {label:'继续修改',run:()=>startEditFromArtifact(artifact)},
+      {label:'用于视频生成',run:()=>sendToVideo('video')},
+      {label:'设为参考图',run:async()=>{ const context=imageContext(); if(context) await attachImages([artifact],'reference',context); }},
+      {label:'设为首帧',run:()=>sendToVideo('first')},{label:'设为尾帧',run:()=>sendToVideo('last')},
+      {label:'加入素材暂存区',run:()=>sendToVideo('video',false)},{label:'下载',href:artifact.download_url}
+    ],toast));
     return card;
   }
   function appendSourceVersions(detail) {
@@ -622,7 +636,7 @@
     state.taskId = '';
     state.detail = null;
     state.baseArtifact = artifact;
-    state.files = [];
+    state.files = []; state.referenceArtifacts = [];
     ui.imageInput.value = '';
     localStorage.removeItem(storageKeys.pendingSave);
     localStorage.setItem(storageKeys.project, state.projectId);
@@ -795,7 +809,7 @@
   function updateEditHelp() { ui.editHelp.hidden = getOperation() !== 'edit' || Boolean(state.baseArtifact); }
   function fingerprint() {
     const fileSignature = state.files.map(file => `${file.name}:${file.size}:${file.lastModified}`).join('|');
-    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature].join('\n');
+    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature, state.referenceArtifacts.map(a => a.artifact_id).join(',')].join('\n');
   }
   function persistentTaskRequestId() {
     const signature = fingerprint();
@@ -809,7 +823,7 @@
   }
   async function saveTask(event) {
     event.preventDefault();
-    if (state.busy) return;
+    if (state.busy || window.IWImageInput.uploading) return;
     if (!state.subprojectId) { setMessage('请先打开一个子项目，再保存任务。', true); return; }
     if (state.config.project_migration_required) { setMessage('已有数据需要先完成项目层级迁移。', true); return; }
     const prompt = ui.prompt.value.trim();
@@ -828,6 +842,7 @@
     form.set('prompt', prompt);
     form.set('aspect_ratio', ui.ratio.value);
     if (state.baseArtifact) form.set('base_artifact_id', state.baseArtifact.artifact_id);
+    form.set('reference_artifact_ids', JSON.stringify(state.referenceArtifacts.map(a => a.artifact_id)));
     for (const file of state.files) form.append('files', file, file.name);
     try {
       const detail = await api(`/api/subprojects/${encodeURIComponent(saveSubId)}/tasks`, { method: 'POST', body: form });
@@ -842,7 +857,7 @@
       localStorage.setItem(storageKeys.task, detail.task_id);
       ui.basePanel.hidden = true;
       ui.refUpload.hidden = false;
-      state.files = [];
+      state.files = []; state.referenceArtifacts = [];
       ui.imageInput.value = '';
       renderFiles();
       ui.prompt.value = '';
@@ -860,6 +875,14 @@
   }
   function renderFiles() {
     ui.previews.replaceChildren();
+    for (const artifact of state.referenceArtifacts) {
+      const tile = appendText(ui.previews, 'div', 'file-tile', '');
+      tile.append(safeImage(artifact, '参考图片预览'));
+      appendText(tile, 'span', '', artifact.filename || '项目图片');
+      const remove = appendText(tile, 'button', 'remove-file', '×'); remove.type = 'button';
+      remove.setAttribute('aria-label', '移除参考图片');
+      remove.addEventListener('click', () => { state.referenceArtifacts = state.referenceArtifacts.filter(a => a.artifact_id !== artifact.artifact_id); renderFiles(); });
+    }
     for (const [index, file] of state.files.entries()) {
       const tile = document.createElement('div');
       tile.className = 'file-tile';
@@ -928,7 +951,18 @@
       }
       ui.imageInput.accept = 'image/png,image/jpeg,image/webp';
       $('#uploadSizeHint').textContent = `PNG、JPG、WEBP · 总计 ${formatBytes(state.config.max_upload_bytes)}`;
-      await loadProjects();
+      await loadProjects(requestedParams.get('main_project_id'),requestedParams.get('subproject_id'));
+      const incoming=requestedParams.get('asset_id');
+      if(incoming && state.subprojectId) {
+        const assets=await api(`/api/subprojects/${state.subprojectId}/assets`);
+        const asset=assets.assets.find(item=>item.artifact_id===incoming);
+        if(!asset) toast('传入素材不属于当前子项目，请重新选择。',true);
+        else {
+          const purpose=requestedParams.get('asset_action')==='reference'?'reference':'edit';
+          if(purpose==='edit') $('input[name="operation"][value="edit"]').checked=true;
+          await attachImages([asset],purpose,imageContext());
+        }
+      }
       ui.saveButton.disabled = !state.subprojectId || Boolean(state.config.project_migration_required);
       if (state.config.project_migration_required) {
         $('#migrationNotice').hidden = false;
@@ -947,7 +981,7 @@
   $('#archiveFilter').addEventListener('click', async () => { state.showArchived = !state.showArchived; $('#archiveFilter').textContent = state.showArchived ? '返回进行中项目' : '查看已归档项目'; await loadProjects(); });
   ui.form.addEventListener('submit', saveTask);
   ui.prompt.addEventListener('input', () => { ui.promptCount.textContent = `${ui.prompt.value.length} / 4000`; });
-  ui.imageInput.addEventListener('change', event => addFiles(event.target.files));
+  
   $('#newProjectButton').addEventListener('click', () => openProjectDialog('new-main'));
   $('#sidebarNewProject').addEventListener('click', () => openProjectDialog('new-main'));
   $('#newSubprojectButton').addEventListener('click', () => openProjectDialog('new-sub'));
@@ -964,9 +998,44 @@
   document.querySelectorAll('.close-move-dialog').forEach(button => button.addEventListener('click', () => ui.moveTaskDialog.close()));
   $('#refreshButton').addEventListener('click', refreshAll);
   $('#clearBaseImage').addEventListener('click', clearBaseArtifact);
-  for (const eventName of ['dragenter', 'dragover']) $('.dropzone').addEventListener(eventName, event => { event.preventDefault(); $('.dropzone').classList.add('dragover'); });
-  for (const eventName of ['dragleave', 'drop']) $('.dropzone').addEventListener(eventName, event => { event.preventDefault(); $('.dropzone').classList.remove('dragover'); });
-  $('.dropzone').addEventListener('drop', event => addFiles(event.dataTransfer.files));
+  function imageContext() {
+    if (!state.subprojectId) { toast('请先打开一个子项目，再添加图片。', true); return null; }
+    return { sub: state.subprojectId, workspace: state.account?.workspace_id, revision: state.selectionVersion,
+      purpose: getOperation() === 'edit' ? 'edit' : 'reference' };
+  }
+  function currentContext(context) { return context.sub === state.subprojectId && context.workspace === state.account?.workspace_id && context.revision === state.selectionVersion; }
+  async function attachImages(assets, purpose, context) {
+    if (!currentContext(context)) return toast('图片已保存到原项目；请在当前项目重新选择素材。');
+    if (purpose === 'library') return toast('图片已保存到项目素材库。');
+    if (purpose === 'edit' && !state.baseArtifact && assets.length === 1) {
+      state.baseArtifact = assets[0]; ui.basePanel.hidden = false; ui.basePreview.replaceChildren(safeImage(assets[0], '待编辑图片')); updateEditHelp(); toast('图片已设为待编辑图片，现有参考素材已保留。'); return;
+    }
+    if (purpose === 'edit') {
+      const choice = await window.IWImageInput.choose('待编辑图片已有内容或包含多张图片，请选择用途', [{value:'reference',label:'追加为参考图片'}, {value:'library',label:'仅保存到项目素材库'}]);
+      if (choice !== 'reference' || !currentContext(context)) return;
+    }
+    const next = [...new Map([...state.referenceArtifacts, ...assets].map(a => [a.artifact_id, a])).values()];
+    if (next.length > 8) throw new Error('任务最多引用 8 张图片；图片已保存到项目素材库，请减少选择后重试');
+    state.referenceArtifacts = next; renderFiles(); toast('图片已登记并添加到当前任务。');
+  }
+  window.IWImageInput.configure({
+    notice: toast, context: imageContext,
+    limits: () => ({ count: 9, single: state.config?.max_image_bytes || 20 * 1024 * 1024, total: state.config?.max_upload_bytes || 40 * 1024 * 1024 }),
+    async receive(files, purpose, context) {
+      const form = new FormData(); files.forEach(file => form.append('files', file));
+      const result = await api(`/api/subprojects/${context.sub}/assets`, { method: 'POST', body: form, headers: context.workspace ? {'X-Workspace-ID': context.workspace} : {} });
+      await attachImages(result.assets, purpose, context);
+    }
+  });
+  window.IWImageInput.bind({ input: ui.imageInput, zone: ui.refUpload });
+  $('#chooseProjectImages').addEventListener('click', async () => {
+    const context = imageContext(); if (!context) return;
+    try {
+      const result = await api(`/api/subprojects/${context.sub}/assets`);
+      const assets = await window.IWImageInput.selectAssets(result.assets);
+      if (assets.length) await attachImages(assets, context.purpose, context);
+    } catch (error) { toast(error.message, true); }
+  });
   document.querySelectorAll('input[name="operation"]').forEach(input => input.addEventListener('change', () => {
     if (getOperation() === 'generate' && state.baseArtifact) clearBaseArtifact();
     updateEditHelp();

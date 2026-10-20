@@ -30,7 +30,7 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     images = lambda aid, wid: application.scoped_app(aid, wid).state.workbench
     application.pipeline_service = PipelineService(application.video_store, scripts, images)
     install_admin(application)
-    install_video(application.auth, application.video_store)
+    install_video(application.auth, application.video_store, application.pipeline_service)
     install_scripts(application.auth, scripts, application.storage, remote_mode=bool(remote_access))
     if remote_access:
         from .script_remote import ScriptRemoteQueue, RemoteScriptRegistry

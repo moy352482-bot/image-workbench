@@ -90,3 +90,10 @@ dist/
 Thumbs.db
 .idea/
 .vscode/
+
+# Browser evidence is generated locally by the regression suite.
+/docs/goals/asset-ux/browser-*.json
+/docs/goals/asset-ux/screenshots/
+
+# Local implementation plans and generated browser evidence
+/docs/goals/

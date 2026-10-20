@@ -17,14 +17,14 @@
       for (const workspace of account.workspaces) { const option = appendText(select, 'option', '', workspace.name); option.value = workspace.workspace_id; option.selected = workspace.workspace_id === account.workspace_id; }
     }
     $('#closeAccountDialog').addEventListener('click', () => $('#accountDialog').close());
-    $('#workspaceSelect').addEventListener('change', async event => { closeImagePreviews(); try { await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:event.target.value})}); location.reload(); } catch(error) { toast(error.message, true); } });
+    $('#workspaceSelect').addEventListener('change', async event => { closeImagePreviews(); try { await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:event.target.value})}); location.assign('/'); } catch(error) { toast(error.message, true); } });
     $('#logoutButton').addEventListener('click', async () => { closeImagePreviews(); try { await api('/api/auth/logout', {method:'POST'}); location.replace('/login'); } catch(error) { toast(error.message, true); } });
     $('#newWorkspaceButton').addEventListener('click', () => {
       const content = accountDialog('新建工作空间'); const form = appendText(content, 'form', '', '');
       const label = appendText(form, 'label', 'field-label', '工作空间名称'); label.htmlFor = 'workspaceNameInput';
       const input = appendText(form, 'input', 'workspace-destination', ''); input.id = 'workspaceNameInput'; input.required = true; input.maxLength = 120;
       const submit = appendText(form, 'button', 'primary-button', '创建工作空间'); submit.type = 'submit';
-      form.addEventListener('submit', async event => { event.preventDefault(); submit.disabled = true; try { const workspace = await api('/api/workspaces', {method:'POST', body:JSON.stringify({name:input.value.trim()})}); await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:workspace.workspace_id})}); location.reload(); } catch(error) { toast(error.message, true); submit.disabled = false; } }); input.focus();
+      form.addEventListener('submit', async event => { event.preventDefault(); submit.disabled = true; try { const workspace = await api('/api/workspaces', {method:'POST', body:JSON.stringify({name:input.value.trim()})}); await api('/api/workspaces/select', {method:'POST', body:JSON.stringify({workspace_id:workspace.workspace_id})}); location.assign('/'); } catch(error) { toast(error.message, true); submit.disabled = false; } }); input.focus();
     });
     $('#creditHistoryButton').addEventListener('click', async () => {
       try { const payload = await api('/api/credits'); await refreshAccount(); const content = accountDialog('积分记录');

@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from .image_backend import BackendError, BackendRequest, BackendResult, ImageBackend
 from .storage import MetadataError, StorageManager, _now, _text, _validate_id
+from .image_references import task_input_artifacts
 from .timing import measure, phase_seconds
 from .locking import FileLock
 from .performance import PerformanceTrace
@@ -273,7 +274,7 @@ class TaskRunner:
                 stderr = self.storage._check_path(directory / "stderr.log")
                 stdout.touch(exist_ok=False)
                 stderr.touch(exist_ok=False)
-                inputs = [item for item in self.storage.list_task_artifacts(project_id, task_id) if item.kind == "input"]
+                inputs = task_input_artifacts(self.storage, project_id, task_id)
                 performance.reference_count = len(inputs) + int(task.base_artifact_id is not None)
                 reference_paths = []
                 for item in inputs:

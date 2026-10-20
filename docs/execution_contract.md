@@ -144,3 +144,11 @@ ExecutionRecord 新增 failure_type、timing_events 以及 prepare/backend/codex
 状态写入持续失败时抛出 StateUpdateError（OSError 子类），其 record 属性保留内存中的执行证据，已存在产物不清理。BatchRunner 可在独立报告中保存该证据；不能把异常当作执行成功。
 
 批测按清单顺序、每份最多20项，无并发与自动生图重试。负例被正确拒绝也计为执行失败，但可符合预期；batch 退出码0表示所有预期及文件终检通过。详见 [批测说明](batch_testing.md)。
+# 脚本直接提交与调用保护（2026-10-20）
+
+生成按钮无需用户先报价。手选模型的预计积分来自 `/api/scripts/config`；自动报价仅作推荐、警告及独立分镜阶段预览，不调用外部需求分类模型。服务端提交时重新验证选择、当前价格与余额；价格仍以 `config/script_pricing.json` 为唯一事实来源。
+
+免费脚本仍产生任务、幂等记录、0 积分冻结/结算记录和执行日志。新增按账号跨 Workspace 计算的保护：默认每 60 秒最多 6 次脚本提交，同时最多 3 个排队或执行任务。环境变量为 `IMAGE_WORKBENCH_SCRIPT_WINDOW_SECONDS`、`IMAGE_WORKBENCH_MAX_SCRIPT_SUBMISSIONS_PER_WINDOW`、`IMAGE_WORKBENCH_MAX_PENDING_SCRIPTS_PER_ACCOUNT`，必须为正整数。失败、退款和已完成提交仍计入时间窗口；同请求重试返回原任务，不另占次数。
+
+容量预检避免正常拒绝留下任务，最终检查与积分冻结、outbox 在同一数据库事务内执行。余额不足、不可用模型或容量超限不调用模型。独立分镜继续按其自己的配置报价；未配置真实价格不能当作免费，明确开启的 Mock 模式除外。
+

@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
 from datetime import datetime, timezone
+from .atomic_files import replace_file
+
 import hashlib
 import json
 import os
@@ -21,7 +23,6 @@ from PIL import Image, UnidentifiedImageError
 from .config import StorageConfig
 from .locking import FileLock
 from .models import Artifact, Project, Task
-from .atomic_files import replace_with_retry
 
 
 class MetadataError(ValueError):
@@ -143,7 +144,7 @@ class StorageManager:
                 stream.flush()
                 os.fsync(stream.fileno())
             self._check_path(path)
-            replace_with_retry(temporary, path)
+            replace_file(temporary, path)
         finally:
             if temporary is not None:
                 self._cleanup(temporary)
@@ -600,7 +601,7 @@ class StorageManager:
                 self._require_text_source(project_id, source_artifact_id, task.operation)
             return self._store_text(project_id, task_id, source_path, source_artifact_id, artifact_id=artifact_id)
 
-    def register_output_document(self, project_id, task_id, data, *, artifact_id, format):
+    def register_output_document(self, project_id, task_id, data, *, artifact_id, format, source_path=None):
         """Immutable structured/video outputs; no generation and no implicit file paths."""
         _validate_id(artifact_id)
         task = self.get_task(project_id, task_id)
@@ -632,6 +633,22 @@ class StorageManager:
             if final.exists():
                 if final.read_bytes() != data:
                     raise ValueError("未归档文件与本次内容不匹配")
+            elif source_path is not None:
+                # Existing immutable video bytes keep their original name and URL.
+                # A same-volume hard link adds the canonical Artifact path without
+                # copying payload bytes or changing StorageManager's layout.
+                if format != "MP4":
+                    raise ValueError("仅已有视频可登记无复制引用")
+                source = self._check_path(Path(source_path))
+                if not source.is_file() or source.read_bytes() != data:
+                    raise ValueError("已有视频文件与登记内容不一致")
+                try:
+                    os.link(source, final)
+                except OSError as exc:
+                    raise ValueError("当前存储无法创建无复制视频引用，请检查同卷硬链接支持和目录权限") from exc
+                if final.read_bytes() != data:
+                    self._cleanup(final)
+                    raise ValueError("视频登记期间内容发生变化，请检查原文件")
             else:
                 temporary = self._check_path(final.parent / (".document-" + uuid4().hex + ".tmp"))
                 try:

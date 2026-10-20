@@ -813,9 +813,7 @@ class StoryboardService:
                 match = next((a for a in assets if a.get("artifact_id") == reference), None)
                 if not match:
                     artifact = self.storage.get_artifact(reference)
-                    path = self.storage.get_artifact_path(reference)
-                    match = self.video.add_assets(aid, wid, pid, [(artifact.original_filename, path.read_bytes())])[0]
-                    match = self.video.associate_artifact(aid, wid, pid, match["asset_id"], reference)
+                    match = self.video.link_artifacts(aid, wid, pid, [{"artifact_id": reference, "filename": artifact.original_filename}])[0]
                     assets.append({**match, "artifact_id": reference})
                 refs.append(match["asset_id"])
             binding = {"storyboard_id": bid, "storyboard_version": record["version"], "storyboard_shot_id": shot_id,

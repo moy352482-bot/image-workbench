@@ -1,5 +1,6 @@
 """Connect H3 images, text versions and MP4 uploads to the existing account workspace."""
 from pathlib import PureWindowsPath
+from typing import Literal
 
 from fastapi import Request, HTTPException
 from fastapi.concurrency import run_in_threadpool
@@ -17,6 +18,20 @@ class ScriptChoice(ScriptBody):
     task_id: str = Field(pattern=ID)
 
 
+class SubprojectChoice(ScriptBody):
+    subproject_id: str = Field(pattern=ID)
+
+
+class TrayChoice(ArtifactChoice):
+    media_type: Literal["image", "video"]
+    action: Literal["add", "remove"]
+    shot_id: str | None = Field(default=None, pattern=ID)
+
+
+class ClipChoice(ArtifactChoice):
+    source_shot_id: str = Field(pattern=ID)
+
+
 class ImageRequest(ScriptBody):
     request_id: str = Field(pattern=ID)
     prompt: str = Field(min_length=1, max_length=12000)
@@ -31,6 +46,22 @@ def install_pipeline(app, service, store):
         if not session:
             raise HTTPException(401, "请先登录")
         return session["account_id"], request.scope["workspace_id"]
+
+    @app.post("/api/video/projects/from-subproject")
+    def from_subproject(body: SubprojectChoice, request: Request):
+        return service.from_subproject(*owner(request), body.subproject_id)
+
+    @app.get("/api/video/projects/{pid}/tray")
+    def tray(pid: str, request: Request):
+        return service.tray(*owner(request), pid)
+
+    @app.post("/api/video/projects/{pid}/tray")
+    def change_tray(pid: str, body: TrayChoice, request: Request):
+        return service.change_tray(*owner(request), pid, **body.model_dump())
+
+    @app.post("/api/video/projects/{pid}/shots/{sid}/clip")
+    def bind_clip(pid: str, sid: str, body: ClipChoice, request: Request):
+        return store.bind_clip(*owner(request), pid, sid, **body.model_dump())
 
     @app.post("/api/video/projects/{pid}/pipeline")
     def initialize(pid: str, body: ScriptBody, request: Request):

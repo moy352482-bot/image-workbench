@@ -97,6 +97,20 @@
   function readyToQuote() {
     return Boolean(state.config && $('scriptSubproject').value && $('scriptTemplate').value && $('scriptRequest').value.trim() && (!state.parent || $('scriptChangeReason').value.trim()));
   }
+  function localEstimate() {
+    return window.IWScriptPricing.estimate(state.config, $('scriptModel').value, $('scriptThinking').value, state.account?.credits, $('scriptType').value);
+  }
+  function showLocalPrice() {
+    const estimate = localEstimate();
+    if (estimate) {
+      $('scriptPrice').textContent = window.IWScriptPricing.priceText(estimate.price) + '/条';
+      $('scriptQuoteDetail').textContent = window.IWScriptPricing.summary(estimate);
+    } else {
+      $('scriptPrice').textContent = '自动推荐';
+      $('scriptQuoteDetail').textContent = '填写需求后自动显示推荐模型、思考强度和积分。';
+    }
+    wallet();
+  }
   function updateControls() {
     for (const item of $('scriptForm').querySelectorAll('input, textarea, select, button')) item.disabled = state.busy;
     for (const item of $('scriptExamples').querySelectorAll('[data-requires-reference]')) item.disabled = state.busy || !state.exampleRefs.has(item.dataset.requiresReference);
@@ -106,8 +120,12 @@
     $('scriptNew').disabled = state.busy;
     $('scriptThinking').disabled = state.busy || $('scriptModel').value === 'recommended';
     $('scriptType').disabled = state.busy || Boolean(state.parent);
-    $('scriptQuote').disabled = state.busy || !readyToQuote();
-    $('scriptGenerate').disabled = state.busy || !state.quote?.can_generate || state.quoteBody !== JSON.stringify(requestBody());
+    let input; try { input = requestBody(); } catch (_) { input = null; }
+    const current = input && state.quoteBody === JSON.stringify(input) ? state.quote : null;
+    const estimate = localEstimate();
+    const needsQuote = !estimate || Boolean(input?.storyboard_options);
+    const canGenerate = estimate ? estimate.can_generate && (!current || current.can_generate) : current?.can_generate;
+    $('scriptGenerate').disabled = state.busy || !input || !readyToQuote() || unavailableCreativeSelection() || !canGenerate || (needsQuote && !current?.can_generate);
     $('scriptContinue').disabled = $('scriptGenerate').disabled;
     $('scriptForm').setAttribute('aria-busy', String(state.busy));
   }
@@ -116,8 +134,7 @@
     state.quoteSequence += 1;
     state.quote = null; state.quoteBody = '';
     clearTimeout(state.timer);
-    $('scriptPrice').textContent = '等待报价';
-    $('scriptQuoteDetail').textContent = readyToQuote() ? schedule ? '需求已更新，正在准备新报价…' : '再次生成前请查看报价。' : '选择子项目和模板，填写需求后查看报价。';
+    showLocalPrice();
     $('scriptWarnings').hidden = true;
     $('scriptConflicts').hidden = true;
     updateControls();
@@ -130,7 +147,7 @@
       option(select, '', '根据需求推荐');
       $('scriptModelHelp').textContent = '系统推荐会结合需求和模板选择模型与思考强度。';
     } else {
-      for (const level of model.thinking_levels || []) option(select, level.id, (level.display_name || level.id) + (level.pricing_status === 'unpriced' ? ' · 暂未定价' : ''));
+      for (const level of model.thinking_levels || []) option(select, level.id, (level.display_name || level.id) + ' · ' + window.IWScriptPricing.priceText(level.price), model.available === false || !Number.isInteger(level.price));
       if ([...select.options].some(item => item.value === previous)) select.value = previous;
       $('scriptModelHelp').textContent = model.available === false ? model.unavailable_reason || '当前模型暂不可用' : '将使用你选择的模型和思考强度。';
     }
@@ -140,7 +157,7 @@
     const previous = $('scriptModel').value;
     const effort = $('scriptThinking').value;
     $('scriptModel').replaceChildren(); option($('scriptModel'), 'recommended', '系统推荐');
-    for (const model of models()) option($('scriptModel'), model.model_id, model.display_name + (model.available === false ? ' · 暂不可用' : ''));
+    for (const model of models()) option($('scriptModel'), model.model_id, model.display_name + (model.available === false ? ' · 当前模型不可用' : ''), model.available === false);
     if ([...$('scriptModel').options].some(item => item.value === previous)) $('scriptModel').value = previous;
     renderThinking(effort);
   }
@@ -187,16 +204,16 @@
     if (!readyToQuote()) { if (explicit) $('scriptForm').reportValidity(); return null; }
     const sequence = ++state.quoteSequence;
     const body = requestBody(); const signature = JSON.stringify(body);
-    $('scriptPrice').textContent = '正在报价';
+    if (!localEstimate()) $('scriptPrice').textContent = '正在自动推荐';
     try {
       const value = await api('/api/scripts/quote', { method: 'POST', body: JSON.stringify(body) });
       if (sequence !== state.quoteSequence || signature !== JSON.stringify(requestBody())) return null;
       state.quote = value; state.quoteBody = signature;
       window.IWStoryboard?.showQuote('script', value.storyboard_quote);
       if (state.noticeSource === 'quote') notice('');
-      $('scriptPrice').textContent = Number.isInteger(value.price) ? value.price === 0 ? '免费试用 · 0 积分' : value.price + ' 积分' : '暂不可生成';
+      $('scriptPrice').textContent = window.IWScriptPricing.priceText(value.price) + '/条';
       const choice = (value.display_name || value.model_id || '') + ' · ' + levelName(value.model_id, value.thinking_level);
-      $('scriptQuoteDetail').textContent = choice + (value.reason ? '。' + value.reason : '') + (value.shortfall > 0 ? '。积分不足，还需要 ' + value.shortfall + ' 积分。' : '');
+      $('scriptQuoteDetail').textContent = choice + ' · 本次 1 条：' + window.IWScriptPricing.priceText(value.price) + (value.storyboard_quote ? ' · 分镜：' + window.IWScriptPricing.priceText(value.storyboard_quote.price) : '') + (value.shortfall > 0 ? '。积分不足，本次需要 ' + (value.total_estimated_credit ?? value.price) + ' 积分，当前剩余 ' + value.remaining_credit + ' 积分。' : '');
       $('scriptBalance').textContent = value.remaining_credit === null ? '当前余额：无限积分' : '当前余额：' + value.remaining_credit + ' 积分';
       const warnings = Array.isArray(value.warnings) ? value.warnings : [];
       $('scriptWarnings').hidden = !warnings.length;
@@ -209,8 +226,8 @@
     } catch (error) {
       if (sequence !== state.quoteSequence) return null;
       state.quote = null; state.quoteBody = '';
-      $('scriptPrice').textContent = '暂不可生成';
-      $('scriptQuoteDetail').textContent = error.message;
+      showLocalPrice();
+      if (!localEstimate() || window.IWStoryboard?.options('script')) $('scriptQuoteDetail').textContent = error.message;
       updateControls();
       if (explicit) notice(error.message, true, 'quote');
       return null;
@@ -339,23 +356,31 @@
   }
   async function generate(warningsConfirmed = false) {
     if (state.busy || !$('scriptForm').reportValidity()) return;
-    if (!state.quote || state.quoteBody !== JSON.stringify(requestBody())) await requestQuote(true);
-    if (!state.quote?.can_generate) return;
-    if (state.quote.warnings?.length && !warningsConfirmed) { $('scriptWarnings').hidden = false; $('scriptContinue').focus(); return; }
-    const quoteSignature = state.quote.quote_signature;
-    state.busy = true; updateControls(); notice('');
-    const body = JSON.parse(state.quoteBody);
+    state.busy = true; clearTimeout(state.timer); updateControls(); notice('');
     try {
+      const body = requestBody();
+      let current = state.quoteBody === JSON.stringify(body) ? state.quote : null;
+      if (body.selection_mode !== 'manual' || body.storyboard_options) {
+        if (!current) current = await requestQuote(true);
+        if (!current?.can_generate) return;
+      } else if (!localEstimate()?.can_generate) return;
+      if (current && !current.can_generate) return;
+      if (current?.warnings?.length && !warningsConfirmed) { $('scriptWarnings').hidden = false; return; }
       const requestId = await submissionId(body);
-      const result = await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...body, request_id: requestId, quote_signature: quoteSignature, warnings_confirmed: warningsConfirmed, ...(body.storyboard_options ? { storyboard_confirmed: true } : {}) }) });
+      const result = await api('/api/scripts/tasks', { method: 'POST', body: JSON.stringify({ ...body, request_id: requestId,
+        ...(current?.quote_signature ? {quote_signature: current.quote_signature} : {}), warnings_confirmed: warningsConfirmed,
+        ...(body.storyboard_options ? { storyboard_confirmed: true } : {}) }) });
       state.pending = null; remember(storageKey('pending'), '');
       invalidateQuote(false);
+      // Keep the accepted task visible and pollable if a follow-up read fails.
+      state.tasks = [result, ...state.tasks.filter(task => task.task_id !== result.task_id)];
+      renderDetail(result);
       await Promise.all([selectTask(result.task_id), refreshAccount()]);
       await loadHistory(result.task_id);
       notice('生成任务已保存。正文完成后可查看、修改和下载 TXT。');
     } catch (error) {
       notice(error.message, true);
-      if (error.status === 402 || error.status === 409) invalidateQuote(false);
+      if (error.status === 402 || error.status === 409) { invalidateQuote(false); await requestQuote(false); }
       await refreshAccount().catch(() => {});
     } finally { state.busy = false; updateControls(); }
   }
@@ -652,7 +677,6 @@
   $('scriptModel').addEventListener('change', () => { renderThinking(); invalidateQuote(); });
   $('scriptThinking').addEventListener('change', () => invalidateQuote());
   $('scriptForm').addEventListener('submit', event => { event.preventDefault(); generate(false); });
-  $('scriptQuote').addEventListener('click', () => requestQuote(true));
   $('scriptContinue').addEventListener('click', () => generate(true));
   $('scriptModify').addEventListener('click', () => { $('scriptWarnings').hidden = true; $('scriptModel').focus(); });
   $('scriptMainProject').addEventListener('change', () => renderSubprojects());
@@ -714,12 +738,15 @@
     const types = Array.isArray(state.config.generation_types) ? state.config.generation_types : [];
     if (types.length) { $('scriptType').replaceChildren(); for (const item of types) option($('scriptType'), item.id, item.name); }
     renderModels(); renderTemplates(); renderStyles(); await loadProjects(); wallet(); updateControls();
+    const params = new URL(location.href).searchParams, target = params.get('task_id');
+    if (target) await loadHistory();
+    if (target && state.tasks.some(task => task.task_id === target)) { await selectTask(target); if (state.detail?.status === 'completed') { if (params.get('action') === 'edit') $('scriptEdit').click(); if (params.get('action') === 'template') $('scriptSaveAsTemplate').click(); } }
     setInterval(async () => {
-      if (document.hidden || state.busy || state.refreshing || !state.account || !state.tasks.some(item => active.has(item.status) || active.has(item.storyboard_task?.status) || (item.storyboard_options && item.status === 'completed' && !item.storyboard_task))) return;
+      if (document.hidden || state.busy || state.refreshing || !state.account || (!active.has(state.detail?.status) && !state.tasks.some(item => active.has(item.status) || active.has(item.storyboard_task?.status) || (item.storyboard_options && item.status === 'completed' && !item.storyboard_task)))) return;
       state.refreshing = true;
       try { await loadHistory(); await refreshAccount(); }
       catch (error) { notice(error.message, true); }
       finally { state.refreshing = false; }
     }, 5000);
-  })().catch(error => { notice(error.message, true); $('scriptGenerate').disabled = true; $('scriptQuote').disabled = true; });
+  })().catch(error => { notice(error.message, true); $('scriptGenerate').disabled = true; });
 })();

@@ -2,6 +2,7 @@
 from fastapi import Request
 from starlette.concurrency import run_in_threadpool
 from ..contracts.images import RunTask, RestoreTask, TaskUpdate, MoveTask
+from ..domain_errors import ConflictError
 from .uploads import save_task
 
 def install_routes(app, state, storage):
@@ -57,6 +58,9 @@ def install_routes(app, state, storage):
     @app.post("/api/tasks/{task_id}/move")
     def move_task(task_id: str, payload: MoveTask):
         with state.control_lock():
+            placement = state.projects.get_task_placement(task_id)
+            if (state.task_options(placement.storage_project_id, task_id) or {}).get("asset_library"):
+                raise ConflictError("项目素材库不能移动；请在目标子项目添加素材")
             state.projects.move_task(task_id, payload.target_subproject_id, expected_subproject_id=payload.expected_subproject_id)
         return state.logical_task_view(task_id)
 

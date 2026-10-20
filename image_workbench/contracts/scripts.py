@@ -37,7 +37,7 @@ class ScriptRequest(ScriptBody):
 
 class ScriptSubmission(ScriptRequest):
     request_id: str = Field(pattern=ID)
-    quote_signature: str = Field(min_length=1, max_length=256)
+    quote_signature: str | None = Field(default=None, min_length=1, max_length=256)
     warnings_confirmed: StrictBool = False
     storyboard_confirmed: StrictBool = False
 

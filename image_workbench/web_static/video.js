@@ -2,6 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const uuid = () => crypto.randomUUID().replaceAll('-', '');
+  const requestedWorkspace = new URL(location.href).searchParams.get('workspace_id');
   const state = { account: null, config: null, csrf: '', project: null, projectRequest: uuid(), shotRequest: uuid(), referenceOrder: [], runRequests: new Map(), projectSignature: '', loading: false };
   const labels = { draft: '待生成', queued: '已排队', running: '生成中', generating: '生成中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
   const modes = { T2V: '文生视频', I2V: '首帧 / 首尾帧', R2V: '参考素材' };
@@ -24,7 +25,7 @@
   async function api(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (state.csrf) headers.set('X-Workbench-CSRF', state.csrf);
-    if (state.account) headers.set('X-Workspace-ID', state.account.workspace_id);
+    if (!headers.has('X-Workspace-ID') && (state.account?.workspace_id || /^[0-9a-f]{32}$/.test(requestedWorkspace || ''))) headers.set('X-Workspace-ID',state.account?.workspace_id || requestedWorkspace);
     if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
     const response = await fetch(path, { ...options, headers, credentials: 'same-origin' });
     const payload = await response.json().catch(() => ({}));
@@ -114,6 +115,7 @@
       const figure = el('figure', 'video-asset');
       const image = el('img'); image.src = mediaURL(asset.url); image.alt = asset.filename; image.loading = 'lazy';
       figure.append(image, el('figcaption', '', `${index + 1}. ${asset.filename}`));
+      if (window.IWAssetTray) figure.append(window.IWAssetTray.imageActions(asset));
       $('videoAssetGrid').append(figure);
       const label = el('label', 'video-reference-choice');
       const input = el('input'); input.type = 'checkbox'; input.value = asset.asset_id; input.checked = selected.has(asset.asset_id);
@@ -187,6 +189,8 @@
         const link = el('a', 'secondary-button', '下载 MP4'); link.href = mediaURL(shot.download_url); actions.append(link);
       }
       if (status === 'queued') actions.append(el('span', 'field-hint', '等待本机算力 · 不会重复提交'));
+      if (shot.output_url && window.IWAssetTray) actions.append(window.IWAssetTray.videoActions({artifact_id:shot.artifact_id || shot.output?.artifact_id,media_type:'video',shot_id:shot.shot_id,filename:shot.name,url:mediaURL(shot.output_url),download_url:mediaURL(shot.download_url)}));
+      if (shot.bound_clip) { const preview=el('button','text-button','预览绑定视频'); preview.type='button'; preview.addEventListener('click',()=>window.IWAssetActions.preview({...shot.bound_clip,media_type:'video',filename:shot.name})); actions.append(preview); }
       copy.append(actions);
       const output = el('div', 'video-shot-output');
       if (shot.output_url) {
@@ -260,21 +264,6 @@
     const url = new URL(location.href); url.searchParams.delete('project'); history.replaceState(null, '', url);
     loadProjects().catch(error => notice(error.message, true));
   });
-  $('videoAssets').addEventListener('change', async event => {
-    const input = event.target; const files = Array.from(input.files);
-    if (!files.length) return;
-    input.disabled = true;
-    try {
-      if (files.some(file => file.size > 20 * 1024 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 40 * 1024 * 1024) throw new Error('单张图片最大 20 MB，一次上传合计最大 40 MB');
-      const id = (await ensureProject()).project_id;
-      const form = new FormData(); files.forEach(file => form.append('files', file));
-      $('videoUploadMessage').textContent = '正在上传并校验图片…';
-      await api(`/api/video/projects/${id}/assets`, { method: 'POST', body: form });
-      if (state.project?.project_id === id) await refresh();
-      $('videoUploadMessage').textContent = '参考资产已保存'; notice('参考资产已保存，可在分镜中选择。');
-    } catch (error) { $('videoUploadMessage').textContent = '上传未完成，可重新选择图片重试'; notice(error.message, true); }
-    finally { input.disabled = false; input.value = ''; }
-  });
   $('videoShotForm').addEventListener('submit', event => {
     event.preventDefault();
     busy(event.submitter, async () => {
@@ -294,7 +283,7 @@
   $('videoWorkspace').addEventListener('change', async event => { try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { event.target.value = state.account.workspace_id; notice(error.message, true); } });
   $('videoLogout').addEventListener('click', event => busy(event.currentTarget, async () => { await api('/api/auth/logout', { method: 'POST' }); location.assign('/login'); }));
 
-  window.IWVideo = { state, api, refresh, notice, busy, mediaURL, el, uuid, ensureProject };
+  window.IWVideo = { state, api, refresh, notice, busy, mediaURL, el, uuid, ensureProject, renderAssets, updateMode, selectProject };
   (async () => {
     state.csrf = (await api('/api/config')).csrf_token;
     await refreshAccount();

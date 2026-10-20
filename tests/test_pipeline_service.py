@@ -15,7 +15,7 @@ class PipelineServiceTests(unittest.TestCase):
         self.state = self.images.return_value
         self.link = {"main_project_id": "main", "subproject_id": "sub"}
         self.videos.pipeline_project.return_value = {"name": "Project", "pipeline": self.link}
-        self.state.projects.get_subproject.return_value = SimpleNamespace(main_project_id="main")
+        self.state.projects.get_subproject.return_value = SimpleNamespace(main_project_id="main", subproject_id="sub")
         self.service = PipelineService(self.videos, lambda: self.scripts, self.images)
 
     def test_ownership_rejection_happens_before_accessing_other_feature(self):
@@ -50,13 +50,14 @@ class PipelineServiceTests(unittest.TestCase):
             path = Path(folder) / "image.png"
             path.write_bytes(b"changed")
             self.state.storage.get_artifact.return_value = SimpleNamespace(
-                task_id="task", artifact_id="artifact", kind="output", format="PNG", size_bytes=7, sha256="bad")
+                task_id="task", artifact_id="a" * 32, kind="output", format="PNG", size_bytes=7, sha256="bad")
             self.state.storage.get_artifact_path.return_value = path
             self.state.projects.get_task_placement.return_value = SimpleNamespace(subproject_id="sub")
             self.videos.max_image_bytes = 100
             with self.assertRaisesRegex(ValueError, "校验失败"):
-                self.service.import_image("a", "w", "p", "artifact")
+                self.service.import_image("a", "w", "p", "a" * 32)
             self.videos.add_assets.assert_not_called()
+            self.videos.link_artifacts.assert_not_called()
 
     def test_duplicate_references_do_not_create_a_task(self):
         with self.assertRaisesRegex(ValueError, "不能重复"):

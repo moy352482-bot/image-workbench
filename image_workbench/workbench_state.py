@@ -20,6 +20,7 @@ from .domain_errors import ConflictError
 
 from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between
 from .image_queries import ImageQueries
+from .image_references import task_input_artifacts
 
 
 class WorkbenchState:
@@ -161,24 +162,30 @@ class WorkbenchState:
             return existing
 
     def create_task(self, project_id, *, request_id, operation, prompt, aspect_ratio="auto", base_artifact_id=None, inputs=(),
-                    subproject_id=None, name=None, description=""):
+                    subproject_id=None, name=None, description="", reference_artifact_ids=()):
         _validate_id(request_id)
         _text(prompt, "提示词")
         if len(prompt) > 12000:
             raise ValueError("提示词最多12000字符")
         if operation not in {"generate", "edit"} or aspect_ratio not in {"auto", "1:1", "3:2", "2:3"}:
             raise ValueError("无效模式或比例")
-        if len(inputs) > 8:
+        if len(inputs) + len(reference_artifact_ids) > 8:
             raise ValueError("最多上传8张参考图")
         main = self.projects.get_main_project(project_id)
         sub = self.projects.get_subproject(subproject_id) if subproject_id else self.projects.default_subproject(project_id)
         if sub.main_project_id != main.main_project_id:
             raise ValueError("子项目不属于指定主项目")
         project_id = self.projects.ensure_storage_namespace(main.main_project_id)
+        from .asset_library import AssetLibrary
+        library = AssetLibrary(self)
+        if len(set(reference_artifact_ids)) != len(reference_artifact_ids):
+            raise ValueError("参考图不能重复")
+        references = [library.require(sub.subproject_id, aid) for aid in reference_artifact_ids]
+        if sum(item.size_bytes for item in references) + sum(Path(path).stat().st_size for path in inputs) > 40 * 1024 * 1024:
+            raise ValueError("本次参考图片合计超过 40 MiB")
         if operation == "edit":
-            base = self.storage._require_source(project_id, base_artifact_id)
-            if base.kind != "output":
-                raise ValueError("请选择已登记输出作为编辑基底")
+            library.require(sub.subproject_id, base_artifact_id)
+            self.storage._require_source(project_id, base_artifact_id)
         elif base_artifact_id:
             raise ValueError("生成模式不能指定编辑基底")
         hashes = []
@@ -188,7 +195,10 @@ class WorkbenchState:
                 raise ValueError("图片体积超过限制")
             self.storage._inspect_image(path)
             hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
-        fingerprint = hashlib.sha256(json.dumps([project_id, sub.subproject_id, name, description, operation, prompt, aspect_ratio, base_artifact_id, hashes], ensure_ascii=False).encode()).hexdigest()
+        parts = [project_id, sub.subproject_id, name, description, operation, prompt, aspect_ratio, base_artifact_id, hashes]
+        if reference_artifact_ids:
+            parts.append(list(reference_artifact_ids))
+        fingerprint = hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()
         with self.control_lock():
             previous = self.task_options(project_id, request_id)
             if previous:
@@ -198,7 +208,8 @@ class WorkbenchState:
                     raise ConflictError("上次保存未完成，未启动模型；请建立新的草稿")
                 return self.storage.get_task(project_id, request_id)
             options = {"schema_version": 1, "project_id": project_id, "task_id": request_id,
-                       "fingerprint": fingerprint, "aspect_ratio": aspect_ratio, "state": "preparing", "created_at": _now()}
+                       "fingerprint": fingerprint, "aspect_ratio": aspect_ratio, "state": "preparing", "created_at": _now(),
+                       "reference_artifact_ids": list(reference_artifact_ids)}
             path = self._task_file("tasks", project_id, request_id, create=True)
             self.storage._write_json(path, options)
             try:
@@ -224,6 +235,8 @@ class WorkbenchState:
             if self.storage.get_task(project_id, task_id).operation not in {"generate", "edit"}:
                 raise ValueError("文本任务请使用脚本生成服务")
             options = self.task_options(project_id, task_id)
+            if options and options.get("asset_library"):
+                raise ValueError("素材暂存任务不能生成，请将素材添加到新的创作任务")
             if options and options["state"] != "ready":
                 raise ConflictError("任务输入尚未完整保存，不能执行")
             owner = None
@@ -275,7 +288,7 @@ class WorkbenchState:
 
     def estimate_credit(self, project_id, task_id):
         task = self.storage.get_task(project_id, task_id)
-        references = sum(item.kind == "input" for item in self.storage.list_task_artifacts(project_id, task_id))
+        references = len(task_input_artifacts(self.storage, project_id, task_id))
         return CreditCostCalculator.calculate(task.operation, self.backend, 1, references + bool(task.base_artifact_id))
 
     def require_job_credit(self, job):

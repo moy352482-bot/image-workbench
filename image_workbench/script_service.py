@@ -162,7 +162,8 @@ class ScriptService:
 
     def config(self, account_id, workspace_id):
         self.identity.require_workspace(account_id, workspace_id)
-        return {"models": self.registry.models(), "templates": self.templates.list_templates() + self.resources.list(account_id, workspace_id, "personal"),
+        return {"capabilities": {"creative_resources": True},
+                "models": self.registry.models(), "templates": self.templates.list_templates() + self.resources.list(account_id, workspace_id, "personal"),
                 "styles": self.templates.list_styles(), "analysis_provider": self.resources.analyzer.provider,
                 "generation_types": [{"id": "script", "name": "脚本"}, {"id": "screenplay", "name": "剧本"}],
                 "credits": self.identity.wallet(account_id)}
@@ -173,7 +174,7 @@ class ScriptService:
         projects.get_subproject(req["subproject_id"])
         self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
         template = _prepared if _prepared is not None else resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
-        choice, reason, spec = self.router.route(req, template)
+        choice, reason, spec = self.router.route(req, template, allow_external=False)
         warnings = []
         if req["selection_mode"] == "manual" and self.router.classify(req)["complexity"] == "complex" and choice["thinking_level"] in {"none", "low", "medium"}:
             warnings.append("当前模型/思考强度可能无法充分满足该需求。请选择继续生成或返回修改。")
@@ -227,7 +228,7 @@ class ScriptService:
             quote = self.quote(account_id, workspace_id, req, _prepared=template)
             if quote["shortfall"]:
                 raise CreditInsufficient(quote.get("total_estimated_credit") or quote["price"], quote["remaining_credit"])
-            if body.get("quote_signature") != quote["quote_signature"]:
+            if body.get("quote_signature") is not None and body["quote_signature"] != quote["quote_signature"]:
                 raise ConflictError("报价或生成参数已变化，请重新预览报价")
             if quote["warnings"] and body.get("warnings_confirmed") is not True:
                 raise ConflictError("请先确认当前模型/思考强度的质量提示")
@@ -243,6 +244,7 @@ class ScriptService:
             parent = self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
             parent_text = self._read_artifact(parent["artifact_id"])[0].decode("utf-8") if parent else None
             prompt = build_prompt(req, template, parent_text=parent_text)
+            self.identity.preflight_script_capacity(account_id)
             task = projects.create_task(req["subproject_id"], req["generation_type"], req["input_request"], parent["artifact_id"] if parent else None, task_id=tid)
             job = {**req, "schema_version": 1, "kind": "script", "task_id": tid, "project_id": task.project_id,
                    "main_project_id": sub.main_project_id, "account_id": account_id, "workspace_id": workspace_id,

@@ -58,7 +58,7 @@ class Complete(Body):
     error: str | None = Field(default=None, max_length=2000)
 
 
-def install_video(app, store):
+def install_video(app, store, pipeline=None):
     directory = Path(__file__).resolve().parent
     templates = Jinja2Templates(directory=directory / "web_templates")
 
@@ -76,7 +76,8 @@ def install_video(app, store):
     def page(request: Request):
         owner(request)
         revision = max((directory / "web_static" / name).stat().st_mtime_ns for name in
-                       ("video.css", "pipeline.css", "storyboard.css", "video.js", "pipeline.js", "storyboard.js"))
+                       ("video.css", "pipeline.css", "storyboard.css", "video.js", "pipeline.js", "storyboard.js",
+                        "asset-input.css", "asset-input.js", "asset-actions.js", "script-pricing.js"))
         return templates.TemplateResponse(request=request, name="video.html", context={"asset_version": str(revision)},
                                           headers={"Cache-Control": "no-store"})
 
@@ -118,7 +119,7 @@ def install_video(app, store):
                 if total > 40 * 1024 * 1024:
                     raise ValueError("本次参考图总大小超过40 MiB")
                 files.append((upload.filename or "reference", data))
-            result = await run_in_threadpool(store.add_assets, aid, wid, pid, files)
+            result = await run_in_threadpool(pipeline.upload_images if pipeline else store.add_assets, aid, wid, pid, files)
             return {"assets": result}
 
     @app.get("/api/video/projects/{pid}/assets/{asset_id}")

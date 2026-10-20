@@ -1,13 +1,14 @@
 """Multipart input lifetime: validate, stage, submit and always clean up."""
 from uuid import uuid4
+import json
 from fastapi import HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 from ..contracts.images import MAX_UPLOAD_BYTES
 
 async def save_task(state, storage, project_id: str, subproject_id: str, request: Request):
-    async with request.form(max_files=8, max_fields=8, max_part_size=64 * 1024) as form:
-        allowed = {"request_id", "operation", "prompt", "aspect_ratio", "base_artifact_id", "files", "name", "description"}
+    async with request.form(max_files=8, max_fields=9, max_part_size=64 * 1024) as form:
+        allowed = {"request_id", "operation", "prompt", "aspect_ratio", "base_artifact_id", "files", "name", "description", "reference_artifact_ids"}
         if set(form) - allowed or any(len(form.getlist(key)) != 1 for key in set(form) - {"files"}):
             raise HTTPException(400, "任务字段不正确，不能指定本地文件路径。")
         for key in ("request_id", "operation", "prompt"):
@@ -19,6 +20,12 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
         for key in ("aspect_ratio", "base_artifact_id", "name", "description"):
             if key in form and not isinstance(form[key], str):
                 raise HTTPException(400, "比例或版本来源格式错误。")
+        try:
+            refs = json.loads(form.get("reference_artifact_ids", "[]"))
+            if not isinstance(refs, list) or len(refs) > 8 or any(not isinstance(item, str) for item in refs):
+                raise ValueError()
+        except (TypeError, ValueError):
+            raise HTTPException(400, "参考素材列表无效，请重新选择图片")
         temporary = storage._path(".workbench", "uploads", uuid4().hex)
         temporary.mkdir()
         sources, total = [], 0
@@ -37,7 +44,8 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
             task = await run_in_threadpool(state.create_task, project_id,
                 request_id=form["request_id"], operation=form["operation"], prompt=form["prompt"],
                 aspect_ratio=form.get("aspect_ratio", "auto"), base_artifact_id=form.get("base_artifact_id") or None,
-                inputs=sources, subproject_id=subproject_id, name=form.get("name") or None, description=form.get("description", ""))
+                inputs=sources, reference_artifact_ids=refs, subproject_id=subproject_id,
+                name=form.get("name") or None, description=form.get("description", ""))
             return await run_in_threadpool(state.task_view, project_id, task.task_id)
         finally:
             for path in sources:

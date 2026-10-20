@@ -113,6 +113,7 @@ class IdentityStore:
                 WHERE status IN ('credit_frozen','running');
             CREATE INDEX IF NOT EXISTS reservation_budget_date ON reservations(created_at);
             CREATE INDEX IF NOT EXISTS reservation_account_status ON reservations(account_id,status);
+            CREATE INDEX IF NOT EXISTS reservation_account_created ON reservations(account_id,created_at);
             CREATE TABLE IF NOT EXISTS credit_rejections (
                 task_id TEXT PRIMARY KEY, account_id TEXT NOT NULL, expected INTEGER NOT NULL, updated_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS sessions (
@@ -392,6 +393,11 @@ class IdentityStore:
             row = db.execute("SELECT payload,status FROM reservations WHERE job_id=? AND status IN ('completed','refunded')", (job_id,)).fetchone()
         return self._job_payload(row) if row else None
 
+    def preflight_script_capacity(self, account_id):
+        """创建任务前只读检查；reserve 仍在事务内重查，避免并发穿透。"""
+        with self.connect() as db:
+            self.capacity_policy.check_script(db, account_id)
+
     def reserve(self, job, owner, amount):
         aid, wid = owner["account_id"], owner["workspace_id"]
         insufficient = None
@@ -408,6 +414,8 @@ class IdentityStore:
                 db.execute("INSERT INTO credit_rejections VALUES (?,?,?,?) ON CONFLICT(task_id) DO UPDATE SET expected=excluded.expected,updated_at=excluded.updated_at", (job["task_id"], aid, amount, _now()))
                 insufficient = CreditInsufficient(amount, remaining)
             else:
+                if job.get("kind") == "script":
+                    self.capacity_policy.check_script(db, aid)
                 self.capacity_policy.check(db, aid, amount)
                 job.update(account_id=aid, workspace_id=wid, credit_cost=amount, credit_status="credit_frozen")
                 stamp = _now()

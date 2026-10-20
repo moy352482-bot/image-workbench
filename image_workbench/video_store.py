@@ -204,7 +204,85 @@ class VideoStore:
 
     def _asset_path(self, pid, aid):
         asset = self._asset(pid, aid)
+        if asset.get("artifact_id"):
+            artifact = self.storage.get_artifact(_validate_id(asset["artifact_id"]))
+            project = self._read(self._project_path(pid))
+            from .project_manager import ProjectManager
+            placement = ProjectManager(self.storage).get_task_placement(artifact.task_id)
+            if placement.subproject_id != project.get("pipeline", {}).get("subproject_id"):
+                raise ValueError("素材已不属于当前子项目，请重新选择")
+            owner = self.identity.ownership(ProjectManager(self.storage).get_subproject(placement.subproject_id).main_project_id)
+            if owner["deleted"] or (owner["account_id"], owner["workspace_id"]) != (project["account_id"], project["workspace_id"]):
+                raise FileNotFoundError("素材不存在于当前工作空间")
+            return self.storage.get_artifact_path(artifact.artifact_id)
         return self._path("projects", pid, "assets", aid + FORMATS[asset["format"]])
+
+    def link_artifacts(self, account_id, workspace_id, pid, artifacts):
+        """Video assets are aliases to existing image artifacts, never media copies."""
+        from .project_manager import ProjectManager
+        projects = ProjectManager(self.storage)
+        with self.lock():
+            project = self._project(account_id, workspace_id, pid)
+            sub_id = project.get("pipeline", {}).get("subproject_id")
+            result = []
+            for item in artifacts:
+                aid = _validate_id(item["artifact_id"])
+                artifact = self.storage.get_artifact(aid)
+                if artifact.format not in FORMATS or projects.get_task_placement(artifact.task_id).subproject_id != sub_id:
+                    raise ValueError("请选择当前子项目的图片素材")
+                owner = self.identity.ownership(projects.get_subproject(sub_id).main_project_id)
+                if owner["deleted"] or (owner["account_id"], owner["workspace_id"]) != (account_id, workspace_id):
+                    raise FileNotFoundError("素材不存在于当前工作空间")
+                asset = {"asset_id": aid, "artifact_id": aid, "project_id": pid,
+                         "filename": item.get("filename") or artifact.original_filename,
+                         **{key: getattr(artifact, key) for key in ("format", "width", "height", "size_bytes", "sha256", "created_at")}}
+                self._write(self._path("projects", pid, "assets", aid + ".json"), asset)
+                result.append(self._asset_view(asset, workspace_id))
+            return result
+
+    def bind_subproject(self, account_id, workspace_id, pid, link):
+        with self.lock():
+            project = self._project(account_id, workspace_id, pid)
+            if project.get("pipeline") and project["pipeline"] != link:
+                raise ConflictError("视频项目已有其他子项目关联")
+            project["pipeline"] = link
+            self._write(self._project_path(pid), project)
+
+    def update_tray(self, account_id, workspace_id, pid, key, action):
+        with self.lock():
+            project = self._project(account_id, workspace_id, pid)
+            tray = project.setdefault("asset_tray", {"hidden": [], "recent": []})
+            tray["hidden"] = [value for value in tray["hidden"] if value != key]
+            tray["recent"] = [value for value in tray["recent"] if value != key]
+            if action == "remove":
+                tray["hidden"].append(key)
+            else:
+                tray["recent"].insert(0, key)
+            self._write(self._project_path(pid), project)
+
+    def bind_clip(self, account_id, workspace_id, pid, sid, source_shot_id, artifact_id):
+        for value in (sid, source_shot_id, artifact_id):
+            _validate_id(value)
+        if sid == source_shot_id:
+            raise ValueError("请选择另一个待制作镜头")
+        self.output_file(account_id, workspace_id, pid, source_shot_id)
+        with self.lock():
+            self._project(account_id, workspace_id, pid)
+            source, target = self._shot(pid, source_shot_id), self._shot(pid, sid)
+            jobs = self._jobs()
+            source_job = self._current(pid, source_shot_id, jobs)
+            actual_id = source.get("output", {}).get("artifact_id") or (source_job or {}).get("output_artifact_id") or source.get("output_artifacts", {}).get((source_job or {}).get("job_id"))
+            if artifact_id != actual_id:
+                raise ValueError("视频版本已变化，请刷新素材暂存区")
+            clip = {"artifact_id": artifact_id, "source_shot_id": source_shot_id,
+                    "url": f"/api/video/projects/{pid}/shots/{source_shot_id}/output?workspace_id={workspace_id}"}
+            if target.get("source") == "upload" or self._current(pid, sid, jobs):
+                raise ConflictError("只能绑定尚未生成的镜头，已有视频不会覆盖")
+            if target.get("bound_clip") and target["bound_clip"] != clip:
+                raise ConflictError("镜头已经绑定其他视频，请选择空镜头")
+            target["bound_clip"] = clip
+            self._write(self._path("projects", pid, "shots", sid + ".json"), target)
+            return self._shot_view(target, workspace_id, jobs)
 
     def _asset_view(self, asset, wid):
         return {**asset, "url": f"/api/video/projects/{asset['project_id']}/assets/{asset['asset_id']}?workspace_id={wid}"}
@@ -217,6 +295,8 @@ class VideoStore:
     def add_assets(self, account_id, workspace_id, pid, files):
         if not 1 <= len(files) <= 9:
             raise ValueError("每次请上传1–9张参考图")
+        if sum(len(data) for _, data in files) > MAX_OUTPUT_BYTES:
+            raise ValueError("本次参考图总大小超过40 MiB")
         prepared = []
         for filename, data in files:
             if not isinstance(data, bytes) or not 0 < len(data) <= self.storage.config.max_image_bytes:
@@ -405,7 +485,7 @@ class VideoStore:
             base = f"/api/video/projects/{shot['project_id']}/shots/{shot['shot_id']}/output?workspace_id={wid}"
             return {**shot, "status": "completed", "current_job": None, "estimated_credit": 0,
                     "requires_rebuild": False, "run_blocked_reason": "已上传的视频无需生成",
-                    "output_url": base, "download_url": base + "&download=1"}
+                    "output_url": base, "download_url": base + "&download=1", "artifact_id": shot.get("output", {}).get("artifact_id")}
         job = self._current(shot["project_id"], shot["shot_id"], jobs)
         supported = self._is_hd_shot(shot)
         config = self.config()
@@ -418,7 +498,7 @@ class VideoStore:
                 "estimated_credit": shot["duration"] * rate if rate is not None else None,
                 "requires_rebuild": not supported, "run_blocked_reason": blocked_reason,
                 "output_url": base if completed else None, "download_url": base + "&download=1" if completed else None,
-                "artifact_id": job.get("output_artifact_id") if job else None}
+                "artifact_id": (job.get("output_artifact_id") or shot.get("output_artifacts", {}).get(job["job_id"])) if job else None}
 
     def shot(self, account_id, workspace_id, pid, sid):
         self._project(account_id, workspace_id, pid)
@@ -628,10 +708,49 @@ class VideoStore:
         task = projects.create_task(job["subproject_id"], "video", "分镜视频结果",
                                     job["storyboard_artifact_id"], task_id=tid)
         data = self._path("outputs", job["job_id"] + ".mp4").read_bytes()
-        artifact = self.storage.register_output_document(task.project_id, tid, data, artifact_id=artifact_id, format="MP4")
+        artifact = self.storage.register_output_document(task.project_id, tid, data, artifact_id=artifact_id, format="MP4", source_path=self._path("outputs", job["job_id"] + ".mp4"))
         job.update(output_artifact_id=artifact.artifact_id, video_version={"version": 1, "artifact_id": artifact.artifact_id,
                    "storyboard_id": job["storyboard_id"], "storyboard_version": job["storyboard_version"],
                    "shot_id": job["storyboard_shot_id"], "created_at": artifact.created_at})
+
+    def reference_output(self, account_id, workspace_id, pid, sid):
+        """Return a real Artifact for an existing immutable clip, without copying it."""
+        from .workspace_scope import WorkspaceProjects
+        with self.lock():
+            project = self._project(account_id, workspace_id, pid)
+            link = project.get("pipeline")
+            if not link:
+                raise ConflictError("请先初始化项目，再引用视频素材")
+            projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
+            sub = projects.get_subproject(link["subproject_id"])
+            if sub.main_project_id != link["main_project_id"]:
+                raise ValueError("视频项目关联无效")
+            shot = self._shot(pid, sid)
+            uploaded = shot.get("source") == "upload"
+            job = None if uploaded else self._current(pid, sid)
+            if not uploaded and (not job or job["status"] != "completed"):
+                raise FileNotFoundError("视频尚未完成")
+            version_key = sid if uploaded else job["job_id"]
+            existing = (shot.get("output", {}).get("artifact_id") if uploaded else
+                        job.get("output_artifact_id") or shot.get("output_artifacts", {}).get(version_key))
+            if existing:
+                artifact = self.storage.get_artifact(existing)
+                if projects.get_task_placement(artifact.task_id).subproject_id != sub.subproject_id or artifact.format != "MP4":
+                    raise ValueError("视频素材不属于当前子项目")
+                self._verify_file(self.storage.get_artifact_path(existing), {"sha256":artifact.sha256,"size_bytes":artifact.size_bytes})
+                return artifact.artifact_id
+            source = self._path("projects", pid, "shots", sid + ".mp4") if uploaded else self._path("outputs", version_key + ".mp4")
+            self._verify_file(source, shot["output"] if uploaded else job["output"])
+            tid = uuid5(NAMESPACE_URL, "video-reference-task:" + pid + ":" + version_key).hex
+            aid = uuid5(NAMESPACE_URL, "video-reference-artifact:" + pid + ":" + version_key).hex
+            task = projects.create_task(sub.subproject_id, "video", "视频素材：" + shot["name"], task_id=tid)
+            artifact = self.storage.register_output_document(task.project_id, tid, source.read_bytes(), artifact_id=aid, format="MP4", source_path=source)
+            if uploaded:
+                shot["output"]["artifact_id"] = artifact.artifact_id
+            else:
+                shot.setdefault("output_artifacts", {})[version_key] = artifact.artifact_id
+            self._write(self._path("projects", pid, "shots", sid + ".json"), shot)
+            return artifact.artifact_id
 
     def output_file(self, account_id, workspace_id, pid, sid):
         self._project(account_id, workspace_id, pid)
