@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-12",
+  "command": "python -X utf8 -m unittest discover -s tests -v",
+  "exit_code": 0,
+  "tests_run": 29,
+  "passed": 28,
+  "skipped": 1,
+  "failed": 0,
+  "duration_seconds": 4.807,
+  "skip_reason": "Codex cache file symlink creation: Windows WinError 1314; directory junction validation passed",
+  "test_image_model_calls": 0,
+  "doctor": {
+    "version": "codex-cli 0.162.0-alpha.17.2",
+    "chatgpt_login": true,
+    "noninteractive_supported": true,
+    "image_input_supported": true,
+    "imagegen_feature_enabled": true,
+    "imagegen_skill_exists": true,
+    "imagegen_verified": false,
+    "expected_generated_root": "C:\\Users\\win\\.codex\\generated_images",
+    "errors": []
+  }
+}

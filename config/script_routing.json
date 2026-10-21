@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "routes": {
+    "simple": [["gpt-6-luna", "high"], ["gpt-6.1-sol", "low"], ["gpt-6-astra", "low"]],
+    "standard": [["gpt-6.1-sol", "high"], ["gpt-6-astra", "medium"], ["gpt-6-luna", "xhigh"]],
+    "complex": [["gpt-6-astra", "high"], ["gpt-6.1-sol", "max"]]
+  },
+  "classifier": {
+    "complex_terms": ["多线", "多时空", "非线性", "悬疑", "伏笔", "反转", "最高质量", "电影级", "获奖", "多人物"],
+    "simple_terms": ["广告", "口播", "产品介绍", "开箱", "短视频", "社交媒体", "宣传", "单场景"],
+    "standard_terms": ["故事", "剧本", "短剧", "剧情", "品牌", "纪录片", "人物", "脚本"],
+    "complex_request_chars": 1500,
+    "long_duration_seconds": 600
+  },
+  "deepseek_flash": {
+    "enabled": false,
+    "endpoint_env": "SCRIPT_DEEPSEEK_ENDPOINT",
+    "model_env": "SCRIPT_DEEPSEEK_MODEL",
+    "api_key_env": "SCRIPT_DEEPSEEK_API_KEY",
+    "timeout_seconds": 20
+  }
+}

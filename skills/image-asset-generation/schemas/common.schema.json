@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/common.schema.json",
+  "title": "Shared image asset contract definitions v1",
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "texts": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "core_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "status": {
+      "enum": [
+        "PLANNED",
+        "GENERATING",
+        "DRAFT",
+        "REVIEW",
+        "APPROVED",
+        "FAILED",
+        "UNCERTAIN"
+      ]
+    },
+    "asset_type": {
+      "enum": [
+        "character",
+        "product",
+        "location",
+        "environment",
+        "prop",
+        "vehicle",
+        "wardrobe",
+        "style_reference",
+        "key_visual",
+        "logo",
+        "food",
+        "architecture"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reference_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "artifact"
+                },
+                "artifact_id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                "artifact_kind": {
+                  "enum": [
+                    "input",
+                    "output"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "artifact_id",
+                "artifact_kind"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "upload_token"
+                },
+                "token": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              },
+              "required": [
+                "kind",
+                "token"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "asset_version"
+                },
+                "asset_id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                "version": {
+                  "type": "string",
+                  "pattern": "^v[1-9][0-9]*$"
+                }
+              },
+              "required": [
+                "kind",
+                "asset_id",
+                "version"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "fixture"
+                },
+                "fixture_id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                }
+              },
+              "required": [
+                "kind",
+                "fixture_id"
+              ]
+            }
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "primary_identity",
+              "face",
+              "full_body",
+              "clothing",
+              "shape",
+              "material",
+              "color",
+              "style",
+              "composition",
+              "edit_base",
+              "mask"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "preserve": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "avoid_copy": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "rights": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "cleared",
+                "user_asserted",
+                "unknown",
+                "restricted"
+              ]
+            },
+            "basis": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "status",
+            "basis"
+          ]
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "enum": [
+                "verified",
+                "unverified",
+                "fixture_only"
+              ]
+            },
+            "file": {
+              "enum": [
+                "verified",
+                "unverified",
+                "missing",
+                "fixture_only"
+              ]
+            }
+          },
+          "required": [
+            "scope",
+            "file"
+          ]
+        }
+      },
+      "required": [
+        "reference_id",
+        "source",
+        "roles",
+        "preserve",
+        "avoid_copy",
+        "rights",
+        "verification"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "properties": {
+                  "kind": {
+                    "const": "fixture"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "verification": {
+                "properties": {
+                  "scope": {
+                    "const": "fixture_only"
+                  },
+                  "file": {
+                    "const": "fixture_only"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "unspecified",
+            "target",
+            "exact"
+          ]
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32768
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32768
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "width",
+        "height"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "unspecified"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "width": {
+                "type": "null"
+              },
+              "height": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "pattern": "^(auto|[1-9][0-9]{0,2}:[1-9][0-9]{0,2})$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "asset_version_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^v[1-9][0-9]*$"
+        }
+      },
+      "required": [
+        "asset_id",
+        "version"
+      ]
+    }
+  }
+}

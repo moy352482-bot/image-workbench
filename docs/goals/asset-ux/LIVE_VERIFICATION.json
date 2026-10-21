@@ -1,0 +1,50 @@
+{
+  "verified_at": "2026-10-20T19:46:51+08:00",
+  "website": "https://124.156.182.151",
+  "authorization": "用户要求先上传到网站",
+  "action": "核查时线上已是相同版本，因此未重复部署或重启",
+  "service_status": "active",
+  "release_id": "20261020T110008Z-e3ef56a0",
+  "path": "/opt/image-workbench/releases/20261020T110008Z-e3ef56a0",
+  "local_runtime_files": 151,
+  "remote_runtime_files": 151,
+  "runtime_differences": [],
+  "remote_manifest_mismatches": [],
+  "public_checks": [
+    {
+      "path": "/login",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/config",
+      "status": 200,
+      "signed_in": false,
+      "csrf_available": true
+    },
+    {
+      "path": "/static/asset-input.js",
+      "status": 200,
+      "matches_local": true
+    },
+    {
+      "path": "/static/script-pricing.js",
+      "status": 200,
+      "matches_local": true
+    },
+    {
+      "path": "/static/pipeline.js",
+      "status": 200,
+      "matches_local": true
+    },
+    {
+      "path": "/static/storyboard.js",
+      "status": 200,
+      "matches_local": true
+    },
+    {
+      "path": "/static/scripts.js",
+      "status": 200,
+      "matches_local": true
+    }
+  ]
+}

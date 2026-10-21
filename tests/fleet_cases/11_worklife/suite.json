@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_11_11_worklife",
+  "cases": [
+    {
+      "case_id": "11_worklife_pure_01",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张设计师工作桌图片。画面内容：桌面有打开的素描本、铅笔、台灯和一盆小绿植。视觉要求：从斜上方拍摄，物品有序。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_02",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张图书馆自习位图片。画面内容：靠窗单人学习桌上摆放笔记本、书和台灯。视觉要求：安静午后自然光，无人物。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_03",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张木工工作台图片。画面内容：木工作坊台面有木块、卷尺和手工具，背景整齐。视觉要求：侧光突出木纹，安全有序。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_04",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张花店包装台图片。画面内容：花店桌面有剪刀、牛皮纸和几束待包装鲜花。视觉要求：明亮柔和色彩，轻微俯拍。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_05",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张录音室控制台图片。画面内容：小型录音室中的调音台、监听音箱和吸音墙。视觉要求：低调灯光，设备布局清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_06",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张陶艺拉坯桌图片。画面内容：陶艺工作台上有转盘、湿陶土和一只完成的杯子。视觉要求：自然工作室光线，桌面不过分杂乱。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "11_worklife_pure_07",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张实验室观察台图片。画面内容：明亮教学实验室里的显微镜、玻璃器皿与笔记本。视觉要求：干净写实，不出现危险操作。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_08",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张园艺播种桌图片。画面内容：户外小棚的桌面上有种子袋、育苗盘和喷壶。视觉要求：清新绿色，上午自然光。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_09",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张裁缝缝纫台图片。画面内容：缝纫机旁摆着布料、线轴与软尺，桌面整洁。视觉要求：温暖室内光，细节清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_pure_10",
+      "project_name": "日常工作学习摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张咖啡烘焙工作台图片。画面内容：小型烘焙店工作台上有咖啡豆、量杯和手冲壶。视觉要求：暖色侧光，真实职业环境。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "工作与学习场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_ref_01",
+      "project_name": "日常工作学习摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：花店桌面有剪刀、牛皮纸和几束待包装鲜花。风格约束：明亮柔和色彩，轻微俯拍。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "工作与学习场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_ref_02",
+      "project_name": "日常工作学习摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：小型录音室中的调音台、监听音箱和吸音墙。风格约束：低调灯光，设备布局清楚。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "工作与学习场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_ref_03",
+      "project_name": "日常工作学习摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：陶艺工作台上有转盘、湿陶土和一只完成的杯子。风格约束：自然工作室光线，桌面不过分杂乱。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "工作与学习场景",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "11_worklife_ref_04",
+      "project_name": "日常工作学习摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：明亮教学实验室里的显微镜、玻璃器皿与笔记本。风格约束：干净写实，不出现危险操作。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "工作与学习场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_ref_05",
+      "project_name": "日常工作学习摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：户外小棚的桌面上有种子袋、育苗盘和喷壶。风格约束：清新绿色，上午自然光。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "工作与学习场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "11_worklife_edit_01",
+      "project_name": "日常工作学习摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“工作与学习场景”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "11_worklife_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "工作与学习场景"
+      ]
+    },
+    {
+      "case_id": "11_worklife_edit_02",
+      "project_name": "日常工作学习摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“工作与学习场景”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "11_worklife_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "工作与学习场景"
+      ]
+    },
+    {
+      "case_id": "11_worklife_edit_03",
+      "project_name": "日常工作学习摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“工作与学习场景”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "11_worklife_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "工作与学习场景"
+      ]
+    },
+    {
+      "case_id": "11_worklife_edit_04",
+      "project_name": "日常工作学习摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“工作与学习场景”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "11_worklife_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "工作与学习场景"
+      ]
+    },
+    {
+      "case_id": "11_worklife_edit_05",
+      "project_name": "日常工作学习摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“工作与学习场景”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "11_worklife_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "工作与学习场景"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_09_09_animals",
+  "cases": [
+    {
+      "case_id": "09_animals_pure_01",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张金毛犬公园散步图片。画面内容：一只成年金毛犬走在绿树环绕的公园小径上。视觉要求：自然纪实摄影，狗的四肢完整。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_pure_02",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张灰白家猫窗边休息图片。画面内容：一只成年灰白家猫蜷在窗台软垫上，窗外有模糊绿植。视觉要求：柔和室内光，毛发细节清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "09_animals_pure_03",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张棕色小马草地站立图片。画面内容：一匹成年棕色小马在牧场草地上安静站立。视觉要求：远景自然光，身体比例真实。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_pure_04",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张红狐狸雪地观察图片。画面内容：一只成年红狐狸站在稀疏积雪的林地边缘。视觉要求：冬日柔光，尾巴完整入镜。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "09_animals_pure_05",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海龟浅海游动图片。画面内容：一只海龟在浅蓝海水中游过珊瑚礁。视觉要求：水下摄影，轮廓清晰且无塑料垃圾。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_pure_06",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张仓鸮栖息树枝图片。画面内容：一只仓鸮停在黄昏林地的一根树枝上。视觉要求：羽毛细节自然，背景克制。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "09_animals_pure_07",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张柯基草地奔跑图片。画面内容：一只成年柯基在草地上迎面小跑。视觉要求：快门定格，四条腿形态自然。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_pure_08",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张橘猫陶艺工作室图片。画面内容：一只成年橘猫坐在整洁的陶艺工作室窗台。视觉要求：生活方式摄影，陶器只作背景。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "09_animals_pure_09",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张黑马海岸漫步图片。画面内容：一匹黑马在宽阔海岸浅滩慢步，海浪在远处。视觉要求：晨光侧逆光，马身完整。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_pure_10",
+      "project_name": "动物主题影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张蜂鸟花园悬停图片。画面内容：一只蜂鸟在红色花朵前悬停，翅膀轻微动态。视觉要求：自然微距摄影，背景柔和。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "动物与宠物"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "09_animals_ref_01",
+      "project_name": "动物主题影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一只成年红狐狸站在稀疏积雪的林地边缘。风格约束：冬日柔光，尾巴完整入镜。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "动物与宠物",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "09_animals_ref_02",
+      "project_name": "动物主题影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一只海龟在浅蓝海水中游过珊瑚礁。风格约束：水下摄影，轮廓清晰且无塑料垃圾。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "动物与宠物",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_ref_03",
+      "project_name": "动物主题影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一只仓鸮停在黄昏林地的一根树枝上。风格约束：羽毛细节自然，背景克制。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "动物与宠物",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "09_animals_ref_04",
+      "project_name": "动物主题影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一只成年柯基在草地上迎面小跑。风格约束：快门定格，四条腿形态自然。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "动物与宠物",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "09_animals_ref_05",
+      "project_name": "动物主题影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一只成年橘猫坐在整洁的陶艺工作室窗台。风格约束：生活方式摄影，陶器只作背景。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "动物与宠物",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "09_animals_edit_01",
+      "project_name": "动物主题影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“动物与宠物”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "09_animals_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "动物与宠物"
+      ]
+    },
+    {
+      "case_id": "09_animals_edit_02",
+      "project_name": "动物主题影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“动物与宠物”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "09_animals_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "动物与宠物"
+      ]
+    },
+    {
+      "case_id": "09_animals_edit_03",
+      "project_name": "动物主题影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“动物与宠物”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "09_animals_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "动物与宠物"
+      ]
+    },
+    {
+      "case_id": "09_animals_edit_04",
+      "project_name": "动物主题影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“动物与宠物”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "09_animals_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "动物与宠物"
+      ]
+    },
+    {
+      "case_id": "09_animals_edit_05",
+      "project_name": "动物主题影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“动物与宠物”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "09_animals_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "动物与宠物"
+      ]
+    }
+  ]
+}

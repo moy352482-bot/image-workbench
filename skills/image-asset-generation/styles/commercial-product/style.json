@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "commercial-product",
+  "name": "商业产品质感",
+  "category": "photography",
+  "visual_positioning": "以结构准确、轮廓完整和可辨材质为第一目标，用受控反射与简洁背景呈现可检视的商品；不把高光当成更换材质的理由。",
+  "use_cases": [
+    "商品主图",
+    "结构与工艺特写",
+    "器物和配件资产"
+  ],
+  "asset_types": [
+    "product",
+    "prop",
+    "vehicle",
+    "wardrobe",
+    "food",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "优先让功能面和识别部件清楚；留白按交付版位安排，不能为构图裁掉必需结构。"
+    ],
+    "lighting": [
+      "大面积柔光塑造基本体积，小范围反射突出边缘；玻璃、金属与哑光材质采用不同反射强度。"
+    ],
+    "color": [
+      "以资产指定色为颜色基准，背景通过明度或色相距离提供分离，避免整体滤镜偏色。"
+    ],
+    "texture": [
+      "保留接缝、表面涂层和真实加工细节；不自动磨平纹理或增加奢侈材质。"
+    ],
+    "camera": [
+      "选用自然透视的三分之四视角、正视或局部微距；不以夸张广角改变尺寸关系。"
+    ],
+    "depth": [
+      "关键功能面尽量都处于可读范围；背景层次少，接触阴影明确。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "产品结构、比例、固定颜色与材质必须可辨且一致。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "高光顺着表面曲率变化，不凭空出现断裂反射。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "展示焦点与需求中的卖点对应，配景不能压过商品。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "背景色、光位和留白方向可随版位调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "surface_light": {
+      "type": "enum",
+      "description": "表面照明方式，服从实际材质。",
+      "default": "宽柔光",
+      "choices": [
+        "宽柔光",
+        "窄条边缘反射",
+        "均匀漫射光"
+      ]
+    },
+    "display_context": {
+      "type": "string",
+      "description": "展示背景的视觉处理，不擅加道具。",
+      "default": "纯净中性背景"
+    },
+    "detail_priority": {
+      "type": "string",
+      "description": "在不丢失整体结构的前提下优先表达的表面或功能细节。",
+      "default": "主体轮廓与材质交界"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用可检视的商业产品表现：使用 {{surface_light}} 刻画真实曲面，以 {{display_context}} 承托主体，把 {{detail_priority}} 作为可读细节重点。保持接触阴影、材质反射和功能面一致，留白服务交付布局。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若是金属或玻璃产品，不把真实反射一概消除，也不增加错误材质的镜面亮斑。",
+    "若标识已获 AssetSpec 指定，保留其位置与精确文字；仅抑制未经要求的额外品牌或水印。",
+    "若要求完整主图，不使用切掉底部、边角或关键接口的裁切。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不要复刻竞品包装、商标位置、专属装饰组合或整张广告的相同布景。"
+  ],
+  "examples": [
+    {
+      "example_id": "ceramic_mug",
+      "brief": "白色带蓝色内壁的陶瓷杯主图，釉面和把手形状已确定。",
+      "asset_type": "product",
+      "variables": {
+        "surface_light": "宽柔光",
+        "display_context": "浅灰无缝台面，杯底有轻接触阴影",
+        "detail_priority": "杯口厚度、把手连接和双色釉面边界"
+      },
+      "adaptation_notes": [
+        "必须保留内壁蓝色，不因中性风格去色。",
+        "高光不得穿过陶瓷实体。"
+      ]
+    },
+    {
+      "example_id": "bicycle_detail",
+      "brief": "折叠自行车铰链工艺说明图，展示金属扣件与接缝。",
+      "asset_type": "vehicle",
+      "variables": {
+        "surface_light": "窄条边缘反射",
+        "display_context": "低干扰的中灰背景",
+        "detail_priority": "折叠铰链、锁扣与相邻车架连接"
+      },
+      "adaptation_notes": [
+        "图像仍需保留足够整车上下文说明部件归属。",
+        "不能凭工艺感增加螺钉或改变铰链数目。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "材质术语应转成可观察的反射、粗糙度和接缝效果；不假定支持精确的物理渲染参数。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "商品可信度",
+      "材质呈现",
+      "功能细节"
+    ],
+    "natural_language_cues": [
+      "电商主图",
+      "干净棚拍",
+      "能看清材质和接缝"
+    ],
+    "avoid_when": [
+      "需要未经摆布的现场感。",
+      "主体结构本来就要自由变形或表现梦境。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

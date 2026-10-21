@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "architectural",
+  "name": "建筑空间摄影",
+  "category": "architecture",
+  "visual_positioning": "以垂直关系、尺度、动线与材料交界呈现可理解空间；审美表达服从既定建筑形体与空间连接。",
+  "use_cases": [
+    "建筑外观概念",
+    "室内与景观空间",
+    "地点资产与空间主视觉"
+  ],
+  "asset_types": [
+    "architecture",
+    "location",
+    "environment",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "通过轴线、转折或开口建立空间阅读顺序；主体建筑边界与出入口尽量清楚。"
+    ],
+    "lighting": [
+      "光线随朝向、开口和灯具设置进入空间；明暗解释墙面、地面与体量关系。"
+    ],
+    "color": [
+      "材料色与环境色分开处理，固定墙面、构件和地面颜色不得随氛围更换。"
+    ],
+    "texture": [
+      "保留材料尺度、接缝方向与表面粗糙度，不能把混凝土、石材和涂料混成同一纹理。"
+    ],
+    "camera": [
+      "明确相机高度与水平关系，控制无意的垂直线倾斜；宽视角不能造成不可理解的空间拉伸。"
+    ],
+    "depth": [
+      "透视、遮挡与尺度线索共同说明远近；门窗、楼梯、廊道的连接必须连续。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "建筑体量、开口与动线继承 AssetSpec。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "透视与尺度能支持空间理解。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "光线与材料接缝共同说明构造关系。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "观察高度、日照时段与环境人流密度可在授权范围调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "spatial_reading": {
+      "type": "string",
+      "description": "优先展示的空间关系。",
+      "default": "入口与主要体量关系"
+    },
+    "light_condition": {
+      "type": "enum",
+      "description": "场景照明状态，不更改朝向。",
+      "default": "均匀日光",
+      "choices": [
+        "均匀日光",
+        "低角度侧光",
+        "室内柔和混合光"
+      ]
+    },
+    "view_strategy": {
+      "type": "enum",
+      "description": "相机视点的组织方式。",
+      "default": "自然高度且垂直线受控",
+      "choices": [
+        "自然高度且垂直线受控",
+        "较高视点说明布局",
+        "低视点强调体量"
+      ]
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 使用建筑空间摄影表达，优先读清 {{spatial_reading}}，照明为 {{light_condition}}，视点采用 {{view_strategy}}。让透视、动线、材料接缝与明暗共同解释空间，不以氛围遮挡构造问题。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若建筑平面与立面已锁定，不新增门窗、楼层、楼梯、廊道或悬挑。",
+    "若没有人物需求，不为比例尺自动添加行人。",
+    "若强调垂直线受控，不以广角感接受弯曲墙体或互相冲突的消失点。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻参考建筑的独特立面、地标形体或未经设定的专属室内设计。"
+  ],
+  "examples": [
+    {
+      "example_id": "reading_room",
+      "brief": "社区阅览室室内，座位区、书架和入口关系已定义。",
+      "asset_type": "architecture",
+      "variables": {
+        "spatial_reading": "入口到座位区的通道与书架关系",
+        "light_condition": "室内柔和混合光",
+        "view_strategy": "自然高度且垂直线受控"
+      },
+      "adaptation_notes": [
+        "不能增加桌椅数量或堵塞通道。",
+        "保留指定地面和书架材质。"
+      ]
+    },
+    {
+      "example_id": "riverside_pavilion",
+      "brief": "河边展亭地点资产，屋顶形式与步道连接已固定。",
+      "asset_type": "location",
+      "variables": {
+        "spatial_reading": "展亭轮廓、步道与水岸的连接",
+        "light_condition": "低角度侧光",
+        "view_strategy": "较高视点说明布局"
+      },
+      "adaptation_notes": [
+        "观察高度用于说明布局，不变更建筑朝向。",
+        "侧光不能隐藏出入口或造成错误台阶。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "建筑效果图不代替施工或测量文件；几何、尺寸和法规适用性需由专门流程验证。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "空间可读",
+      "材料与构造",
+      "可信尺度"
+    ],
+    "natural_language_cues": [
+      "建筑摄影",
+      "能看清动线",
+      "垂直线规整的空间"
+    ],
+    "avoid_when": [
+      "需要法定施工图、测绘成果或精确工程尺寸。",
+      "希望自由改造建筑但任务只授权风格变体。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

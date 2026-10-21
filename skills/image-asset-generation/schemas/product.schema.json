@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/product.schema.json",
+  "title": "Product AssetSpec v1",
+  "allOf": [
+    {
+      "$ref": "asset-spec.schema.json"
+    },
+    {
+      "properties": {
+        "asset_type": {
+          "const": "product"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "profile": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "branding": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "surface": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "logo": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "dimensions": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "branding",
+            "surface",
+            "logo",
+            "dimensions"
+          ]
+        },
+        "identity": {
+          "required": [
+            "product_identity"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

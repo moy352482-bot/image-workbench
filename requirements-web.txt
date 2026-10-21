@@ -1,0 +1,11 @@
+-r requirements.txt
+fastapi>=0.143.0,<0.144
+uvicorn>=0.54.0,<0.55
+Jinja2>=3.1.6,<4
+python-multipart>=0.0.32,<0.1
+httpx>=0.28.1,<0.29
+# Security floors for transitive network dependencies (2026-10 audit).
+anyio>=4.14.2,<5
+idna>=3.15,<4
+python-docx>=1.2.0,<2
+pypdf>=6.9.2,<7

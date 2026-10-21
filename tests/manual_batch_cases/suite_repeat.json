@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "suite_name": "ecommerce-repeat-v1",
+  "cases": [
+    {
+      "case_id": "pure_short_square",
+      "project_name": "无参考简洁陶瓷杯主图",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "生成一只白色陶瓷马克杯，纯浅灰背景，居中单品，无文字无标志。 画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "short_prompt",
+        "single_product"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "ref_mascara_main",
+      "project_name": "睫毛膏套图",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "以参考图中的睫毛膏为唯一主体，保持包装形状、颜色和盖身比例，制作干净白底电商主图，正面居中，柔和投影，不添加文字或logo。 画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "single_subject",
+        "main_image"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "boundary_corrupt_image",
+      "project_name": "边界损坏图像",
+      "group": "boundary",
+      "operation": "generate",
+      "prompt": "以输入图作为商品主体生成白底图。",
+      "input_images": [
+        {
+          "path": "assets/corrupt.png",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "expected_failure",
+      "expected_failure_type": "prepare_failed",
+      "tags": [
+        "corrupt_image",
+        "must_not_call_model"
+      ]
+    }
+  ]
+}

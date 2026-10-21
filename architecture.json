@@ -1,0 +1,278 @@
+{
+  "root_package": "image_workbench",
+  "groups": {
+    "plugin_api": {
+      "modules": ["plugin_api"],
+      "may_import": ["foundation"]
+    },
+    "script_plugin": {
+      "modules": ["script_plugin"],
+      "may_import": ["plugin_api", "contracts"]
+    },
+    "foundation": {
+      "modules": [
+        "config",
+        "models",
+        "locking",
+        "timing",
+        "performance",
+        "codex_observer",
+        "codex_runtime",
+        "capacity",
+        "registration",
+        "remote_access",
+        "domain_errors",
+        "atomic_files",
+        "image_status",
+        "scheduling",
+        "media_validation",
+        "video_models"
+      ],
+      "may_import": [
+        "foundation"
+      ]
+    },
+    "contracts": {
+      "modules": [
+        "contracts",
+        "contracts.*"
+      ],
+      "may_import": [
+        "contracts"
+      ]
+    },
+    "storage": {
+      "modules": [
+        "storage"
+      ],
+      "may_import": [
+        "foundation"
+      ]
+    },
+    "identity": {
+      "modules": [
+        "accounts"
+      ],
+      "may_import": [
+        "foundation",
+        "storage"
+      ]
+    },
+    "image_backend": {
+      "modules": [
+        "image_backend",
+        "codex_backend"
+      ],
+      "may_import": [
+        "foundation",
+        "image_backend"
+      ]
+    },
+    "execution": {
+      "modules": [
+        "task_runner"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "identity",
+        "image_backend",
+        "assets"
+      ]
+    },
+    "projects": {
+      "modules": [
+        "project_manager",
+        "workspace_scope",
+        "account_migration"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "identity",
+        "execution",
+        "projects"
+      ]
+    },
+    "images": {
+      "modules": [
+        "workbench_state",
+        "image_queries",
+        "remote_queue",
+        "remote_worker",
+        "worker",
+        "batch_runner"
+      ],
+      "may_import": [
+        "foundation",
+        "contracts",
+        "storage",
+        "identity",
+        "image_backend",
+        "execution",
+        "projects",
+        "images",
+        "assets"
+      ]
+    },
+    "scripts": {
+      "modules": [
+        "script_service",
+        "script_models",
+        "script_templates",
+        "script_adapter",
+        "script_remote",
+        "script_remote_worker",
+        "script_resources",
+        "script_engine"
+      ],
+      "may_import": [
+        "foundation",
+        "contracts",
+        "storage",
+        "identity",
+        "projects",
+        "scripts"
+      ]
+    },
+    "video": {
+      "modules": [
+        "video_store",
+        "h3_worker"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "identity",
+        "video",
+        "projects"
+      ]
+    },
+    "qwen": {
+      "modules": [
+        "qwen_lab",
+        "qwen_worker"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "qwen"
+      ]
+    },
+    "pipeline": {
+      "modules": [
+        "pipeline_service"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "assets"
+      ]
+    },
+    "operations": {
+      "modules": [
+        "admin_operations"
+      ],
+      "may_import": [
+        "foundation",
+        "storage"
+      ]
+    },
+    "http": {
+      "modules": [
+        "http_api",
+        "http_api.*",
+        "script_web",
+        "video_web",
+        "qwen_web",
+        "admin_web",
+        "video_pipeline",
+        "script_resource_web",
+        "storyboard_web"
+      ],
+      "may_import": [
+        "plugin_api",
+        "foundation",
+        "contracts",
+        "storage",
+        "identity",
+        "execution",
+        "projects",
+        "images",
+        "scripts",
+        "video",
+        "qwen",
+        "pipeline",
+        "operations",
+        "http",
+        "storyboards",
+        "assets"
+      ]
+    },
+    "accounts_http": {
+      "modules": [
+        "accounts_web"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "identity",
+        "projects",
+        "images",
+        "http"
+      ]
+    },
+    "entrypoints": {
+      "modules": [
+        "",
+        "__main__",
+        "web",
+        "composition",
+        "cli"
+      ],
+      "may_import": [
+        "*"
+      ]
+    },
+    "storyboards": {
+      "modules": [
+        "storyboard_service",
+        "storyboard_planner",
+        "storyboard_models"
+      ],
+      "may_import": [
+        "foundation",
+        "storage",
+        "identity",
+        "projects",
+        "scripts",
+        "storyboards"
+      ]
+    },
+    "assets": {
+      "modules": [
+        "asset_library",
+        "image_references"
+      ],
+      "may_import": [
+        "foundation",
+        "storage"
+      ]
+    }
+  },
+  "http_framework_groups": [
+    "http",
+    "accounts_http",
+    "entrypoints"
+  ],
+  "frontend": {
+    "entry": "web_static/workbench.js",
+    "template": "web_templates/index.html",
+    "components": {
+      "WorkbenchFormat": "web_static/workbench-format.js",
+      "WorkbenchApi": "web_static/workbench-api.js",
+      "WorkbenchPreview": "web_static/workbench-preview.js",
+      "WorkbenchAccounts": "web_static/workbench-accounts.js"
+    }
+  }
+}

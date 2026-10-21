@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_12_12_architecture",
+  "cases": [
+    {
+      "case_id": "12_architecture_pure_01",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张白色现代美术馆图片。画面内容：简洁白色立面与入口台阶，几何线条对称。视觉要求：晴天自然光，建筑完整入镜。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_02",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张红砖旧厂房图片。画面内容：改造后的红砖厂房外立面有高窗与黑色金属门。视觉要求：阴天漫射光，砖墙纹理清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_03",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海边小灯塔图片。画面内容：白色灯塔立在低矮海岸岩石上，天空留白。视觉要求：竖向画幅，海面平静。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "12_architecture_pure_04",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张玻璃温室建筑图片。画面内容：一座小型玻璃温室置于城市公园草坪中。视觉要求：清晨侧光，结构线条清晰。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_05",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张木结构山间旅馆图片。画面内容：山坡上的木质旅馆有宽窗与窄阳台。视觉要求：阴天柔光，周围针叶林环绕。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_06",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张拱廊市集街道图片。画面内容：石柱拱廊下是一条安静的老城步行街。视觉要求：晨间空景，透视构图端正。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_07",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张现代社区图书馆图片。画面内容：低层公共图书馆外墙结合浅木与玻璃，入口清楚。视觉要求：广角建筑摄影，周围绿化克制。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_08",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张山谷石桥图片。画面内容：一座古朴石桥跨过浅溪，两岸有树木。视觉要求：自然风景与建筑比例协调。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_pure_09",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张蓝色地铁入口图片。画面内容：城市街角的简洁地铁入口与周围人行道。视觉要求：晴日建筑摄影，不出现可读广告。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "12_architecture_pure_10",
+      "project_name": "建筑空间影像",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张庭院白墙民居图片。画面内容：传统庭院中白墙、木门和一株小树形成层次。视觉要求：柔和晨光，构图安宁。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "建筑与城市"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "12_architecture_ref_01",
+      "project_name": "建筑空间影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一座小型玻璃温室置于城市公园草坪中。风格约束：清晨侧光，结构线条清晰。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "建筑与城市",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_ref_02",
+      "project_name": "建筑空间影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：山坡上的木质旅馆有宽窗与窄阳台。风格约束：阴天柔光，周围针叶林环绕。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "建筑与城市",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_ref_03",
+      "project_name": "建筑空间影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：石柱拱廊下是一条安静的老城步行街。风格约束：晨间空景，透视构图端正。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "建筑与城市",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_ref_04",
+      "project_name": "建筑空间影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：低层公共图书馆外墙结合浅木与玻璃，入口清楚。风格约束：广角建筑摄影，周围绿化克制。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "建筑与城市",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_ref_05",
+      "project_name": "建筑空间影像",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一座古朴石桥跨过浅溪，两岸有树木。风格约束：自然风景与建筑比例协调。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "建筑与城市",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "12_architecture_edit_01",
+      "project_name": "建筑空间影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“建筑与城市”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "12_architecture_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "建筑与城市"
+      ]
+    },
+    {
+      "case_id": "12_architecture_edit_02",
+      "project_name": "建筑空间影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“建筑与城市”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "12_architecture_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "建筑与城市"
+      ]
+    },
+    {
+      "case_id": "12_architecture_edit_03",
+      "project_name": "建筑空间影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“建筑与城市”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "12_architecture_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "建筑与城市"
+      ]
+    },
+    {
+      "case_id": "12_architecture_edit_04",
+      "project_name": "建筑空间影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“建筑与城市”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "12_architecture_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "建筑与城市"
+      ]
+    },
+    {
+      "case_id": "12_architecture_edit_05",
+      "project_name": "建筑空间影像",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“建筑与城市”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "12_architecture_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "建筑与城市"
+      ]
+    }
+  ]
+}

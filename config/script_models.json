@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "catalog_max_age_days": 7,
+  "models": [
+    {"model_id": "gpt-6-astra", "display_name": "GPT-6 Astra", "provider": "codex", "enabled": true, "capabilities": ["script", "screenplay"]},
+    {"model_id": "gpt-6.1-sol", "display_name": "GPT-6.1 Sol", "provider": "codex", "enabled": true, "capabilities": ["script", "screenplay"]},
+    {"model_id": "gpt-6-luna", "display_name": "GPT-6 Luna", "provider": "codex", "enabled": true, "capabilities": ["script", "screenplay"]}
+  ],
+  "thinking_labels": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "xhigh": "Extra High", "max": "Max", "ultra": "Ultra"}
+}

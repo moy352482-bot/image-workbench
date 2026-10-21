@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_06_06_adult_portrait",
+  "cases": [
+    {
+      "case_id": "06_adult_portrait_pure_01",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年女性咖啡师图片。画面内容：一位约30岁的女性咖啡师站在明亮咖啡馆吧台旁，穿深绿围裙。视觉要求：半身肖像，神情自然，双手姿势正常。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_02",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年男性建筑师图片。画面内容：一位约40岁的男性建筑师站在工作室模型旁，穿浅灰衬衫。视觉要求：环境肖像，窗边自然光，背景不过度虚化。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_03",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年女性陶艺师图片。画面内容：一位约35岁的女性陶艺师坐在工作台边，手边有陶土与转盘。视觉要求：侧面半身照，真实皮肤纹理。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_04",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年男性园艺师图片。画面内容：一位约50岁的男性园艺师在温室里整理盆栽。视觉要求：腰部以上构图，表情放松。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_05",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年女性音乐家图片。画面内容：一位约28岁的女性小提琴演奏者在排练厅休息间隙望向窗外。视觉要求：自然侧光，衣着得体。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_06",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年男性厨师图片。画面内容：一位约38岁的男性厨师在专业厨房端着空白白盘。视觉要求：人物清晰，背景设备整洁。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_07",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年女性登山者图片。画面内容：一位约32岁的女性登山者在山屋门口整理背包。视觉要求：户外纪实肖像，天气明亮。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_08",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年男性教师图片。画面内容：一位约45岁的男性教师在空教室讲台边翻阅书本。视觉要求：自然微笑，真实室内光线。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_09",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年女性医生图片。画面内容：一位约36岁的女性医生在明亮诊室里查看平板电脑。视觉要求：职业肖像，环境干净、无病人。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_pure_10",
+      "project_name": "成年人肖像摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张成年男性摄影师图片。画面内容：一位约34岁的男性摄影师在城市街角举着相机。视觉要求：黄昏环境光，人物手指自然。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "成年人像"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_ref_01",
+      "project_name": "成年人肖像摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一位约50岁的男性园艺师在温室里整理盆栽。风格约束：腰部以上构图，表情放松。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "成年人像",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_ref_02",
+      "project_name": "成年人肖像摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一位约28岁的女性小提琴演奏者在排练厅休息间隙望向窗外。风格约束：自然侧光，衣着得体。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "成年人像",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_ref_03",
+      "project_name": "成年人肖像摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一位约38岁的男性厨师在专业厨房端着空白白盘。风格约束：人物清晰，背景设备整洁。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "成年人像",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_ref_04",
+      "project_name": "成年人肖像摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一位约32岁的女性登山者在山屋门口整理背包。风格约束：户外纪实肖像，天气明亮。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "成年人像",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "06_adult_portrait_ref_05",
+      "project_name": "成年人肖像摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一位约45岁的男性教师在空教室讲台边翻阅书本。风格约束：自然微笑，真实室内光线。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "成年人像",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "06_adult_portrait_edit_01",
+      "project_name": "成年人肖像摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“成年人像”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "06_adult_portrait_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "成年人像"
+      ]
+    },
+    {
+      "case_id": "06_adult_portrait_edit_02",
+      "project_name": "成年人肖像摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“成年人像”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "06_adult_portrait_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "成年人像"
+      ]
+    },
+    {
+      "case_id": "06_adult_portrait_edit_03",
+      "project_name": "成年人肖像摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“成年人像”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "06_adult_portrait_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "成年人像"
+      ]
+    },
+    {
+      "case_id": "06_adult_portrait_edit_04",
+      "project_name": "成年人肖像摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“成年人像”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "06_adult_portrait_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "成年人像"
+      ]
+    },
+    {
+      "case_id": "06_adult_portrait_edit_05",
+      "project_name": "成年人肖像摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“成年人像”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "06_adult_portrait_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "成年人像"
+      ]
+    }
+  ]
+}

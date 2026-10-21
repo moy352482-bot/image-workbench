@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/quality-check.schema.json",
+  "title": "AssetQualityCheck technical contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "overall": {
+      "enum": [
+        "pass",
+        "fail",
+        "not_run"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "check": {
+            "enum": [
+              "file_exists",
+              "readable",
+              "dimensions",
+              "format",
+              "generation_succeeded",
+              "artifact_registered",
+              "version_registered",
+              "content_integrity"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "fail",
+              "not_run"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "check",
+          "status",
+          "evidence"
+        ]
+      },
+      "minItems": 8,
+      "maxItems": 8
+    },
+    "visual_evaluation": {
+      "const": "human_only"
+    }
+  },
+  "required": [
+    "schema_version",
+    "asset_id",
+    "version",
+    "overall",
+    "checks",
+    "visual_evaluation"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "overall": {
+            "const": "pass"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "items": {
+              "properties": {
+                "status": {
+                  "const": "pass"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overall": {
+            "const": "fail"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "fail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overall": {
+            "const": "not_run"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "not_run"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

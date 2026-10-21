@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/skill-input.schema.json",
+  "title": "Image Asset Generation canonical input v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "user_request": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "asset_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "character",
+            "product",
+            "location",
+            "environment",
+            "prop",
+            "vehicle",
+            "wardrobe",
+            "style_reference",
+            "key_visual",
+            "logo",
+            "food",
+            "architecture"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reference_images": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "common.schema.json#/$defs/reference"
+      },
+      "uniqueItems": true
+    },
+    "style": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "aspect_ratio": {
+      "$ref": "common.schema.json#/$defs/aspect_ratio"
+    },
+    "quality": {
+      "enum": [
+        "draft",
+        "standard",
+        "high"
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "max_credit": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": []
+    },
+    "generation_intent": {
+      "enum": [
+        "generate",
+        "edit",
+        "inpaint",
+        "multi_reference"
+      ]
+    },
+    "existing_asset": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/asset_version_ref"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "pose": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "composition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "camera": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "lighting": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "setting": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "time": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "weather": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": []
+    },
+    "resolution": {
+      "$ref": "common.schema.json#/$defs/resolution"
+    },
+    "preferred_model": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fallback_model": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "user_request"
+  ]
+}

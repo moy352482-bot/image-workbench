@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "styles": [
+    {
+      "style_id": "cinematic-realism",
+      "path": "cinematic-realism/style.json"
+    },
+    {
+      "style_id": "commercial-product",
+      "path": "commercial-product/style.json"
+    },
+    {
+      "style_id": "editorial-fashion",
+      "path": "editorial-fashion/style.json"
+    },
+    {
+      "style_id": "documentary",
+      "path": "documentary/style.json"
+    },
+    {
+      "style_id": "anime-manga",
+      "path": "anime-manga/style.json"
+    },
+    {
+      "style_id": "illustration",
+      "path": "illustration/style.json"
+    },
+    {
+      "style_id": "watercolor",
+      "path": "watercolor/style.json"
+    },
+    {
+      "style_id": "3d-stylized",
+      "path": "3d-stylized/style.json"
+    },
+    {
+      "style_id": "retro-film",
+      "path": "retro-film/style.json"
+    },
+    {
+      "style_id": "futuristic-sci-fi",
+      "path": "futuristic-sci-fi/style.json"
+    },
+    {
+      "style_id": "minimal",
+      "path": "minimal/style.json"
+    },
+    {
+      "style_id": "graphic-poster",
+      "path": "graphic-poster/style.json"
+    },
+    {
+      "style_id": "lifestyle",
+      "path": "lifestyle/style.json"
+    },
+    {
+      "style_id": "architectural",
+      "path": "architectural/style.json"
+    },
+    {
+      "style_id": "food-photography",
+      "path": "food-photography/style.json"
+    }
+  ]
+}

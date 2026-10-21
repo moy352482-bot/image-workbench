@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "anime-manga",
+  "name": "动画漫画造型",
+  "category": "illustration",
+  "visual_positioning": "以清晰线条、分组明暗和可辨轮廓组织二维角色与场景；保持原创造型，不依赖现成作品或作者名称。",
+  "use_cases": [
+    "原创角色设定",
+    "道具与载具插画",
+    "动画叙事关键画面"
+  ],
+  "asset_types": [
+    "character",
+    "prop",
+    "vehicle",
+    "environment",
+    "wardrobe",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "轮廓优先，姿态的重心线与大形清楚；夸张程度不得破坏已锁定的资产比例。"
+    ],
+    "lighting": [
+      "把光影归纳为少量清晰色块，主光方向一致；高光不随意漂浮。"
+    ],
+    "color": [
+      "使用明确的主体配色与少量辅助色，固定发色、衣色、涂装不能为了画面统一而替换。"
+    ],
+    "texture": [
+      "以干净填色为主，材质通过少量线条与高光区别；避免所有表面都变成同一种塑料。"
+    ],
+    "camera": [
+      "根据 AssetSpec 使用平视、俯视或仰视；动作镜头保持透视与肢体连接。"
+    ],
+    "depth": [
+      "前中后景用线宽、明度与细节密度分层；不要靠全部背景模糊掩盖结构。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "外轮廓与关键内部结构清晰可辨。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "明暗归纳服从一个稳定主光方向。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "角色或物件的核心识别特征跨图保持一致。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "线宽、明暗层数和场景细节量可随用途调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "line_weight": {
+      "type": "enum",
+      "description": "线条的粗细节奏。",
+      "default": "外粗内细",
+      "choices": [
+        "外粗内细",
+        "均匀细线",
+        "有轻微手绘变化"
+      ]
+    },
+    "shadow_steps": {
+      "type": "enum",
+      "description": "归纳明暗的层数倾向。",
+      "default": "两层清晰明暗",
+      "choices": [
+        "两层清晰明暗",
+        "三层柔和分组",
+        "平涂配少量阴影"
+      ]
+    },
+    "energy_level": {
+      "type": "enum",
+      "description": "画面线条与构图的动势，不覆盖锁定动作。",
+      "default": "平稳清楚",
+      "choices": [
+        "平稳清楚",
+        "轻快活泼",
+        "紧凑有力"
+      ]
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 使用原创动画漫画造型：线条按 {{line_weight}} 处理，光影采用 {{shadow_steps}}，视觉动势为 {{energy_level}}。突出大形、轮廓与识别特征，用有限细节区分材质，保持二维表达和空间逻辑。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若是设定资产，不额外添加对话框、拟声字、速度线或漫画分格。",
+    "若身份比例已锁定，不自动改成幼态大头或改变眼鼻间距。",
+    "若需要清楚展示结构，不用夸张透视遮掉手部、轮子或连接件。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不继承既有动漫角色的脸型、服装标记、专属武器、制服配色组合或作品标题。"
+  ],
+  "examples": [
+    {
+      "example_id": "courier_character",
+      "brief": "原创成人快递员的角色半身设定，服装色和发型已固定。",
+      "asset_type": "character",
+      "variables": {
+        "line_weight": "外粗内细",
+        "shadow_steps": "两层清晰明暗",
+        "energy_level": "轻快活泼"
+      },
+      "adaptation_notes": [
+        "保持成人比例和既定脸部特征。",
+        "活泼来自线条与表情许可范围，不新增随身装备。"
+      ]
+    },
+    {
+      "example_id": "research_rover",
+      "brief": "月面勘探车的动画道具展示，轮数与传感器布局固定。",
+      "asset_type": "vehicle",
+      "variables": {
+        "line_weight": "均匀细线",
+        "shadow_steps": "三层柔和分组",
+        "energy_level": "平稳清楚"
+      },
+      "adaptation_notes": [
+        "轮轴和传感器位置必须准确。",
+        "用线条密度区分面板，不增加虚构机械附件。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "使用线宽、明暗分组与轮廓描述，不加入模型标签、权重语法或现成作品名。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "二维清晰轮廓",
+      "角色辨识",
+      "明暗分组"
+    ],
+    "natural_language_cues": [
+      "原创动画设定",
+      "漫画感线稿上色",
+      "清晰赛璐璐感"
+    ],
+    "avoid_when": [
+      "需要真实皮肤或商品材质验收。",
+      "必须与某个现有角色高度近似而无身份授权依据。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

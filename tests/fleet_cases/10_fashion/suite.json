@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_10_10_fashion",
+  "cases": [
+    {
+      "case_id": "10_fashion_pure_01",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张米色羊毛围巾图片。画面内容：一条米色羊毛围巾自然搭在浅木椅背上。视觉要求：纹理清楚的静物主图。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "10_fashion_pure_02",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张蓝色牛仔外套图片。画面内容：无人物穿着的蓝色牛仔外套正面平铺，袖口与纽扣完整。视觉要求：干净浅灰背景，均匀光线。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "10_fashion_pure_03",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张棕色皮革斜挎包图片。画面内容：小型棕色皮革斜挎包摆在暖灰石台上。视觉要求：包带完整可见，突出皮革纹理。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "10_fashion_pure_04",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张白色帆布运动鞋图片。画面内容：一双白色帆布鞋并排摆放，鞋带和鞋底完整。视觉要求：轻微俯拍，浅蓝摄影棚背景。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_pure_05",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张琥珀色太阳镜图片。画面内容：一副琥珀色镜框太阳镜放在浅色亚麻布上。视觉要求：镜片反光克制，产品轮廓清晰。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "10_fashion_pure_06",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张深绿棒球帽图片。画面内容：一顶深绿纯色棒球帽侧前方摆放在木台上。视觉要求：帽檐弧度自然，不添加标志。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_pure_07",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张银色耳坠图片。画面内容：一对简约银色耳坠置于浅米色绒面展示台。视觉要求：竖构图微距，金属反光柔和。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "10_fashion_pure_08",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张酒红色皮鞋图片。画面内容：一双酒红色牛津鞋分开摆放，鞋带穿孔清楚。视觉要求：深浅对比适中，电商棚拍。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_pure_09",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张浅紫色雨伞图片。画面内容：一把收拢的浅紫色长柄伞靠在白墙边，伞尖完整。视觉要求：自然阴天光，简洁场景。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "10_fashion_pure_10",
+      "project_name": "服饰产品摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张黑色旅行背包图片。画面内容：黑色登山背包正面立放，肩带、侧袋和扣具完整。视觉要求：浅灰背景，均匀产品光线。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "服饰与配饰"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_ref_01",
+      "project_name": "服饰产品摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一双白色帆布鞋并排摆放，鞋带和鞋底完整。风格约束：轻微俯拍，浅蓝摄影棚背景。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "服饰与配饰",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_ref_02",
+      "project_name": "服饰产品摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一副琥珀色镜框太阳镜放在浅色亚麻布上。风格约束：镜片反光克制，产品轮廓清晰。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "服饰与配饰",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "10_fashion_ref_03",
+      "project_name": "服饰产品摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一顶深绿纯色棒球帽侧前方摆放在木台上。风格约束：帽檐弧度自然，不添加标志。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "服饰与配饰",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_ref_04",
+      "project_name": "服饰产品摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一对简约银色耳坠置于浅米色绒面展示台。风格约束：竖构图微距，金属反光柔和。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "服饰与配饰",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "10_fashion_ref_05",
+      "project_name": "服饰产品摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：一双酒红色牛津鞋分开摆放，鞋带穿孔清楚。风格约束：深浅对比适中，电商棚拍。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "服饰与配饰",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "10_fashion_edit_01",
+      "project_name": "服饰产品摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“服饰与配饰”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "10_fashion_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "服饰与配饰"
+      ]
+    },
+    {
+      "case_id": "10_fashion_edit_02",
+      "project_name": "服饰产品摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“服饰与配饰”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "10_fashion_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "服饰与配饰"
+      ]
+    },
+    {
+      "case_id": "10_fashion_edit_03",
+      "project_name": "服饰产品摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“服饰与配饰”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "10_fashion_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "服饰与配饰"
+      ]
+    },
+    {
+      "case_id": "10_fashion_edit_04",
+      "project_name": "服饰产品摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“服饰与配饰”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "10_fashion_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "服饰与配饰"
+      ]
+    },
+    {
+      "case_id": "10_fashion_edit_05",
+      "project_name": "服饰产品摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“服饰与配饰”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "10_fashion_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "服饰与配饰"
+      ]
+    }
+  ]
+}

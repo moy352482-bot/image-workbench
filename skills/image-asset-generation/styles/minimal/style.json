@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "minimal",
+  "name": "留白极简",
+  "category": "graphic",
+  "visual_positioning": "用少量元素、准确边界与充分留白建立清楚层级；减少无关背景而不删去主体必需结构。",
+  "use_cases": [
+    "产品与物件主视觉",
+    "简洁品牌资产",
+    "少元素主题图"
+  ],
+  "asset_types": [
+    "product",
+    "prop",
+    "wardrobe",
+    "food",
+    "architecture",
+    "logo",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "控制焦点数量，主体与留白形成明确比例；固定标识和必需说明不得因极简而省略。"
+    ],
+    "lighting": [
+      "柔和单向光或均匀平面照明按资产用途选择，阴影只承担体积和接触说明。"
+    ],
+    "color": [
+      "背景与主体用明度分离，辅助色少；主体固定配色即使复杂也不得擅自删色。"
+    ],
+    "texture": [
+      "表面保持真实或已定义的材质，纹理密度低但关键纹理不被抹掉。"
+    ],
+    "camera": [
+      "采用低畸变、清楚的视角；图形资产优先正面呈现，实体依据所需功能面取景。"
+    ],
+    "depth": [
+      "背景层次少，空间由一到两个明确平面表达；不凭空制造空洞的悬浮感。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "每个可见元素都有明确的信息作用。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "留白保证主体边界与阅读层级清楚。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "简化只作用于未锁定的上下文，不修改主体身份。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "主体占比、留白方向与背景明度可按版位调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "space_distribution": {
+      "type": "enum",
+      "description": "留白与主体之间的关系。",
+      "default": "均衡四周留白",
+      "choices": [
+        "均衡四周留白",
+        "一侧明确留白",
+        "上方呼吸空间"
+      ]
+    },
+    "contrast_weight": {
+      "type": "enum",
+      "description": "主体与背景的对比程度。",
+      "default": "清晰中等对比",
+      "choices": [
+        "清晰中等对比",
+        "柔和低对比",
+        "强烈明暗对比"
+      ]
+    },
+    "surface_restraint": {
+      "type": "string",
+      "description": "减少视觉干扰的方法，不能改材质。",
+      "default": "去除非必要背景装饰"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用留白极简表达，以 {{space_distribution}} 组织版面，保持 {{contrast_weight}}，通过 {{surface_restraint}} 减少干扰。所有保留元素都服务识别和层级，主体固定结构、颜色、材质及文字必须完整。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若资产有重要接口、纹理或部件，不能为了简洁删除。",
+    "若需 logo 或精确品牌标识，不将 logo 作为通用排除词。",
+    "若低对比造成边缘不可辨，优先提高分离度而非继续压低对比。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复制第三方标识的负形、独特版式比例或具有强识别性的形状组合。"
+  ],
+  "examples": [
+    {
+      "example_id": "desk_lamp",
+      "brief": "桌灯主视觉，灯杆转轴与电源线是必需结构。",
+      "asset_type": "product",
+      "variables": {
+        "space_distribution": "一侧明确留白",
+        "contrast_weight": "清晰中等对比",
+        "surface_restraint": "背景只保留台面与墙面的交界"
+      },
+      "adaptation_notes": [
+        "电源线和转轴不能被简化掉。",
+        "灯罩材质与固定色保持不变。"
+      ]
+    },
+    {
+      "example_id": "brand_symbol",
+      "brief": "已确认品牌图形标识的干净展示资产。",
+      "asset_type": "logo",
+      "variables": {
+        "space_distribution": "均衡四周留白",
+        "contrast_weight": "强烈明暗对比",
+        "surface_restraint": "纯色背景，不添加阴影与材质纹理"
+      },
+      "adaptation_notes": [
+        "标识形状、指定色和安全区优先。",
+        "高对比通过背景选择实现，不重染标识。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "极简是元素与空间的选择，不是自动删除背景、强制透明或把所有材质变哑光。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "低干扰",
+      "清楚留白",
+      "少元素层级"
+    ],
+    "natural_language_cues": [
+      "极简干净",
+      "空间大一点",
+      "少点装饰"
+    ],
+    "avoid_when": [
+      "需拥挤生活场景或大量信息的完整展示。",
+      "主体本身信息密集且用户要求每项同时突出。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

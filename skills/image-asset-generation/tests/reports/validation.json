@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "scope": "offline_contract_and_fixture_validation",
+  "schemas": 11,
+  "styles": 15,
+  "style_examples": 30,
+  "request_output_cases": 24,
+  "asset_types_in_cases": [
+    "architecture",
+    "character",
+    "environment",
+    "food",
+    "key_visual",
+    "location",
+    "logo",
+    "product",
+    "prop",
+    "style_reference",
+    "vehicle",
+    "wardrobe"
+  ],
+  "supplemental_synthetic_cases": 9,
+  "quality_contract_fixtures": 3,
+  "version_contract_fixtures": 4,
+  "rejected_negative_mutations": 62,
+  "output_path_checks": {
+    "accepted": 2,
+    "rejected": 5,
+    "writes": 0
+  },
+  "remote_schema_retrieval_denied": true,
+  "model_calls": 0,
+  "credit_operations": 0,
+  "limitations": [
+    "No NLP interpretation validation",
+    "No image generation or visual-quality validation",
+    "No real file, account-scope, artifact registry or version registry verification"
+  ]
+}

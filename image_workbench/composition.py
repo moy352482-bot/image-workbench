@@ -1,0 +1,66 @@
+"""Application composition root: create services, then attach HTTP adapters.
+
+This is the only place that assembles all website features. Route installers
+receive their dependencies and must not construct unrelated feature services.
+"""
+import os
+
+from .accounts_web import AccountApplication
+from .admin_web import install_admin
+from .storage import StorageManager
+from .script_service import ScriptService
+from .script_web import install_scripts
+from .video_store import VideoStore
+from .video_web import install_video
+from .video_pipeline import install_pipeline
+from .pipeline_service import PipelineService
+from .qwen_lab import QwenLabStore
+from .qwen_web import install_qwen
+from .storyboard_service import StoryboardService
+from .storyboard_web import install_storyboards
+from .plugin_api import PluginRegistry
+from .script_plugin import PLUGIN_ID, ScriptGenerationPlugin
+
+
+def create_app(storage: StorageManager | None = None, *, backend="codex", remote_access=None, registration_policy=None,
+               disabled_plugins=None):
+    disabled = set(disabled_plugins if disabled_plugins is not None else
+                   filter(None, (item.strip() for item in os.environ.get("IMAGE_WORKBENCH_DISABLED_PLUGINS", "").split(","))))
+    if disabled - {PLUGIN_ID}:
+        raise ValueError(f"Unknown disabled plugins: {sorted(disabled - {PLUGIN_ID})}")
+    application = AccountApplication(storage or StorageManager(), backend=backend,
+                                     remote_access=remote_access, registration_policy=registration_policy)
+    application.video_store = VideoStore(application.storage, application.identity)
+    application.script_service = ScriptService(application.storage, application.identity)
+    application.qwen_store = QwenLabStore(application.storage, application.identity)
+    # Resolve text service per operation so tests/integrations can replace the
+    # service without rebuilding routes. Identity and workspace scope stay intact.
+    def scripts():
+        return application.script_service
+
+    def images(aid, wid):
+        return application.scoped_app(aid, wid).state.workbench
+
+    application.plugins = PluginRegistry(services=("script-service",))
+    application.plugins.register(ScriptGenerationPlugin(scripts, application.plugins), enabled=PLUGIN_ID not in disabled)
+    application.pipeline_service = PipelineService(application.video_store, scripts, images)
+    install_admin(application)
+    install_video(application.auth, application.video_store, application.pipeline_service)
+    install_scripts(application.auth, scripts, application.storage, remote_mode=bool(remote_access),
+                    get_plugin=lambda: application.plugins.get(PLUGIN_ID),
+                    describe_plugin=lambda: application.plugins.describe(PLUGIN_ID))
+    if remote_access:
+        from .script_remote import ScriptRemoteQueue, RemoteScriptRegistry
+        from .http_api.script_workers import install_script_worker
+        application.script_queue = ScriptRemoteQueue(application.script_service)
+        registry = RemoteScriptRegistry(application.script_queue)
+        application.script_service.registry = registry
+        application.script_service.router.registry = registry
+        install_script_worker(application.auth, application.script_queue)
+    application.storyboard_service = StoryboardService(application.storage, application.identity,
+                                                       application.script_service, application.video_store)
+    application.script_service.storyboards = application.storyboard_service
+    install_storyboards(application.auth, application.storyboard_service)
+    install_pipeline(application.auth, application.pipeline_service, application.video_store)
+    install_qwen(application.auth, application.qwen_store)
+    return application

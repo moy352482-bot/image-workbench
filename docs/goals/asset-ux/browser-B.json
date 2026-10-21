@@ -1,0 +1,57 @@
+{
+  "runner": "Python Playwright Chromium + real uvicorn/SQLite/files + ffmpeg H.264 MP4 fixture",
+  "model_calls": 0,
+  "elapsed_seconds": 23.069,
+  "cases": [
+    {
+      "name": "test_generated_result_and_gallery_continue_edit_keep_scope_and_base",
+      "status": "passed",
+      "elapsed_seconds": 3.949,
+      "page_errors": [],
+      "screenshot": "screenshots/test_generated_result_and_gallery_continue_edit_keep_scope_and_base.png"
+    },
+    {
+      "name": "test_root_output_menu_handoff_maps_same_subproject_and_artifact",
+      "status": "passed",
+      "elapsed_seconds": 2.292,
+      "page_errors": [],
+      "screenshot": "screenshots/test_root_output_menu_handoff_maps_same_subproject_and_artifact.png"
+    },
+    {
+      "name": "test_tray_drag_references_existing_artifact_without_copying",
+      "status": "passed",
+      "elapsed_seconds": 2.164,
+      "page_errors": [],
+      "screenshot": "screenshots/test_tray_drag_references_existing_artifact_without_copying.png"
+    },
+    {
+      "name": "test_tray_first_last_actions_preserve_occupied_frames",
+      "status": "passed",
+      "elapsed_seconds": 2.608,
+      "page_errors": [],
+      "screenshot": "screenshots/test_tray_first_last_actions_preserve_occupied_frames.png"
+    },
+    {
+      "name": "test_tray_image_actions_use_same_artifact_and_remove_only_reference",
+      "status": "passed",
+      "elapsed_seconds": 3.461,
+      "page_errors": [],
+      "screenshot": "screenshots/test_tray_image_actions_use_same_artifact_and_remove_only_reference.png"
+    },
+    {
+      "name": "test_video_tray_binds_draft_shot_and_previews_same_clip",
+      "status": "passed",
+      "elapsed_seconds": 2.308,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_tray_binds_draft_shot_and_previews_same_clip.png"
+    },
+    {
+      "name": "test_video_tray_preview_extract_first_last_frames_and_hide_original_survives",
+      "status": "passed",
+      "elapsed_seconds": 4.237,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_tray_preview_extract_first_last_frames_and_hide_original_survives.png"
+    }
+  ],
+  "note": "All actions use the real API; frame extraction runs in browser video/canvas. Drag tests pass DataTransfer through actual dragstart/drop listeners."
+}

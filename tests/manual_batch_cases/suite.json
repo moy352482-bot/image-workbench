@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "suite_name": "ecommerce-small-v1",
+  "cases": [
+    {
+      "case_id": "pure_short_square",
+      "project_name": "无参考简洁陶瓷杯主图",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "生成一只白色陶瓷马克杯，纯浅灰背景，居中单品，无文字无标志。 画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "short_prompt",
+        "single_product"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "pure_long_landscape",
+      "project_name": "无参考户外背包场景图",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "为一款深绿色通勤背包制作电商场景图：背包置于整洁的木质长凳上，柔和自然窗光，背景为克制的浅米色室内墙面，产品结构清楚、拉链和肩带完整，画面留白适中；只出现一个背包，不添加文字、商标或额外商品。 画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "long_prompt",
+        "landscape"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "pure_portrait_bottle",
+      "project_name": "无参考玻璃水瓶详情图",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "制作透明玻璃水瓶的单品图，浅蓝纯色背景，水瓶竖直居中，柔和侧光，瓶盖和瓶身边缘清晰，无文字无logo。 画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "portrait"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "pure_long_square_watch",
+      "project_name": "无参考腕表棚拍",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "生成一只银色简约腕表的电商棚拍图，表盘朝向镜头，表带自然展开并完整入镜，置于温暖的浅色石材台面上，背景干净、光线柔和，金属细节清晰；仅一只腕表，不出现手腕、文字、商标、水印或其他商品。 画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "long_prompt",
+        "square"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "ref_mascara_main",
+      "project_name": "睫毛膏套图",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "以参考图中的睫毛膏为唯一主体，保持包装形状、颜色和盖身比例，制作干净白底电商主图，正面居中，柔和投影，不添加文字或logo。 画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "single_subject",
+        "main_image"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "ref_fragrance_scene",
+      "project_name": "香水套图",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "仅借鉴参考图中香水瓶的深色配色与精致产品摄影风格，不复制其中的瓶型或品牌；生成一只无品牌的透明方形玻璃香水瓶，置于深色石材台面，暖色侧光，单件商品，无文字。 画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "single_style",
+        "scene_image"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "ref_phone_detail",
+      "project_name": "手机套图",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "严格保持参考手机的机身比例、按键和颜色，生成手机背部摄像头区域的电商详情特写，背景为浅灰，细节清楚，不出现文字或品牌标志。 画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "single_subject",
+        "detail_image"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "ref_multi_cosmetic_campaign",
+      "project_name": "睫毛膏多参考视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "以第一张参考图中的睫毛膏作为唯一商品主体，保持其包装轮廓；借鉴第二张图的深色、精致布光氛围，第三张图仅作为竖向产品居中构图参考。输出一张电商场景图，不混合其他商品，不添加文字或logo。 画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "subject"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "reference"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "multi_reference",
+        "subject_style_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "edit_mascara_bg",
+      "project_name": "睫毛膏套图",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "仅将白色背景改为柔和的浅米色无缝背景，商品保持原样，位置和外观不变。",
+      "input_images": [],
+      "base_case": "ref_mascara_main",
+      "expected_mode": "success",
+      "tags": [
+        "background_change",
+        "edit_chain_1"
+      ]
+    },
+    {
+      "case_id": "edit_mascara_tone",
+      "project_name": "睫毛膏套图",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "保持浅米色背景和商品结构不变，将整体照明色调调整为中性自然光，避免偏黄。",
+      "input_images": [],
+      "base_case": "edit_mascara_bg",
+      "expected_mode": "success",
+      "tags": [
+        "tone_change",
+        "edit_chain_2"
+      ]
+    },
+    {
+      "case_id": "edit_mascara_detail",
+      "project_name": "睫毛膏套图",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "只增强包装边缘与瓶盖细节清晰度，保持颜色、形状、构图及背景不变。",
+      "input_images": [],
+      "base_case": "edit_mascara_tone",
+      "expected_mode": "success",
+      "tags": [
+        "detail_change",
+        "edit_chain_3"
+      ]
+    },
+    {
+      "case_id": "edit_mascara_final",
+      "project_name": "睫毛膏套图",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "微调商品下方的柔和接触阴影，使其自然贴合背景；商品外形、色调和位置保持不变。",
+      "input_images": [],
+      "base_case": "edit_mascara_detail",
+      "expected_mode": "success",
+      "tags": [
+        "subtle_shadow",
+        "edit_chain_4"
+      ]
+    },
+    {
+      "case_id": "boundary_invalid_type",
+      "project_name": "边界非法图像",
+      "group": "boundary",
+      "operation": "generate",
+      "prompt": "以输入图作为商品主体生成白底图。",
+      "input_images": [
+        {
+          "path": "assets/invalid.txt",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "expected_failure",
+      "expected_failure_type": "prepare_failed",
+      "tags": [
+        "invalid_image_type",
+        "must_not_call_model"
+      ]
+    },
+    {
+      "case_id": "boundary_corrupt_image",
+      "project_name": "边界损坏图像",
+      "group": "boundary",
+      "operation": "generate",
+      "prompt": "以输入图作为商品主体生成白底图。",
+      "input_images": [
+        {
+          "path": "assets/corrupt.png",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "expected_failure",
+      "expected_failure_type": "prepare_failed",
+      "tags": [
+        "corrupt_image",
+        "must_not_call_model"
+      ]
+    },
+    {
+      "case_id": "boundary_missing_input",
+      "project_name": "边界缺失图像",
+      "group": "boundary",
+      "operation": "generate",
+      "prompt": "以输入图作为商品主体生成白底图。",
+      "input_images": [
+        {
+          "path": "assets/missing.png",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "expected_failure",
+      "expected_failure_type": "prepare_failed",
+      "tags": [
+        "missing_input",
+        "must_not_call_model"
+      ]
+    },
+    {
+      "case_id": "boundary_empty_prompt",
+      "project_name": "边界空提示词",
+      "group": "boundary",
+      "operation": "generate",
+      "prompt": "",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "expected_failure",
+      "expected_failure_type": "prepare_failed",
+      "tags": [
+        "empty_prompt",
+        "must_not_call_model"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "illustration",
+  "name": "叙事形状插画",
+  "category": "illustration",
+  "visual_positioning": "以有目的的形状简化、图形关系和有限细节讲清主题；允许手绘变化，同时保留资产的核心识别结构。",
+  "use_cases": [
+    "知识主题配图",
+    "品牌原创场景插画",
+    "简明角色与道具资产"
+  ],
+  "asset_types": [
+    "character",
+    "prop",
+    "environment",
+    "key_visual",
+    "logo",
+    "style_reference",
+    "product"
+  ],
+  "visual_language": {
+    "composition": [
+      "用少量大形建立阅读顺序，次要细节围绕主题安排；负空间参与图形关系。"
+    ],
+    "lighting": [
+      "明暗可以简化为形状关系，不追求摄影高光；受光方向在同一画面中保持统一。"
+    ],
+    "color": [
+      "用有限色组区分语义层级；资产固定色和指定品牌色保留。"
+    ],
+    "texture": [
+      "表面可有少量手绘笔触或纸感，但不以纹理覆盖轮廓。"
+    ],
+    "camera": [
+      "使用正面、侧面或轻微斜视的清楚视角；自由透视仅在 AssetSpec 允许时采用。"
+    ],
+    "depth": [
+      "通过遮挡、大小与色块层次表达距离，不必套用摄影景深。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "图形的大形与层次能在缩小后保持识别。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "简化只删除无关细节，不删除资产身份关键特征。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "纹理和装饰服务主题，不填满所有空白。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "边缘手感、色块数量和空间夸张可按应用调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "shape_language": {
+      "type": "enum",
+      "description": "大形的边缘与几何节奏。",
+      "default": "圆润但有结构",
+      "choices": [
+        "圆润但有结构",
+        "利落几何",
+        "自然不规则"
+      ]
+    },
+    "surface_mark": {
+      "type": "enum",
+      "description": "表面笔触密度。",
+      "default": "轻微手绘痕迹",
+      "choices": [
+        "轻微手绘痕迹",
+        "干净平涂",
+        "可见短笔触"
+      ]
+    },
+    "narrative_rhythm": {
+      "type": "string",
+      "description": "图形之间的叙事组织方式。",
+      "default": "单一重心与少量呼应形状"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用叙事形状插画，主要形状语言为 {{shape_language}}，表面采用 {{surface_mark}}，按 {{narrative_rhythm}} 建立阅读顺序。以轮廓、遮挡和有限细节表达主题，在缩小后仍保持可辨。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若是 logo 或图形标识，避免纸纹、阴影和装饰破坏指定轮廓；不默认排除标识本身。",
+    "若要求识别真实产品，不把接口、把手或功能结构简化掉。",
+    "若用户未指定文字，不自动用假文字填充画面。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不照搬参考插画的独有角色、形状拼接、标识轮廓或整套构图；重新建立与当前资产有关的图形关系。"
+  ],
+  "examples": [
+    {
+      "example_id": "community_garden",
+      "brief": "社区花园计划的原创环境插画，展示步道与种植区关系。",
+      "asset_type": "environment",
+      "variables": {
+        "shape_language": "自然不规则",
+        "surface_mark": "可见短笔触",
+        "narrative_rhythm": "步道串联三个种植区域，植物疏密有节奏"
+      },
+      "adaptation_notes": [
+        "区域关系以规划简报为准。",
+        "花草可以简化，但不能堵塞步道。"
+      ]
+    },
+    {
+      "example_id": "reading_symbol",
+      "brief": "已确认的读书社图形标识做插画风格呈现。",
+      "asset_type": "logo",
+      "variables": {
+        "shape_language": "利落几何",
+        "surface_mark": "干净平涂",
+        "narrative_rhythm": "中心符号与指定外轮廓形成清楚留白"
+      },
+      "adaptation_notes": [
+        "标识路径与精确颜色保持不变。",
+        "只调整允许的平面呈现，不自创文字或重画轮廓。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "图形语汇用边缘、色块和阅读顺序描述，不借作者名字定义风格。",
+      "若要求矢量交付，栅格生成结果仍需单独矢量制作与路径验证，不能宣称天然是矢量。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "主题易读",
+      "图形简化",
+      "温和叙事"
+    ],
+    "natural_language_cues": [
+      "原创插画配图",
+      "用形状讲清楚",
+      "缩小也看得懂"
+    ],
+    "avoid_when": [
+      "必须证明材料的真实外观。",
+      "复杂工程信息不可通过形状简化表达。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

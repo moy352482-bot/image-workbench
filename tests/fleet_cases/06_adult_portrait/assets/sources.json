@@ -1,0 +1,48 @@
+{
+  "source_service": "DummyJSON public sample product API/CDN",
+  "note": "Local test inputs only; no claim that source imagery is open-licensed. Original files are unedited.",
+  "items": [
+    {
+      "path": "assets/mascara.webp",
+      "product_name": "Essence Mascara Lash Princess",
+      "source_url": "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp",
+      "source_page": "https://dummyjson.com/products/1",
+      "downloaded_at": "2026-10-12",
+      "sha256": "4c9b190e6d218f0ca7aae7523ffc083be9df44c585823796978148f9d81854ee",
+      "bytes": 63250,
+      "format": "WEBP",
+      "dimensions": [
+        1000,
+        1000
+      ]
+    },
+    {
+      "path": "assets/fragrance.webp",
+      "product_name": "Chanel Coco Noir Eau De",
+      "source_url": "https://cdn.dummyjson.com/product-images/fragrances/chanel-coco-noir-eau-de/1.webp",
+      "source_page": "https://dummyjson.com/products/7",
+      "downloaded_at": "2026-10-12",
+      "sha256": "0cb6e50f86454c4dafac67f929c3bde215917edb1c71e67bb2d6821d166167e9",
+      "bytes": 22800,
+      "format": "WEBP",
+      "dimensions": [
+        1000,
+        1000
+      ]
+    },
+    {
+      "path": "assets/smartphone.webp",
+      "product_name": "iPhone 5s",
+      "source_url": "https://cdn.dummyjson.com/product-images/smartphones/iphone-5s/1.webp",
+      "source_page": "https://dummyjson.com/products/category/smartphones",
+      "downloaded_at": "2026-10-12",
+      "sha256": "8adb597ead18683bef8b53bc5e33ba3779d4739b080b512a7d33fb1fffaa01bb",
+      "bytes": 7136,
+      "format": "WEBP",
+      "dimensions": [
+        1000,
+        1000
+      ]
+    }
+  ]
+}

@@ -1,0 +1,509 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/generation-plan.schema.json",
+  "title": "Image Asset Generation offline plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "intent": {
+      "enum": [
+        "generate",
+        "edit",
+        "inpaint",
+        "multi_reference"
+      ]
+    },
+    "execution_enabled": {
+      "const": false
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "unbound"
+        },
+        "required_scope": {
+          "const": "authenticated_account_workspace_project_subproject"
+        }
+      },
+      "required": [
+        "status",
+        "required_scope"
+      ]
+    },
+    "model_route": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_model": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fallback_model": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolved_model": {
+          "type": "null"
+        },
+        "capability_profile": {
+          "const": "workbench-source-2026-10-16"
+        },
+        "automatic_fallback": {
+          "const": false
+        }
+      },
+      "required": [
+        "preferred_model",
+        "fallback_model",
+        "resolved_model",
+        "capability_profile",
+        "automatic_fallback"
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+          },
+          "operation": {
+            "enum": [
+              "generate",
+              "edit",
+              "inpaint"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "output_count": {
+            "const": 1
+          },
+          "reference_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+            },
+            "minItems": 0
+          },
+          "edit_base_reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "references_from_steps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+            },
+            "minItems": 0
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+            },
+            "minItems": 0
+          },
+          "step_prompt": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "step_reference_constraints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source_step",
+                "roles",
+                "preserve",
+                "avoid_copy"
+              ],
+              "properties": {
+                "source_step": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                "roles": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "primary_identity",
+                      "face",
+                      "full_body",
+                      "clothing",
+                      "shape",
+                      "material",
+                      "color",
+                      "style",
+                      "composition"
+                    ]
+                  }
+                },
+                "preserve": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                },
+                "avoid_copy": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "step_id",
+          "operation",
+          "purpose",
+          "output_count",
+          "reference_ids",
+          "edit_base_reference",
+          "references_from_steps",
+          "depends_on",
+          "step_prompt",
+          "step_reference_constraints"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "operation": {
+                  "const": "generate"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "edit_base_reference": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "aspect_ratio": {
+              "$ref": "common.schema.json#/$defs/aspect_ratio"
+            },
+            "resolution": {
+              "$ref": "common.schema.json#/$defs/resolution"
+            },
+            "quality": {
+              "enum": [
+                "draft",
+                "standard",
+                "high"
+              ]
+            }
+          },
+          "required": [
+            "aspect_ratio",
+            "resolution",
+            "quality"
+          ]
+        },
+        "applied": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "aspect_ratio": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "auto",
+                    "1:1",
+                    "3:2",
+                    "2:3"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "resolution": {
+              "type": "null"
+            },
+            "quality": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "aspect_ratio",
+            "resolution",
+            "quality"
+          ]
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "parameter": {
+                "enum": [
+                  "operation",
+                  "aspect_ratio",
+                  "resolution",
+                  "quality",
+                  "model",
+                  "references"
+                ]
+              },
+              "disposition": {
+                "enum": [
+                  "supported",
+                  "prompt_only",
+                  "unsupported",
+                  "requires_adapter",
+                  "unverified"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "parameter",
+              "disposition",
+              "reason"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "requested",
+        "applied",
+        "assessments"
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "max_credit": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "max_model_calls",
+        "max_credit"
+      ]
+    },
+    "calls_planned": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+    "automatic_retry": {
+      "const": false
+    },
+    "execution_authorization": {
+      "const": "pending_host_bound_confirmation"
+    },
+    "asset_approval": {
+      "const": "pending_generated_artifact_review"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "HOST_ADAPTER_REQUIRED",
+              "COST_UNQUOTED",
+              "BUDGET_EXCEEDED",
+              "UNSUPPORTED_OPERATION",
+              "UNSUPPORTED_RATIO",
+              "EXACT_RESOLUTION_UNSUPPORTED",
+              "REFERENCE_UNVERIFIED",
+              "REFERENCE_RIGHTS_UNRESOLVED",
+              "EDIT_BASE_REQUIRED",
+              "MASK_REQUIRED",
+              "MODEL_UNRESOLVED",
+              "REFERENCE_LIMIT_EXCEEDED",
+              "IDENTITY_CHANGE_REQUIRES_ASSET_REVISION",
+              "ASSET_IDENTITY_UNRESOLVED"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "intent",
+    "execution_enabled",
+    "binding",
+    "model_route",
+    "steps",
+    "parameters",
+    "budget",
+    "calls_planned",
+    "automatic_retry",
+    "execution_authorization",
+    "asset_approval",
+    "blockers"
+  ],
+  "$defs": {
+    "estimated_cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "awaiting_host_quote"
+        },
+        "currency": {
+          "const": "credit"
+        },
+        "total": {
+          "type": "null"
+        },
+        "source": {
+          "const": "authenticated_host_CreditCostCalculator"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+              },
+              "operation": {
+                "enum": [
+                  "generate",
+                  "edit",
+                  "inpaint"
+                ]
+              },
+              "backend_key": {
+                "const": "codex"
+              },
+              "image_count": {
+                "const": 1
+              },
+              "reference_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9
+              }
+            },
+            "required": [
+              "step_id",
+              "operation",
+              "backend_key",
+              "image_count",
+              "reference_count"
+            ]
+          },
+          "minItems": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "status",
+        "currency",
+        "total",
+        "source",
+        "items",
+        "note"
+      ]
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "watercolor",
+  "name": "通透水彩",
+  "category": "illustration",
+  "visual_positioning": "以透明叠色、纸面留白和水迹边缘表现轻盈的手绘质感；让形体在湿润色面中仍可辨，避免把模糊等同于水彩。",
+  "use_cases": [
+    "旅行与空间氛围图",
+    "自然与食物插画",
+    "柔和主题主视觉"
+  ],
+  "asset_types": [
+    "location",
+    "environment",
+    "food",
+    "prop",
+    "character",
+    "architecture",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "留白与主体色面共同构图；水迹扩散在背景或非关键边缘，核心轮廓有控制。"
+    ],
+    "lighting": [
+      "光感主要来自纸白与透明色层，不靠镜面高光和强烈数字光晕。"
+    ],
+    "color": [
+      "叠色保持透明感与清楚冷暖，固定物体色不能被任意调换。"
+    ],
+    "texture": [
+      "纸纹、回流边缘与少量干笔形成材料感；颗粒尺度不得大过需要表达的细部。"
+    ],
+    "camera": [
+      "选择便于理解形体的平视、俯视或轻斜视；遵守锁定的结构与透视。"
+    ],
+    "depth": [
+      "远处降低细节与色彩密度，近处保留少量干笔定义形体，不用统一模糊滤镜。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "纸面留白真正参与光感与空间。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "透明色层与湿干边缘形成层次。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "核心识别轮廓在松散笔触中仍然成立。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "水迹范围、纸纹强度和局部干笔密度可按资产用途变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "wash_balance": {
+      "type": "enum",
+      "description": "大片水洗与明确边缘的比例。",
+      "default": "通透水洗配清楚轮廓",
+      "choices": [
+        "通透水洗配清楚轮廓",
+        "松散背景与局部干笔",
+        "细致叠色与少量扩散"
+      ]
+    },
+    "paper_presence": {
+      "type": "enum",
+      "description": "纸纹在最终尺度的可见度。",
+      "default": "轻微纸纹",
+      "choices": [
+        "轻微纸纹",
+        "中等纸纹",
+        "近乎平滑纸面"
+      ]
+    },
+    "edge_focus": {
+      "type": "string",
+      "description": "需要优先保留的识别边缘。",
+      "default": "主体外形与主要结构交界"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 使用通透水彩语言，采用 {{wash_balance}}，纸面呈现 {{paper_presence}}，重点保留 {{edge_focus}}。让纸白承担亮部，透明叠色形成体积，水迹只在不损害识别的边缘自然扩散。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若资产依赖精确轮廓或文字辨认，不让水洗覆盖那些位置。",
+    "若背景需透明，必须由执行能力实际输出透明通道，白纸视觉不等于透明背景。",
+    "若色彩已经锁定，不用随机混色改变主体固有色。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻参考画的独特笔触排列、签名、题字或同一视点的完整景物组合。"
+  ],
+  "examples": [
+    {
+      "example_id": "old_station",
+      "brief": "旧车站建筑的旅行插画，立面开窗与屋顶结构已有设定。",
+      "asset_type": "architecture",
+      "variables": {
+        "wash_balance": "松散背景与局部干笔",
+        "paper_presence": "中等纸纹",
+        "edge_focus": "屋顶转折、站房外轮廓与窗洞排列"
+      },
+      "adaptation_notes": [
+        "建筑结构不因自由笔触改变。",
+        "背景树木和天空允许疏朗扩散。"
+      ]
+    },
+    {
+      "example_id": "pear_plate",
+      "brief": "两只梨与一只浅盘的食物插画，器物数量固定。",
+      "asset_type": "food",
+      "variables": {
+        "wash_balance": "细致叠色与少量扩散",
+        "paper_presence": "轻微纸纹",
+        "edge_focus": "梨形、果柄与盘沿接触关系"
+      },
+      "adaptation_notes": [
+        "绿色果皮用透明层次表现，不改变成熟度设定。",
+        "高光保留纸白，不能变成塑料反光。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "纸纹和水迹是栅格视觉效果；实际印刷纸张与颜料效果仍需输出打样。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "轻盈手绘",
+      "透明叠色",
+      "纸面留白"
+    ],
+    "natural_language_cues": [
+      "淡淡水彩",
+      "湿润色面",
+      "有纸感的旅行插画"
+    ],
+    "avoid_when": [
+      "需要严格商品颜色校样或精确文字主视觉。",
+      "要求干净无纹理的工程图或细小 logo。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

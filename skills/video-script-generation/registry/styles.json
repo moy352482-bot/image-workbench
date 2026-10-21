@@ -1,0 +1,553 @@
+{
+  "schema_version": 1,
+  "styles": [
+    {
+      "style_id": "cinematic_narrative",
+      "name": "电影叙事",
+      "description": "通过人物选择、视听动作与前后呼应形成完整叙事。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "以建立、升级、关键选择和余韵推进，重要时刻留反应空间。",
+      "dialogue_style": "对白带行动目的与潜台词，避免角色讲解全部背景。",
+      "emotional_tone": "随人物得失变化，高潮情绪由行动积累。",
+      "conflict_style": "让目标遭遇有代价的阻碍，转折出自前文因果。",
+      "visual_language": "用重复出现且状态改变的物件、空间与动作传达主题。",
+      "characterization": "以具体欲望、弱点和取舍塑造人物。",
+      "constraints": [
+        "转折须有前文因果或可回看线索。",
+        "不用抽象情绪词替代人物可见行为。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "建立人物当下要完成的动作。",
+        "让关键选择改变处境，再用开头的元素回响结尾。"
+      ],
+      "examples": [
+        "开头人物将坏表收进口袋，结尾选择把修好的表交回原主。"
+      ],
+      "keywords": [
+        "电影感",
+        "电影叙事",
+        "弧光",
+        "潜台词",
+        "呼应"
+      ],
+      "traits": {
+        "pacing": "balanced",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "realism",
+      "name": "现实主义",
+      "description": "关注具体生活处境和可信动机，用细节呈现真实质感。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "按生活行动推进，关键阻力逐次显露，保留必要停顿。",
+      "dialogue_style": "口语化且符合身份，允许打断、回避和未说完的话。",
+      "emotional_tone": "克制、具体，有生活压力与复杂感受。",
+      "conflict_style": "冲突出自资源、责任、关系或价值取舍。",
+      "visual_language": "使用劳动、空间和物件的实际变化，不依赖奇观。",
+      "characterization": "人物有相互牵制的需要，不以单一善恶标签解释行为。",
+      "constraints": [
+        "选择与后果须符合已建立的现实条件。",
+        "涉及真实事件时不得把编造细节写成事实。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "从一项具体生活任务开始。",
+        "让经济、时间或关系代价影响人物行动。"
+      ],
+      "examples": [
+        "父亲在修车费与回家的车票之间数了两遍零钱。"
+      ],
+      "keywords": [
+        "现实主义",
+        "写实",
+        "生活流",
+        "生活",
+        "真实质感"
+      ],
+      "traits": {
+        "pacing": "balanced",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "youth_healing",
+      "name": "青春治愈",
+      "description": "以细微关系变化、主动善意和可见成长形成温暖体验。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "从轻微不适进入，在相处和尝试中逐渐松动，留柔和余韵。",
+      "dialogue_style": "自然、含蓄，善意通过行动与简短回应传递。",
+      "emotional_tone": "清新温暖，允许失落存在，不强迫乐观。",
+      "conflict_style": "以误解、成长或自我接纳为主，冲突与情绪回报相称。",
+      "visual_language": "用季节、校园或日常空间中的感官细节承载关系变化。",
+      "characterization": "年轻人物通过一次小选择获得新的相处方式。",
+      "constraints": [
+        "不把伤痛一笔带过或让一句安慰解决全部问题。",
+        "温暖结果要有人物主动行动支撑。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "先呈现人物不愿说出的困扰。",
+        "安排具体互助，再以小动作显示关系改变。"
+      ],
+      "examples": [
+        "一直坐在教室最后排的人，第一次为迟到的同伴留下位置。"
+      ],
+      "keywords": [
+        "青春",
+        "治愈",
+        "清新",
+        "校园",
+        "成长"
+      ],
+      "traits": {
+        "pacing": "slow",
+        "conflict": "low"
+      }
+    },
+    {
+      "style_id": "comedy",
+      "name": "喜剧",
+      "description": "用明确期待、错位行动与后果升级制造可理解的笑点。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "铺垫简短明确，误差升级后及时回收，给反应留空间。",
+      "dialogue_style": "人物认真表达自身目标，语言反差服务关系与行动。",
+      "emotional_tone": "轻快，有善意或适度讽刺。",
+      "conflict_style": "冲突出自目标错位、身份信息差或错误策略。",
+      "visual_language": "以动作结果、物件用途和人物反应呈现反差。",
+      "characterization": "每人有稳定的认真目标，笑点来自其坚持造成的后果。",
+      "constraints": [
+        "笑点不依赖无原因的降智或只靠角色口头说好笑。",
+        "先建立常规，再打破常规，最后回收铺垫。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "确定人物认真想完成的事。",
+        "设计一次可见误差，让补救动作带来更大但合理的结果。"
+      ],
+      "examples": [
+        "为了显得会做饭，人物不断藏起失败成品，最后找不到给客人坐的椅子。"
+      ],
+      "keywords": [
+        "喜剧",
+        "搞笑",
+        "幽默",
+        "反差",
+        "荒诞"
+      ],
+      "traits": {
+        "pacing": "fast",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "suspense_reversal",
+      "name": "悬疑反转",
+      "description": "控制信息释放，以可回看的线索和行动后果改变判断。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "尽早建立待解问题，线索与阻力交替，答案到来时压缩解释。",
+      "dialogue_style": "每句对白体现人物掌握的信息与隐瞒动机。",
+      "emotional_tone": "紧张、好奇，结尾有认知变化。",
+      "conflict_style": "人物目标受未知信息、误判或秘密阻碍。",
+      "visual_language": "让关键物件、动作与空间细节同时承担线索和日常功能。",
+      "characterization": "人物隐瞒有可理解的代价，反转后行为仍能解释。",
+      "constraints": [
+        "核心答案必须受前文线索支持，不能临时新增决定性规则。",
+        "不能靠省略角色眼前已知事实伪造公平谜题。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "明确观众最初相信的解释。",
+        "放入至少一个可以支持另一解释的可见线索，再通过行动揭示。"
+      ],
+      "examples": [
+        "走廊里反复出现的湿脚印，最终指向一直未被注意的漏水推车。"
+      ],
+      "keywords": [
+        "悬疑",
+        "反转",
+        "谜题",
+        "秘密",
+        "伏笔",
+        "信息差"
+      ],
+      "traits": {
+        "pacing": "fast",
+        "conflict": "high"
+      }
+    },
+    {
+      "style_id": "science_fiction",
+      "name": "科幻未来",
+      "description": "用有限且一致的技术规则检验人物选择及其代价。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "先在行动中展示规则，再升级应用后果，关键选择回扣规则。",
+      "dialogue_style": "技术信息尽量嵌入操作和争论，避免术语独白。",
+      "emotional_tone": "探索、陌生感与人性关切并存。",
+      "conflict_style": "技术能力、限制或社会后果与人物需要发生矛盾。",
+      "visual_language": "用可理解的界面反馈、环境和物件状态表现科技作用。",
+      "characterization": "人物面对新能力仍有具体情感需要和可追溯动机。",
+      "constraints": [
+        "先建立关键技术的能力与代价，结尾不新增万能能力。",
+        "避免以大段设定介绍替代正在发生的事件。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "把一种未来规则落实为可见操作。",
+        "让规则帮助人物一次，再使它制造必须选择的代价。"
+      ],
+      "examples": [
+        "记忆租赁器每次播放都会擦去一段原有记忆，人物最后选择停止重听。"
+      ],
+      "keywords": [
+        "科幻",
+        "未来",
+        "AI",
+        "人工智能",
+        "技术伦理",
+        "世界观"
+      ],
+      "traits": {
+        "pacing": "balanced",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "commercial_advertising",
+      "name": "商业广告",
+      "description": "聚焦受众问题、单一利益与可信证明，形成清晰品牌记忆。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "尽快显露需求，用演示连续推进，在信息仍清晰时收束。",
+      "dialogue_style": "短句、具体，利益描述贴合受众任务。",
+      "emotional_tone": "明确、有吸引力，情绪与品牌目标一致。",
+      "conflict_style": "突出需求与现状落差，以使用行动展示解决路径。",
+      "visual_language": "产品和利益落在可见使用场景中，品牌落点有内容依据。",
+      "characterization": "人物代表具体使用情境，不充当无依据的背书。",
+      "constraints": [
+        "不得编造价格、功效、销量、资质或用户评价。",
+        "主张必须有用户资料或可展示动作支撑。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "提炼单一主要利益。",
+        "让产品在解决任务时出现，再按用户要求收束行动。"
+      ],
+      "examples": [
+        "人物出门前用已提供的提醒功能确认钥匙，动作结束时出现品牌。"
+      ],
+      "keywords": [
+        "商业广告",
+        "广告风格",
+        "卖点",
+        "转化",
+        "品牌",
+        "营销"
+      ],
+      "traits": {
+        "pacing": "fast",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "documentary_observation",
+      "name": "纪录片",
+      "description": "以观察、证据和真实声音组织表达，明确未知与核实边界。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "随真实任务推进，观察段与必要解释交替，允许开放结束。",
+      "dialogue_style": "使用已提供采访原话；未提供时仅规划问题。",
+      "emotional_tone": "克制、尊重、好奇，保留对象的复杂性。",
+      "conflict_style": "由现实处境和不同观点显露张力，不安排虚假对立。",
+      "visual_language": "关注现场动作、环境变化和同期声，资料标明来源。",
+      "characterization": "通过真实选择和原始材料理解人物，不替其推断内心事实。",
+      "constraints": [
+        "不得伪造真实人物引语、经历、数据或现场事件。",
+        "未核实信息不得写成已确认事实。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "标出已有素材能回答的问题。",
+        "围绕缺口列采访方向，以观察细节连接已证实内容。"
+      ],
+      "examples": [
+        "跟随一次修补渔网的过程，访谈问题围绕手艺变化展开，不预写回答。"
+      ],
+      "keywords": [
+        "纪录片",
+        "纪实风格",
+        "观察",
+        "采访",
+        "真实记录",
+        "非虚构"
+      ],
+      "traits": {
+        "pacing": "slow",
+        "conflict": "low"
+      }
+    },
+    {
+      "style_id": "poetic_lyrical",
+      "name": "诗意抒情",
+      "description": "以感官意象、节奏呼应与含蓄关系承载情绪和主题。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "留白与重复有变化，意象之间保持可感知的推进。",
+      "dialogue_style": "少而具体；旁白只补充画面无法表达的联想。",
+      "emotional_tone": "细腻、含蓄，情绪可流动而不必被命名。",
+      "conflict_style": "以记忆、距离或内在需要产生轻微张力。",
+      "visual_language": "选择少量可见意象，重复出现时改变状态或语境。",
+      "characterization": "用习惯动作和物件关系呈现人物。",
+      "constraints": [
+        "不能只有散落美词；每段至少存在可感知的变化。",
+        "旁白避免逐句复述画面，也不堆叠不相关比喻。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "选定一个贯穿意象。",
+        "让同一意象在开头、中段和结尾承担不同情绪。"
+      ],
+      "examples": [
+        "窗上的水汽一次次被擦开，直到人物终于看见窗外等候的人。"
+      ],
+      "keywords": [
+        "诗意",
+        "抒情",
+        "意象",
+        "散文",
+        "留白"
+      ],
+      "traits": {
+        "pacing": "slow",
+        "conflict": "low"
+      }
+    },
+    {
+      "style_id": "high_conflict_drama",
+      "name": "短剧高冲突",
+      "description": "用明确目标、正面对抗、信息变化和阶段回报推动短剧。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "迅速建立眼前冲突，每次交锋改变筹码，及时兑现转折。",
+      "dialogue_style": "对白短且有策略，质问、回避和反击必须影响行动。",
+      "emotional_tone": "紧迫、鲜明，情绪随权力与信息变化。",
+      "conflict_style": "人物争夺具体目标或关系主动权，升级伴随代价。",
+      "visual_language": "关键凭证、物件和反应直接参与剧情推进。",
+      "characterization": "双方有不同利益与策略，主角通过选择争取结果。",
+      "constraints": [
+        "反转需要线索，不能突然引入身份、能力或证据解围。",
+        "不以重复辱骂、争吵或无故降智替代事件推进。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "明确本段双方各要什么。",
+        "至少一次改变筹码，再兑现阶段结果；分集悬念依用户要求。"
+      ],
+      "examples": [
+        "被赶出店铺的人拿出前文出现过的合同附件，争论目标随之改变。"
+      ],
+      "keywords": [
+        "短剧",
+        "高冲突",
+        "爽感",
+        "反击",
+        "逆袭",
+        "强情节"
+      ],
+      "traits": {
+        "pacing": "fast",
+        "conflict": "high"
+      }
+    },
+    {
+      "style_id": "warm_family",
+      "name": "温情家庭",
+      "description": "以共同生活、代际差异和照顾行动呈现家庭关系。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "从日常摩擦进入，经过具体相处与选择积累情绪。",
+      "dialogue_style": "符合亲属关系与生活习惯，情感藏在琐碎话语中。",
+      "emotional_tone": "温暖、复杂，可保留遗憾和不完全理解。",
+      "conflict_style": "不同责任、习惯和关心方式引发矛盾。",
+      "visual_language": "用饭菜、门口、旧物和照料动作呈现关系变化。",
+      "characterization": "每个家人有自己的需要，避免单向牺牲的工具人物。",
+      "constraints": [
+        "和解须有实际行动，不用一句道歉抹去全部矛盾。",
+        "不把同一家庭角色固定写成永远正确或永远自私。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "选一个家庭共同任务。",
+        "通过照顾方式的变化表现理解，并保留合理边界。"
+      ],
+      "examples": [
+        "总替孩子收拾书包的人，第一次把整理清单留在桌边，等孩子自己完成。"
+      ],
+      "keywords": [
+        "家庭",
+        "温情",
+        "亲情",
+        "代际",
+        "团圆"
+      ],
+      "traits": {
+        "pacing": "slow",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "urban_emotion",
+      "name": "都市情感",
+      "description": "以都市生活条件中的关系选择、边界和现实代价推进情感故事。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "生活压力与关系事件交错，关键误解及时转化为行动。",
+      "dialogue_style": "口语自然，有关系潜台词；关键事实不永久依赖回避。",
+      "emotional_tone": "细腻、现实，有亲密需要与自我边界的拉扯。",
+      "conflict_style": "时间、工作、居住和期待差异影响关系。",
+      "visual_language": "通过通勤、住所、工作与共享物件表现距离。",
+      "characterization": "双方都有独立目标，关系变化来自选择而非标签。",
+      "constraints": [
+        "避免全靠未接电话或一句话不解释维持剧情。",
+        "不将占有、控制或羞辱自动表现成爱情证明。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "给双方各一个现实任务。",
+        "让相处方式与各自目标发生冲突，用选择改变关系。"
+      ],
+      "examples": [
+        "两人下班后在同一站台错开等车，最后先协商见面时间再决定同行。"
+      ],
+      "keywords": [
+        "都市",
+        "情感",
+        "爱情",
+        "关系",
+        "职场生活",
+        "亲密"
+      ],
+      "traits": {
+        "pacing": "balanced",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "fast_social_video",
+      "name": "快节奏短视频",
+      "description": "高密度地兑现一个内容承诺，以连续信息收益保持理解。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "开头直入问题，每段增加新信息，结果清晰且及时。",
+      "dialogue_style": "短句、口语，主要信息一遍能听懂。",
+      "emotional_tone": "鲜明直接，有行动感。",
+      "conflict_style": "以问题、错误或认知落差制造推进，不强求人际对抗。",
+      "visual_language": "可见例子与对应声音同步，状态变化清楚。",
+      "characterization": "出镜人物承担清晰内容角色，不展开无关背景。",
+      "constraints": [
+        "快节奏不能省略理解因果所需的信息。",
+        "不用虚假数据、夸张承诺或未兑现悬念。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "一句话明确内容收益。",
+        "用可见例子逐段兑现，删去不增加信息的重复口播。"
+      ],
+      "examples": [
+        "开头展示常见打包错误，中间完成两个纠正动作，结尾直接展示装包结果。"
+      ],
+      "keywords": [
+        "快节奏",
+        "短视频风格",
+        "干货",
+        "高密度",
+        "口播",
+        "节奏快"
+      ],
+      "traits": {
+        "pacing": "fast",
+        "conflict": "balanced"
+      }
+    },
+    {
+      "style_id": "minimal_narrative",
+      "name": "极简叙事",
+      "description": "限制角色、场景和信息量，用一个动作变化承载完整表达。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "少量事件形成清楚因果，留白围绕核心动作。",
+      "dialogue_style": "对白少而必要，动作能传达的部分不重复解释。",
+      "emotional_tone": "克制、集中，情绪从细节中显露。",
+      "conflict_style": "聚焦一个阻碍或选择，避免平行支线。",
+      "visual_language": "选择少量关键物件与空间关系，变化清晰可见。",
+      "characterization": "人物通过一个核心目标与关键取舍被理解。",
+      "constraints": [
+        "简洁仍需可辨认的目标、变化与结果。",
+        "不用省略关键因果制造无意的晦涩。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "将故事归结为一个必须完成的动作。",
+        "每个元素都参与阻碍、选择或结果，结尾改变开头状态。"
+      ],
+      "examples": [
+        "一人反复把第二只杯子摆上桌，最后将它收进抽屉并打开窗。"
+      ],
+      "keywords": [
+        "极简",
+        "简约",
+        "少对白",
+        "单场景",
+        "克制"
+      ],
+      "traits": {
+        "pacing": "slow",
+        "conflict": "low"
+      }
+    },
+    {
+      "style_id": "experimental_visual",
+      "name": "实验视觉叙事",
+      "description": "以可辨认的视觉规则、重复变形与节奏关系探索主题。",
+      "version": 1,
+      "enabled": true,
+      "narrative_pacing": "建立视觉规则后改变其关系，节奏转折对应主题变化。",
+      "dialogue_style": "可少对白或用碎片声音，但声音须有明确表达作用。",
+      "emotional_tone": "探索、陌生化，可开放解释。",
+      "conflict_style": "以秩序与扰动、重复与变化形成张力。",
+      "visual_language": "用色彩、材质、空间或动作的统一规则组织段落。",
+      "characterization": "人物可具象或符号化，但身份与变化规则需自洽。",
+      "constraints": [
+        "先让观众识别一种规则，再有目的地打破或变化。",
+        "视觉实验仍需可描述的段落进展，不输出完整分镜参数。",
+        "风格只调节表达，不覆盖用户明确约束，不要求完整分镜表。"
+      ],
+      "prompt_guidance": [
+        "选定一个动作或视觉母题和变化规则。",
+        "重复两次建立关系，再用一次有意义的变形完成转折。"
+      ],
+      "examples": [
+        "人物每推开一扇门都回到同一张桌子，最后将门把手放在桌上，空间关系改变。"
+      ],
+      "keywords": [
+        "实验",
+        "视觉叙事",
+        "超现实",
+        "非线性",
+        "视觉母题",
+        "抽象"
+      ],
+      "traits": {
+        "pacing": "balanced",
+        "conflict": "balanced"
+      }
+    }
+  ]
+}

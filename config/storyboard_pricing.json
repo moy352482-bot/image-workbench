@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "unit": "one_storyboard_plan",
+  "mock_enabled": true,
+  "real_enabled": false,
+  "free_test_enabled": false,
+  "models": {}
+}

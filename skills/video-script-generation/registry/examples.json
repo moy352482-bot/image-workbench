@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "examples": [
+    {
+      "example_id": "user_robot_boyfriend_ep1",
+      "generation_type": "screenplay",
+      "source_kind": "user_provided_reference",
+      "file": "examples/screenplays/user_robot_boyfriend_ep1.txt",
+      "source_filename": "我做的男朋友_第一集_审阅稿.txt",
+      "sha256": "785b2f2289eac5aa4b362a6d3cccb5d55a668e9a977797dcdc6ea72505be47e4",
+      "byte_length": 6968,
+      "encoding": "UTF-8",
+      "reference_roles": ["structure", "format", "quality", "style"],
+      "prompt_eligible": true,
+      "rights_basis": "用户为本任务提供的参考资料；未声明开放再分发许可"
+    },
+    {
+      "example_id": "user_roommates_ep1",
+      "generation_type": "screenplay",
+      "source_kind": "user_provided_reference",
+      "file": "examples/screenplays/user_roommates_ep1.txt",
+      "source_filename": "合租搭子，禁止加戏_第一集_剧本正文.txt",
+      "sha256": "0e90af42bce7608535dfd6abc3abe7f1ea4d76cedecf4382d26db0f608ba84a1",
+      "byte_length": 8987,
+      "encoding": "UTF-8",
+      "reference_roles": ["structure", "format", "quality", "style"],
+      "prompt_eligible": true,
+      "related_reference_ids": ["user_roommates_ep1_storyboard"],
+      "rights_basis": "用户为本任务提供的参考资料；未声明开放再分发许可"
+    },
+    {
+      "example_id": "user_roommates_ep1_storyboard",
+      "generation_type": "storyboard_reference",
+      "source_kind": "user_provided_reference",
+      "file": "references/storyboard/user_roommates_ep1.txt",
+      "source_filename": "合租搭子，禁止加戏_第一集_分镜脚本(1).txt",
+      "sha256": "c6b980690197e2397416a807fe80314deb99881f547c4c693105c8ce6af25cc9",
+      "byte_length": 7418,
+      "encoding": "UTF-8",
+      "reference_roles": ["downstream_storyboard_reference"],
+      "prompt_eligible": false,
+      "related_to": "user_roommates_ep1",
+      "rights_basis": "用户为本任务提供的参考资料；未声明开放再分发许可"
+    }
+  ]
+}

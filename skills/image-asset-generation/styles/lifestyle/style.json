@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "lifestyle",
+  "name": "自然生活方式",
+  "category": "photography",
+  "visual_positioning": "以放松但有目的的使用关系、柔和现场光和真实触感呈现日常；环境帮助理解资产用途，不自动制造人物或私密故事。",
+  "use_cases": [
+    "商品使用场景",
+    "日常人物形象",
+    "居家与户外生活视觉"
+  ],
+  "asset_types": [
+    "character",
+    "product",
+    "location",
+    "environment",
+    "food",
+    "wardrobe",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "让主体与使用环境产生明确联系，画面有呼吸感；配景少而有效，留出需要的文案空间。"
+    ],
+    "lighting": [
+      "以窗光、阴天光或柔和日照为主，阴影自然；不对每件背景物都加高光。"
+    ],
+    "color": [
+      "环境色温和且与主体分离，固定商品色和肤色基准保持稳定。"
+    ],
+    "texture": [
+      "织物、木材、食物与皮肤保留自然触感；不一概柔焦或磨成光滑表面。"
+    ],
+    "camera": [
+      "使用接近日常观察的视高与距离，近景突出使用关系，宽景说明场景。"
+    ],
+    "depth": [
+      "主体明确、背景可理解，景深适中；需要展示的交互部位保持清楚。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "资产与场景存在可解释的使用关系。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "光线温和自然，触感细节可读。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "生活氛围不能改变产品结构或人物身份。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "场景整洁度、观察距离和辅助留白可随传播用途变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "daily_mood": {
+      "type": "enum",
+      "description": "日常氛围，不增加未经指定的情节。",
+      "default": "安静舒适",
+      "choices": [
+        "安静舒适",
+        "轻快清新",
+        "温暖相聚"
+      ]
+    },
+    "natural_light": {
+      "type": "enum",
+      "description": "环境照明条件。",
+      "default": "柔和侧窗光",
+      "choices": [
+        "柔和侧窗光",
+        "阴天漫射光",
+        "低角度日光"
+      ]
+    },
+    "context_balance": {
+      "type": "string",
+      "description": "使用关系与背景的权重。",
+      "default": "主体清楚，环境只提供用途线索"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用自然生活方式摄影，氛围为 {{daily_mood}}，光线采用 {{natural_light}}，按 {{context_balance}} 分配注意。保留可触摸的材料细节与自然使用关系，场景丰富度只到足以说明用途。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若 AssetSpec 未要求人物，不自动加入手、脸、儿童或家庭成员。",
+    "若产品未设定为使用后状态，不添加油渍、磨损、开封痕迹或内容物。",
+    "若用途需要清楚交互部位，不用背景虚化掩盖握持、支撑或接触错误。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不照搬网红参考的私人住宅布置、人物关系、独特道具组合或同款商品场景。"
+  ],
+  "examples": [
+    {
+      "example_id": "home_coffee_maker",
+      "brief": "家用咖啡机在清晨厨房台面上的使用场景，无人物。",
+      "asset_type": "product",
+      "variables": {
+        "daily_mood": "安静舒适",
+        "natural_light": "柔和侧窗光",
+        "context_balance": "咖啡机清楚，背景仅保留台面与少量厨房线索"
+      },
+      "adaptation_notes": [
+        "不添加握持的手或未经要求的杯具。",
+        "机身配色、出水口和按钮位置保持不变。"
+      ]
+    },
+    {
+      "example_id": "park_reading",
+      "brief": "已确定成年角色在公园读书的生活形象。",
+      "asset_type": "character",
+      "variables": {
+        "daily_mood": "轻快清新",
+        "natural_light": "阴天漫射光",
+        "context_balance": "人物与书的关系优先，公园路径提供少量环境信息"
+      },
+      "adaptation_notes": [
+        "面貌和服装继承角色资产。",
+        "书本接触与手指位置需要独立检查。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "自然感来自光线、触感与使用关系，不需要声称偷拍、真实家庭或未经授权的真人生活。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "自然使用关系",
+      "亲近触感",
+      "轻松日常"
+    ],
+    "natural_language_cues": [
+      "生活方式照片",
+      "像真的在家使用",
+      "自然不刻意"
+    ],
+    "avoid_when": [
+      "需要完全去环境的商品目录图。",
+      "场景不能容许任何生活痕迹或配景。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

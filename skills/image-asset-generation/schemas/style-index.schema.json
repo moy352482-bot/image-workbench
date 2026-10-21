@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/style-index.schema.json",
+  "title": "Image Asset Style Index v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "styles"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "styles": {"type": "array", "minItems": 15, "maxItems": 15, "items": {
+      "type": "object", "additionalProperties": false, "required": ["style_id", "path"],
+      "properties": {
+        "style_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "path": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*/style\\.json$"}
+      }
+    }}
+  }
+}

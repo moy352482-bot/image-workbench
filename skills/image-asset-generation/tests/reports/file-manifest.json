@@ -1,0 +1,246 @@
+{
+  "file_count_including_manifest": 49,
+  "self_hash_excluded": true,
+  "files": [
+    {
+      "path": "ATTRIBUTIONS.md",
+      "bytes": 9157,
+      "sha256": "6798620581a49277117d0c82411a89f485516275a57a193049f0479f4f9a7603"
+    },
+    {
+      "path": "examples/asset-generation-examples.json",
+      "bytes": 584809,
+      "sha256": "3700f2e6c9ef1193ca475e1188339477737cd9b04f81c925cd0c6b2b4e5a77b8"
+    },
+    {
+      "path": "references/asset-types.md",
+      "bytes": 10982,
+      "sha256": "d5d0c34ccb64ed56a67d48a82e4e410c5cf837ee2fcb04f69a565a7f6aef2e7d"
+    },
+    {
+      "path": "references/consistency.md",
+      "bytes": 8994,
+      "sha256": "0a4f798017d46af97a93a59110766c0d69aa836758bb3fb167213e79432f3431"
+    },
+    {
+      "path": "references/delivery-report.md",
+      "bytes": 11149,
+      "sha256": "a2ff1abdfc25fae901cb0fd9c7abfa452a7f484ecdf47d2482c00fa63d03a867"
+    },
+    {
+      "path": "references/lifecycle-and-quality.md",
+      "bytes": 10549,
+      "sha256": "3ed6503106f6567cd44042704d466d34b8d2f8f5f269f8befe392d11dddcbb9c"
+    },
+    {
+      "path": "references/project-integration.md",
+      "bytes": 21352,
+      "sha256": "d6a34e0adf5dec87b3dfa675e719fc70df502c4563f29698e30798d96f912619"
+    },
+    {
+      "path": "references/prompt-compilation.md",
+      "bytes": 6464,
+      "sha256": "33b37cb48c9fc830019085c42332b2f2dd402f0e08358e4bcd978cdd6350f088"
+    },
+    {
+      "path": "references/research.md",
+      "bytes": 8842,
+      "sha256": "821e47df4f94ac741c43a789ce6d68ee1e173e94c90bdb3cde6fccb8fe7815ce"
+    },
+    {
+      "path": "references/style-system.md",
+      "bytes": 4832,
+      "sha256": "10c96fa259581b45aac58586aa9ba34c7f379e7cf4056c2fe0678dc13411196b"
+    },
+    {
+      "path": "references/test-spec.md",
+      "bytes": 7907,
+      "sha256": "7ae70450563a220896d573525a32ac808ef2cf1cf43ac82ac568636b9b2195e3"
+    },
+    {
+      "path": "schemas/asset-spec.schema.json",
+      "bytes": 31593,
+      "sha256": "0a099290d5c1253a5f7319273952473e2f9fb11c0832a0ec4348520be0e47395"
+    },
+    {
+      "path": "schemas/asset-version.schema.json",
+      "bytes": 5956,
+      "sha256": "5a85d58e6514e2b8f3741bca98316e445009bc85b5184266cb0dc791935deea2"
+    },
+    {
+      "path": "schemas/character.schema.json",
+      "bytes": 1212,
+      "sha256": "87aef3f81ce555afb78112675007f60a229c02904c46fd75196dc0f8799cbbe8"
+    },
+    {
+      "path": "schemas/common.schema.json",
+      "bytes": 9142,
+      "sha256": "9eb37846431f4e582ba1df682f96d650e9754e1ad7f3d09e47249a7d428a67df"
+    },
+    {
+      "path": "schemas/generation-plan.schema.json",
+      "bytes": 12903,
+      "sha256": "691e8d6b309fa977739216e81e410cf5c35422df1c6492489f0d9c7d528611b3"
+    },
+    {
+      "path": "schemas/product.schema.json",
+      "bytes": 1558,
+      "sha256": "a414060e23c6f91106986e3938e38fdd8d460374a0496866d1dfe23d1f75491a"
+    },
+    {
+      "path": "schemas/quality-check.schema.json",
+      "bytes": 3052,
+      "sha256": "a9693326bb3852311d2ce4b62a37d250ff38cb26b77e8b030e2a9da5d8bad483"
+    },
+    {
+      "path": "schemas/skill-input.schema.json",
+      "bytes": 4057,
+      "sha256": "a8352c330e9e4f4e5dd1d30e07e7e14faf5a1dabd8ecf9713703aeba34dd5e89"
+    },
+    {
+      "path": "schemas/skill-output.schema.json",
+      "bytes": 9292,
+      "sha256": "232856380b926ae1708740bdc61c1649af0cad3794b0580af3bd87aa6325fe83"
+    },
+    {
+      "path": "schemas/style-index.schema.json",
+      "bytes": 742,
+      "sha256": "ad7c0b114e02801961aa048c0efa0fbee73d0bb6d022fe282381dd6b630b3a47"
+    },
+    {
+      "path": "schemas/style.schema.json",
+      "bytes": 4433,
+      "sha256": "18384b75bd7973d763cb39322a1b74d5b2f91ca55887c229cf884554ea36635c"
+    },
+    {
+      "path": "SKILL.md",
+      "bytes": 10163,
+      "sha256": "c8d1a3b00d0ac9b72d0c2aa3747ec4abced643bdf39741034b8394e2481d9d41"
+    },
+    {
+      "path": "styles/3d-stylized/style.json",
+      "bytes": 5847,
+      "sha256": "7e3e9245040c9d25715f493e938063f9b364140ca10320bd9730f5d17644b2b0"
+    },
+    {
+      "path": "styles/anime-manga/style.json",
+      "bytes": 5865,
+      "sha256": "ae461f96caca250220275c2a3d2f84bba79914816d7f6efab3ac3b442fe17c1e"
+    },
+    {
+      "path": "styles/architectural/style.json",
+      "bytes": 5856,
+      "sha256": "2299b5dec4af2e321a4e9bc4542d454f69099d09c620502e94cd310eea804920"
+    },
+    {
+      "path": "styles/cinematic-realism/style.json",
+      "bytes": 5923,
+      "sha256": "de80b4cc7b29d8d4f542a8908d377151a19e008594addcad014baeb760363348"
+    },
+    {
+      "path": "styles/commercial-product/style.json",
+      "bytes": 5939,
+      "sha256": "7c605bbc766a781240fc634e51e1a0bfe728612620f6896483b796abc8f0a01a"
+    },
+    {
+      "path": "styles/documentary/style.json",
+      "bytes": 5937,
+      "sha256": "f54d7b9b4183d8d6ff5d123cfee7ce23fdbdbac1fb0f272d73f0f797e833b987"
+    },
+    {
+      "path": "styles/editorial-fashion/style.json",
+      "bytes": 5694,
+      "sha256": "5962fd99e788492d24ac45537e9dac98f805d7bba6d085541db51d5a22171679"
+    },
+    {
+      "path": "styles/food-photography/style.json",
+      "bytes": 5837,
+      "sha256": "144b73ad0d95f2d30ec0fb85b1851fd8a692a49b37ea609697dd854dcb99c944"
+    },
+    {
+      "path": "styles/futuristic-sci-fi/style.json",
+      "bytes": 5982,
+      "sha256": "6720afc84c5b9dae624291ca74e4a4c113774d43a231d4cfbe53a50da2052396"
+    },
+    {
+      "path": "styles/graphic-poster/style.json",
+      "bytes": 6151,
+      "sha256": "47d1258cab8cce22398b42d4ba150859a87b7923d6ec8eca1be8dc4e14293ceb"
+    },
+    {
+      "path": "styles/illustration/style.json",
+      "bytes": 5881,
+      "sha256": "4a750586b291ea609e7ddb027f7d6096e70ed29b9872aafd238718228bde0cad"
+    },
+    {
+      "path": "styles/index.json",
+      "bytes": 1446,
+      "sha256": "4de3473f4473822c94a9a17ecb9506640bdb5bf0b56c84385f45f964c70aba07"
+    },
+    {
+      "path": "styles/lifestyle/style.json",
+      "bytes": 5832,
+      "sha256": "20fabfcec7dab83a810c266ff4202a2d67a63f1b8eaa2af0f3649cdb34538615"
+    },
+    {
+      "path": "styles/minimal/style.json",
+      "bytes": 5777,
+      "sha256": "a64d1c97a5b7bd603a9d6aee23784c29d680ee64f2f131b3a93c285d0eceb850"
+    },
+    {
+      "path": "styles/retro-film/style.json",
+      "bytes": 5810,
+      "sha256": "154c164f365e61f3a024ee469e5344ff0e94518c883cd28ab99269ccdd33faab"
+    },
+    {
+      "path": "styles/watercolor/style.json",
+      "bytes": 5791,
+      "sha256": "f25c75f561970b3e8fade99ff8d1846bf8500131072eba1ef5adf3bb0d44779a"
+    },
+    {
+      "path": "tests/reports/core-preservation.json",
+      "bytes": 844,
+      "sha256": "461b5bf014494dfcdfb5594bdc43d39337f8566f55a6d906bc009e85f74f1ec4"
+    },
+    {
+      "path": "tests/reports/document-validation.json",
+      "bytes": 150,
+      "sha256": "df731b3001c923451b7181a8993ea5d9ab6ad713f8630a95bba5f342a552d3a7"
+    },
+    {
+      "path": "tests/reports/existing-source-baseline.json",
+      "bytes": 13694,
+      "sha256": "259c3edfd3942bdf596b199308c5bec3bbdbc50926155668b8762d17612f33d2"
+    },
+    {
+      "path": "tests/reports/forward-evaluation.json",
+      "bytes": 3011,
+      "sha256": "9f21f8b5d7fe874f4c1383e8b5e2086332f29d9fe462f73129d9e215fa2b192e"
+    },
+    {
+      "path": "tests/reports/skill-validation.json",
+      "bytes": 193,
+      "sha256": "ada2a973ba7f01facfe0135932b496c919b52b8cf8b4082b5cc10b8f0ff7579c"
+    },
+    {
+      "path": "tests/reports/validation.json",
+      "bytes": 953,
+      "sha256": "1f2c926df52464ecee078924e47952e55f03bb4957b3691718d7bcc922aa8bb1"
+    },
+    {
+      "path": "tests/reports/validator-dependency-install.txt",
+      "bytes": 1721,
+      "sha256": "de3cb08c3f6e7b59d87e45ee86ef8935e82ea6d542dadbe0d7ecd1d59d2dbf17"
+    },
+    {
+      "path": "tests/requirements.txt",
+      "bytes": 122,
+      "sha256": "650626f73ddac33fe535e808fc3cdbad13cb6428e006375f4659e39d8d2af6cc"
+    },
+    {
+      "path": "tests/validate_skill.py",
+      "bytes": 47129,
+      "sha256": "bf8afd67d2d56efb6f6b87faab2eef2bf7814a83da817caef346c3e707ae6c61"
+    }
+  ]
+}

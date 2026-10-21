@@ -1,0 +1,828 @@
+{
+  "schema_version": 1,
+  "templates": [
+    {
+      "template_id": "basic_video_script",
+      "type": "script",
+      "name": "视频脚本基础结构",
+      "description": "系统基础结构，可按短视频、广告、宣传或产品需求调整；当前没有用户提供的脚本案例。",
+      "origin": "system_basic_structure",
+      "template_file": "templates/scripts/basic.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "主题或标题",
+        "核心创意",
+        "按内容推进的可见事件",
+        "对应旁白或对白",
+        "情绪节奏",
+        "结尾"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "主题或标题",
+          "purpose": "用一句可理解的话限定内容主题"
+        },
+        {
+          "section": "核心创意",
+          "purpose": "说明贯穿内容的行动或表达方法"
+        },
+        {
+          "section": "内容段落",
+          "purpose": "用可见事件和对应声音推动信息"
+        },
+        {
+          "section": "结尾",
+          "purpose": "完成用户要求的故事、观点或行动目标"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，按模板原生栏目或分场格式书写，不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": null,
+        "max_seconds": null,
+        "guidance": "未提供时长时按需求组织；提供时长时控制信息与对白密度，不自行补写时长。"
+      },
+      "examples": [
+        "开头提出一个生活问题，中段用行动呈现变化，结尾回到问题。"
+      ],
+      "keywords": [
+        "视频脚本",
+        "基础",
+        "通用",
+        "原创"
+      ]
+    },
+    {
+      "template_id": "episodic_screenplay_plaintext",
+      "type": "screenplay",
+      "name": "分场短剧剧本",
+      "description": "由用户提供的两份剧本正文提取分场格式，保留可见动作、人物对白和声音来源。",
+      "origin": "structure_extracted_from_user_references",
+      "template_file": "templates/screenplays/episodic.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "可选作品名称与集标题",
+        "场次：编号、时间、内外、地点",
+        "人物",
+        "可见动作与对白",
+        "结尾"
+      ],
+      "example_refs": [
+        "user_robot_boyfriend_ep1",
+        "user_roommates_ep1"
+      ],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "作品与集标题",
+          "purpose": "只在有标题或分集需求时使用"
+        },
+        {
+          "section": "场次",
+          "purpose": "明确时间、内外与地点并维持连续性"
+        },
+        {
+          "section": "人物动作与对白",
+          "purpose": "交替描写可见行为、对白和必要声音来源"
+        },
+        {
+          "section": "结尾",
+          "purpose": "收束本次人物行动或已要求的分集悬念"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，按模板原生栏目或分场格式书写，不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": null,
+        "max_seconds": null,
+        "guidance": "未提供时长时按需求组织；提供时长时控制信息与对白密度，不自行补写时长。"
+      },
+      "examples": [
+        "人物试图隐瞒一封信；来客寻找同一封信；动作先于对白暴露矛盾。"
+      ],
+      "keywords": [
+        "分场",
+        "剧本",
+        "短剧",
+        "对白",
+        "人物"
+      ]
+    },
+    {
+      "template_id": "commercial_ad",
+      "type": "script",
+      "name": "商业广告",
+      "description": "围绕单一传播目标，用具体使用情境、可信利益和行动收束形成广告脚本。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/commercial_ad.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "传播主张",
+        "情境与吸引点",
+        "产品介入与证明",
+        "行动收束"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "传播主张",
+          "purpose": "由用户信息提炼一个可验证的核心利益"
+        },
+        {
+          "section": "情境与吸引点",
+          "purpose": "用受众熟悉的具体行动引出需求"
+        },
+        {
+          "section": "产品介入与证明",
+          "purpose": "呈现产品如何解决该需求；证据仅用已提供资料"
+        },
+        {
+          "section": "行动收束",
+          "purpose": "按用户目标给出品牌落点或行动引导"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 15,
+        "max_seconds": 120,
+        "guidance": "建议15–120秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "雨天回家，人物在门口处理湿鞋；产品在使用动作中出现；以用户提供的利益点收束。"
+      ],
+      "keywords": [
+        "广告",
+        "商业广告",
+        "促销",
+        "投放",
+        "卖点",
+        "转化",
+        "品牌产品"
+      ]
+    },
+    {
+      "template_id": "brand_promo",
+      "type": "script",
+      "name": "品牌宣传",
+      "description": "通过人物行动与可信场景表达品牌价值，连接品牌主张和受众感受。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/brand_promo.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "品牌命题",
+        "真实情境",
+        "行动与价值证明",
+        "价值回响"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "品牌命题",
+          "purpose": "提炼用户希望受众记住的价值或态度"
+        },
+        {
+          "section": "真实情境",
+          "purpose": "以人物任务或生活场景承载品牌问题"
+        },
+        {
+          "section": "行动与价值证明",
+          "purpose": "用具体行为和已提供事实支撑品牌主张"
+        },
+        {
+          "section": "价值回响",
+          "purpose": "呼应开头情境，形成品牌记忆"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 30,
+        "max_seconds": 300,
+        "guidance": "建议30–300秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "以交接班的动作串起不同岗位，用已提供工作事实体现守时，结尾回到等待的人。"
+      ],
+      "keywords": [
+        "品牌",
+        "宣传片",
+        "企业宣传",
+        "品牌故事",
+        "价值观",
+        "形象片"
+      ]
+    },
+    {
+      "template_id": "product_intro",
+      "type": "script",
+      "name": "产品介绍",
+      "description": "按使用任务组织产品说明，让观众理解功能、操作与适用场景。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/product_intro.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "使用目标",
+        "操作与功能",
+        "利益与边界",
+        "总结与下一步"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "使用目标",
+          "purpose": "说明用户任务或产品适用问题"
+        },
+        {
+          "section": "操作与功能",
+          "purpose": "按实际使用顺序呈现功能及关键动作"
+        },
+        {
+          "section": "利益与边界",
+          "purpose": "把已提供功能转成具体收益并保留适用限制"
+        },
+        {
+          "section": "总结与下一步",
+          "purpose": "回扣核心用途和用户要求的下一步"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 30,
+        "max_seconds": 300,
+        "guidance": "建议30–300秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "先呈现整理桌面的任务，再演示已提供的收纳功能，结尾展示整理后的使用状态。"
+      ],
+      "keywords": [
+        "产品介绍",
+        "功能",
+        "演示",
+        "教程",
+        "开箱",
+        "操作",
+        "使用说明"
+      ]
+    },
+    {
+      "template_id": "social_short_video",
+      "type": "script",
+      "name": "自媒体短视频",
+      "description": "用清晰切入点、连续信息收益和可见例子完成一条短视频。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/social_short_video.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "开头切入",
+        "主体推进",
+        "结果或观点",
+        "互动收束"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "开头切入",
+          "purpose": "立即给出具体问题、反常现象或内容收益"
+        },
+        {
+          "section": "主体推进",
+          "purpose": "用行动、例子或步骤逐次兑现开头期待"
+        },
+        {
+          "section": "结果或观点",
+          "purpose": "展示可见结果或解释核心判断"
+        },
+        {
+          "section": "互动收束",
+          "purpose": "在用户有需求时给出与主题相关的互动引导"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 15,
+        "max_seconds": 180,
+        "guidance": "建议15–180秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "从一个常见整理误区开场，用两个可见操作纠正，最后展示同一空间的结果。"
+      ],
+      "keywords": [
+        "自媒体",
+        "短视频",
+        "口播",
+        "社交媒体",
+        "抖音",
+        "小红书",
+        "竖屏",
+        "干货"
+      ]
+    },
+    {
+      "template_id": "ai_story_short",
+      "type": "screenplay",
+      "name": "AI剧情短片",
+      "description": "以单一主行动、稳定人物与清晰因果组织适于后续AI影像制作的故事短片。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/screenplays/ai_story_short.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "故事与人物",
+        "触发与行动",
+        "升级与转折",
+        "选择与结尾"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "故事与人物",
+          "purpose": "给出人物当前目标、阻碍和必要设定"
+        },
+        {
+          "section": "触发与行动",
+          "purpose": "事件迫使人物做出可见选择"
+        },
+        {
+          "section": "升级与转折",
+          "purpose": "前一行动带来后果，改变人物理解或处境"
+        },
+        {
+          "section": "选择与结尾",
+          "purpose": "用关键行动完成变化并回响前文"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，按场次时间、内外、地点、人物、可见动作与对白书写；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 60,
+        "max_seconds": 600,
+        "guidance": "建议60–600秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "维修员收到无法投递的语音；每次尝试让声音更清楚，却使留言时间更早；最后选择留下新的回复。"
+      ],
+      "keywords": [
+        "AI剧情短片",
+        "AI短片",
+        "剧情短片",
+        "原创故事",
+        "角色一致性"
+      ]
+    },
+    {
+      "template_id": "ai_short_drama",
+      "type": "screenplay",
+      "name": "AI短剧",
+      "description": "以强目标、人物对抗、信息转折与阶段回报组织短剧，支持用户指定的分集结构。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/screenplays/ai_short_drama.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "开场矛盾",
+        "行动与对抗",
+        "信息或关系转折",
+        "阶段结果与悬念"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "开场矛盾",
+          "purpose": "尽快显露人物诉求、关系与眼前代价"
+        },
+        {
+          "section": "行动与对抗",
+          "purpose": "双方采取不同策略，行动导致冲突升级"
+        },
+        {
+          "section": "信息或关系转折",
+          "purpose": "前文有线索的新事实改变主动权"
+        },
+        {
+          "section": "阶段结果与悬念",
+          "purpose": "兑现本段冲突；有分集要求时再留下后续问题"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，按场次时间、内外、地点、人物、可见动作与对白书写；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 30,
+        "max_seconds": 180,
+        "guidance": "建议30–180秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "主角被要求交出钥匙，却用早前留下的收据证明归属；对方改口提出新的条件。"
+      ],
+      "keywords": [
+        "AI短剧",
+        "短剧",
+        "连续剧",
+        "分集",
+        "高冲突",
+        "身份反转",
+        "爽点"
+      ]
+    },
+    {
+      "template_id": "microfilm",
+      "type": "screenplay",
+      "name": "微电影",
+      "description": "围绕人物欲望和代价构建完整短篇弧线，以行动完成情绪变化。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/screenplays/microfilm.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "人物与处境",
+        "触发与尝试",
+        "代价与转折",
+        "关键选择与余韵"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "人物与处境",
+          "purpose": "用日常行动暴露目标、缺口与关系"
+        },
+        {
+          "section": "触发与尝试",
+          "purpose": "事件打破平衡，人物主动尝试解决"
+        },
+        {
+          "section": "代价与转折",
+          "purpose": "行动代价迫使人物重新判断真正需要"
+        },
+        {
+          "section": "关键选择与余韵",
+          "purpose": "通过不可替代的选择完成变化，结尾回响前文"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，按场次时间、内外、地点、人物、可见动作与对白书写；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 180,
+        "max_seconds": 1800,
+        "guidance": "建议180–1800秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "一直替人修伞的老人拒修一把旧伞；来人逐步发现原因；最后老人选择与来人一同走进雨里。"
+      ],
+      "keywords": [
+        "微电影",
+        "短片",
+        "电影故事",
+        "人物弧光",
+        "完整故事"
+      ]
+    },
+    {
+      "template_id": "documentary",
+      "type": "script",
+      "name": "纪录片",
+      "description": "以纪实问题、观察行动与可核实素材组织纪录片脚本，清楚标记证据边界。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/documentary.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "纪实问题与范围",
+        "现场观察",
+        "资料与访谈",
+        "发现与开放结尾"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "纪实问题与范围",
+          "purpose": "界定对象、观察问题与已提供素材范围"
+        },
+        {
+          "section": "现场观察",
+          "purpose": "以真实行动、环境和现场声音建立具体经验"
+        },
+        {
+          "section": "资料与访谈",
+          "purpose": "组织已提供的事实、来源和访谈内容以解释问题"
+        },
+        {
+          "section": "发现与开放结尾",
+          "purpose": "收束已证实发现，对未知保留开放性"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 120,
+        "max_seconds": 3600,
+        "guidance": "建议120–3600秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "跟随修车师傅一次真实工作流程，以已提供采访补充选择原因；没有提供的话语列作采访问题。"
+      ],
+      "keywords": [
+        "纪录片",
+        "纪实",
+        "访谈",
+        "观察",
+        "非虚构",
+        "实地",
+        "档案"
+      ]
+    },
+    {
+      "template_id": "character_story",
+      "type": "script",
+      "name": "人物故事短片",
+      "description": "沿人物的具体目标、选择与变化组织人物故事，兼容真实采访素材与明确的虚构创作。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/character_story.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "人物此刻",
+        "目标与阻碍",
+        "关键经历与选择",
+        "改变与回响"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "人物此刻",
+          "purpose": "用当前行动和关系建立人物辨识度"
+        },
+        {
+          "section": "目标与阻碍",
+          "purpose": "交代人物在意的事及其现实阻力"
+        },
+        {
+          "section": "关键经历与选择",
+          "purpose": "通过具体事件或已提供素材呈现人物取舍"
+        },
+        {
+          "section": "改变与回响",
+          "purpose": "以可观察变化收束人物故事"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 60,
+        "max_seconds": 900,
+        "guidance": "建议60–900秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "从照看夜班小店的一次交接开始，以用户提供经历解释坚持原因，结尾回到新的交接动作。"
+      ],
+      "keywords": [
+        "人物故事",
+        "人物短片",
+        "人物专访",
+        "人物传记",
+        "个人故事",
+        "人物纪录"
+      ]
+    },
+    {
+      "template_id": "storyboard_friendly",
+      "type": "script",
+      "name": "分镜友好脚本",
+      "description": "按连续事件写清人物、空间、动作和声音，为后续分镜拆解提供明确叙事材料。",
+      "origin": "system_curated_structure",
+      "template_file": "templates/scripts/storyboard_friendly.txt",
+      "input_requirements": [
+        "user_request"
+      ],
+      "output_structure": [
+        "主题与事件目标",
+        "场景与人物",
+        "连续行动段落",
+        "转折与结束状态"
+      ],
+      "example_refs": [],
+      "header_policy": "template_native",
+      "enabled": true,
+      "version": 1,
+      "structure": [
+        {
+          "section": "主题与事件目标",
+          "purpose": "明确该段内容要完成的变化"
+        },
+        {
+          "section": "场景与人物",
+          "purpose": "提供后续拆解所需的时间、地点、人物和关键物件"
+        },
+        {
+          "section": "连续行动段落",
+          "purpose": "每段给出可见动作、因果结果和对应声音"
+        },
+        {
+          "section": "转折与结束状态",
+          "purpose": "交代场景衔接、道具去向及最终结果"
+        }
+      ],
+      "required_fields": [
+        "user_request"
+      ],
+      "optional_fields": [
+        "duration",
+        "aspect_ratio",
+        "target_audience",
+        "tone",
+        "characters",
+        "product_ip",
+        "constraints"
+      ],
+      "output_format": "UTF-8 TXT，使用内容段落、可见事件及对应声音；不输出完整分镜表。",
+      "duration_rules": {
+        "min_seconds": 30,
+        "max_seconds": 900,
+        "guidance": "建议30–900秒，仅作为密度参考；用户给定时长优先，超出建议区间应报告确认项，不自动修改。未提供时长不虚构时长。"
+      },
+      "examples": [
+        "人物将红信封放入抽屉；门外铃声响起；人物带走钥匙离开，红信封仍留在原处。"
+      ],
+      "keywords": [
+        "分镜友好",
+        "可视化脚本",
+        "后续分镜",
+        "动作连续",
+        "空间连续",
+        "事件段落"
+      ]
+    }
+  ]
+}

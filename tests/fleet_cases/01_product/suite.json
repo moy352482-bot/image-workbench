@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_01_01_product",
+  "cases": [
+    {
+      "case_id": "01_product_pure_01",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张磨砂白陶瓷咖啡杯图片。画面内容：浅灰摄影棚里的单品主图，杯口椭圆自然、把手完整可见。视觉要求：柔和左侧窗光与轻微接触阴影。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "01_product_pure_02",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张雾蓝色保温水壶图片。画面内容：浅米色石台上的竖直产品照，壶盖和提环结构清楚。视觉要求：清爽晨光，背景干净留白。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "01_product_pure_03",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张橄榄绿帆布通勤包图片。画面内容：木长凳与浅色墙构成的城市室内场景，肩带自然展开。视觉要求：斜射日光，突出帆布纹理。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_pure_04",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张银色机械腕表图片。画面内容：浅色石材台面上的俯拍主图，表盘朝向镜头、表带完整。视觉要求：克制高光表现拉丝金属。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "01_product_pure_05",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张琥珀色精华滴管瓶图片。画面内容：乳白背景上的护肤品主图，玻璃瓶身透光且滴管竖直。视觉要求：柔和暖光和清晰轮廓。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "01_product_pure_06",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张折叠式无线耳机图片。画面内容：浅蓝渐变摄影棚中的耳机与充电盒，二者间距清楚。视觉要求：轻盈科技感、不出现品牌。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_pure_07",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张奶油色香薰蜡烛图片。画面内容：浅木桌面上的居家商品照，烛杯边缘完整且烛芯可见。视觉要求：午后暖光与低饱和背景。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "01_product_pure_08",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张珊瑚橙运动鞋图片。画面内容：干净浅灰地面上的侧前方单品图，鞋底和鞋带完整。视觉要求：鲜明但真实的运动棚拍光。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_pure_09",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张透明玻璃花瓶图片。画面内容：纯白背景中的竖构图产品照，瓶口和玻璃折射细节清楚。视觉要求：柔和逆光，不放入花朵。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "01_product_pure_10",
+      "project_name": "商品电商视觉",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张深蓝色旅行行李箱图片。画面内容：浅色机场休息区背景中的完整箱体场景图，拉杆收起。视觉要求：自然侧光，背景适度虚化。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "商品主图与场景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_ref_01",
+      "project_name": "商品电商视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据说明生成一张银色机械腕表图片。参考图仅用于主体外观与包装比例；目标画面：浅色石材台面上的俯拍主图，表盘朝向镜头、表带完整。风格约束：克制高光表现拉丝金属。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "subject"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "商品主图与场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "01_product_ref_02",
+      "project_name": "商品电商视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据说明生成一张琥珀色精华滴管瓶图片。参考图仅用于配色与布光氛围；目标画面：乳白背景上的护肤品主图，玻璃瓶身透光且滴管竖直。风格约束：柔和暖光和清晰轮廓。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "商品主图与场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "01_product_ref_03",
+      "project_name": "商品电商视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据说明生成一张折叠式无线耳机图片。分别使用睫毛膏参考图中的简洁竖向主体、香水参考图的深暖色布光及手机参考图的居中构图作为三种独立参考；不要把参考商品混入画面。目标画面：浅蓝渐变摄影棚中的耳机与充电盒，二者间距清楚。风格约束：轻盈科技感、不出现品牌。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "subject"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "reference"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "商品主图与场景",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_ref_04",
+      "project_name": "商品电商视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据说明生成一张奶油色香薰蜡烛图片。只借鉴手机参考图的冷色调与干净棚拍光线，不复制手机或品牌。目标画面：浅木桌面上的居家商品照，烛杯边缘完整且烛芯可见。风格约束：午后暖光与低饱和背景。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "商品主图与场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "01_product_ref_05",
+      "project_name": "商品电商视觉",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据说明生成一张珊瑚橙运动鞋图片。参考图仅借鉴睫毛膏包装的黑金配色，不在输出中出现化妆品或文字。目标画面：干净浅灰地面上的侧前方单品图，鞋底和鞋带完整。风格约束：鲜明但真实的运动棚拍光。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "商品主图与场景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "01_product_edit_01",
+      "project_name": "商品电商视觉",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“商品主图与场景”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "01_product_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "商品主图与场景"
+      ]
+    },
+    {
+      "case_id": "01_product_edit_02",
+      "project_name": "商品电商视觉",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“商品主图与场景”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "01_product_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "商品主图与场景"
+      ]
+    },
+    {
+      "case_id": "01_product_edit_03",
+      "project_name": "商品电商视觉",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“商品主图与场景”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "01_product_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "商品主图与场景"
+      ]
+    },
+    {
+      "case_id": "01_product_edit_04",
+      "project_name": "商品电商视觉",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“商品主图与场景”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "01_product_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "商品主图与场景"
+      ]
+    },
+    {
+      "case_id": "01_product_edit_05",
+      "project_name": "商品电商视觉",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“商品主图与场景”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "01_product_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "商品主图与场景"
+      ]
+    }
+  ]
+}

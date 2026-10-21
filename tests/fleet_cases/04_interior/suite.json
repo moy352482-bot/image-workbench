@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_04_04_interior",
+  "cases": [
+    {
+      "case_id": "04_interior_pure_01",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张小户型客厅图片。画面内容：约18平方米的现代客厅，浅木地板、米色沙发和落地灯。视觉要求：从入口看向窗边，空间通透。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_02",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张日式早餐角图片。画面内容：靠窗的两人餐桌、木椅和一只陶壶，窗外有绿植。视觉要求：清晨柔光，物件简洁。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "04_interior_pure_03",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张家庭阅读室图片。画面内容：整面矮书架、灰绿色扶手椅与弧形落地灯。视觉要求：暖色灯光，安静舒适。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_04",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张紧凑型厨房图片。画面内容：白色橱柜、浅灰台面和木质开放层板，台面保持整洁。视觉要求：自然窗光，写实室内摄影。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_05",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张青少年卧室图片。画面内容：单人床、书桌和软木板组成的明亮房间。视觉要求：蓝绿色点缀，整洁不拥挤。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "04_interior_pure_06",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张植物阳光房图片。画面内容：玻璃屋顶下摆放高低不同的观叶植物和藤椅。视觉要求：午后光影落在浅石地面。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_07",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张小型居家工作室图片。画面内容：靠墙书桌、人体工学椅和桌面收纳灯。视觉要求：中性配色，真实可居住。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_08",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张奶油色浴室图片。画面内容：圆镜、浅色洗手台和亚麻毛巾，地面无杂物。视觉要求：柔和漫射光，干净清爽。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "04_interior_pure_09",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张复古餐厅卡座图片。画面内容：深木餐桌、皮革卡座和墙上小壁灯。视觉要求：琥珀色光线，镜头平视。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_pure_10",
+      "project_name": "室内空间设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张入口玄关图片。画面内容：窄玄关中的换鞋凳、挂钩和一盆小绿植。视觉要求：浅色墙面，整洁实用。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "室内空间"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "04_interior_ref_01",
+      "project_name": "室内空间设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：白色橱柜、浅灰台面和木质开放层板，台面保持整洁。风格约束：自然窗光，写实室内摄影。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "室内空间",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_ref_02",
+      "project_name": "室内空间设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：单人床、书桌和软木板组成的明亮房间。风格约束：蓝绿色点缀，整洁不拥挤。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "室内空间",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "04_interior_ref_03",
+      "project_name": "室内空间设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：玻璃屋顶下摆放高低不同的观叶植物和藤椅。风格约束：午后光影落在浅石地面。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "室内空间",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_ref_04",
+      "project_name": "室内空间设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：靠墙书桌、人体工学椅和桌面收纳灯。风格约束：中性配色，真实可居住。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "室内空间",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "04_interior_ref_05",
+      "project_name": "室内空间设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：圆镜、浅色洗手台和亚麻毛巾，地面无杂物。风格约束：柔和漫射光，干净清爽。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "室内空间",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "04_interior_edit_01",
+      "project_name": "室内空间设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“室内空间”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "04_interior_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "室内空间"
+      ]
+    },
+    {
+      "case_id": "04_interior_edit_02",
+      "project_name": "室内空间设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“室内空间”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "04_interior_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "室内空间"
+      ]
+    },
+    {
+      "case_id": "04_interior_edit_03",
+      "project_name": "室内空间设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“室内空间”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "04_interior_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "室内空间"
+      ]
+    },
+    {
+      "case_id": "04_interior_edit_04",
+      "project_name": "室内空间设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“室内空间”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "04_interior_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "室内空间"
+      ]
+    },
+    {
+      "case_id": "04_interior_edit_05",
+      "project_name": "室内空间设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“室内空间”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "04_interior_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "室内空间"
+      ]
+    }
+  ]
+}

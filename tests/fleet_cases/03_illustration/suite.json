@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_03_03_illustration",
+  "cases": [
+    {
+      "case_id": "03_illustration_pure_01",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张戴黄色雨帽的小狐狸图片。画面内容：一只小狐狸坐在窗台看雨，窗外有圆润雨滴和远处屋顶。视觉要求：温柔绘本水彩，轮廓清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "03_illustration_pure_02",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张漂浮的云朵邮局图片。画面内容：小型邮局建在云朵上，信封由两只白鸽送出。视觉要求：轻松童话插画，天空留白。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_pure_03",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张月球上的温室图片。画面内容：玻璃温室里长着番茄和蕨类植物，地球出现在远方。视觉要求：蓝紫夜色与鲜绿植物形成对比。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "03_illustration_pure_04",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海底图书馆图片。画面内容：鲸鱼旁的珊瑚建筑里有一排书架，几条小鱼穿梭。视觉要求：细节丰富的儿童插画，画面清爽。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_pure_05",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张会唱歌的茶壶图片。画面内容：木桌上的茶壶冒出音符形状的蒸汽，旁边只有一只茶杯。视觉要求：复古彩铅质感，温暖安静。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "03_illustration_pure_06",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张森林里的迷你火车图片。画面内容：红色小火车沿树根轨道驶过苔藓森林。视觉要求：俯视构图，绿色层次丰富。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_pure_07",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张星星收集员图片。画面内容：穿蓝色外套的小孩用玻璃罐收集夜空中的小星星。视觉要求：梦幻但构图简洁，人物为虚构儿童形象。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "03_illustration_pure_08",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张面包山谷图片。画面内容：几座面包形状的小山围绕着一条牛奶河。视觉要求：明快扁平插画，柔和奶油色。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "03_illustration_pure_09",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张花园里的机械鸟图片。画面内容：铜色小鸟停在盛开的紫色花枝上，翅膀有精细齿轮。视觉要求：奇幻绘本插画，主体完整。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "03_illustration_pure_10",
+      "project_name": "原创插画",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张灯塔与纸船图片。画面内容：黄昏海面上漂着几只纸船，远方白色灯塔亮起。视觉要求：剪纸拼贴风格，层次分明。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "插画创作"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_ref_01",
+      "project_name": "原创插画",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：鲸鱼旁的珊瑚建筑里有一排书架，几条小鱼穿梭。风格约束：细节丰富的儿童插画，画面清爽。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "插画创作",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_ref_02",
+      "project_name": "原创插画",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：木桌上的茶壶冒出音符形状的蒸汽，旁边只有一只茶杯。风格约束：复古彩铅质感，温暖安静。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "插画创作",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "03_illustration_ref_03",
+      "project_name": "原创插画",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：红色小火车沿树根轨道驶过苔藓森林。风格约束：俯视构图，绿色层次丰富。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "插画创作",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "03_illustration_ref_04",
+      "project_name": "原创插画",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：穿蓝色外套的小孩用玻璃罐收集夜空中的小星星。风格约束：梦幻但构图简洁，人物为虚构儿童形象。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "插画创作",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "03_illustration_ref_05",
+      "project_name": "原创插画",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：几座面包形状的小山围绕着一条牛奶河。风格约束：明快扁平插画，柔和奶油色。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "插画创作",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "03_illustration_edit_01",
+      "project_name": "原创插画",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“插画创作”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "03_illustration_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "插画创作"
+      ]
+    },
+    {
+      "case_id": "03_illustration_edit_02",
+      "project_name": "原创插画",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“插画创作”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "03_illustration_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "插画创作"
+      ]
+    },
+    {
+      "case_id": "03_illustration_edit_03",
+      "project_name": "原创插画",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“插画创作”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "03_illustration_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "插画创作"
+      ]
+    },
+    {
+      "case_id": "03_illustration_edit_04",
+      "project_name": "原创插画",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“插画创作”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "03_illustration_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "插画创作"
+      ]
+    },
+    {
+      "case_id": "03_illustration_edit_05",
+      "project_name": "原创插画",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“插画创作”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "03_illustration_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "插画创作"
+      ]
+    }
+  ]
+}

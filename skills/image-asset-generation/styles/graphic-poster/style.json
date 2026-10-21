@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "graphic-poster",
+  "name": "图形海报",
+  "category": "graphic",
+  "visual_positioning": "以大形、网格、层级与精确文字区建立强识别平面；图形与文字各有边界，优先保证信息准确和最终版位可用。",
+  "use_cases": [
+    "活动主视觉",
+    "品牌图形版式",
+    "产品海报底图与排版指引"
+  ],
+  "asset_types": [
+    "key_visual",
+    "logo",
+    "style_reference",
+    "product",
+    "character",
+    "prop"
+  ],
+  "visual_language": {
+    "composition": [
+      "先建立主次网格，图像焦点与指定文字区域互相避让；不因满版冲击力越过安全区。"
+    ],
+    "lighting": [
+      "平面色块可不依赖物理照明；含照片时保持照片自身光线一致，不把所有内容统一变立体。"
+    ],
+    "color": [
+      "用少量对比色建立层级，精确品牌色和商品色不可被替换。"
+    ],
+    "texture": [
+      "选择清楚平涂或受控印刷颗粒；纹理不得穿过小字损害可读性。"
+    ],
+    "camera": [
+      "图形按正面画布组织，照片或产品的角度继承资产需求；不默认套展示样机透视。"
+    ],
+    "depth": [
+      "以遮挡次序、大小与色块对比表达层次；文字不能被无依据遮挡或切断。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "信息层级在缩略图尺度仍清楚。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "用户给定文字逐字保留，不增删与改写。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "图像和文字区域互不破坏识别与安全边距。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "色块比例、网格节奏和纹理强度可随版式变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "layout_rhythm": {
+      "type": "enum",
+      "description": "图像与文字区的构图节奏，不改变文案。",
+      "default": "单一主形与清楚文字区",
+      "choices": [
+        "单一主形与清楚文字区",
+        "有秩序的分区网格",
+        "对角动势与稳定边距"
+      ]
+    },
+    "graphic_finish": {
+      "type": "enum",
+      "description": "平面表面处理。",
+      "default": "干净平涂",
+      "choices": [
+        "干净平涂",
+        "轻微印刷颗粒",
+        "少量纸面纹理"
+      ]
+    },
+    "hierarchy_focus": {
+      "type": "string",
+      "description": "强调的信息层级，由既定简报指定。",
+      "default": "主体图形优先，文字区留足空间"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用图形海报语言，版面节奏为 {{layout_rhythm}}，表面处理采用 {{graphic_finish}}，层级重点是 {{hierarchy_focus}}。遵守既定文字区、安全边距与阅读顺序；能力不足以准确生成文字时，交付留白底图与排版约束，不伪造已完成文字。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若用户要求精确文字，不生成同义改写、随机小字、额外日期或虚构品牌名。",
+    "若存在文字区，不使用通用的 no text 思路把必要内容一并排除。",
+    "若是最终平面文件，不默认添加海报框、墙面样机、透视边框或观看者。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻第三方海报的完整文字排列、独有字体造型、标志组合和主图关系。"
+  ],
+  "examples": [
+    {
+      "example_id": "science_event",
+      "brief": "科学开放日主视觉，标题与时间已有精确文案。",
+      "asset_type": "key_visual",
+      "variables": {
+        "layout_rhythm": "有秩序的分区网格",
+        "graphic_finish": "干净平涂",
+        "hierarchy_focus": "标题区优先，实验器物图形作次级阅读点"
+      },
+      "adaptation_notes": [
+        "实际文字必须逐字校验。",
+        "生成器无法准确输出时保留版位并进入后期排版。"
+      ]
+    },
+    {
+      "example_id": "speaker_launch",
+      "brief": "音箱新品海报底图，产品比例与标识固定。",
+      "asset_type": "product",
+      "variables": {
+        "layout_rhythm": "对角动势与稳定边距",
+        "graphic_finish": "轻微印刷颗粒",
+        "hierarchy_focus": "音箱主体优先，右上预留短文案空间"
+      },
+      "adaptation_notes": [
+        "颗粒只能在背景适量出现，不损伤产品材质与标识。",
+        "对角动势通过色块实现，不扭曲音箱结构。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "文字能力、字体文件与最终排版必须单独核实；提示词写了精确文字不等于输出已校对。",
+      "生成栅格海报不自动满足印刷出血、色彩空间或可编辑分层交付。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "平面层级",
+      "精确文字版位",
+      "图形冲击"
+    ],
+    "natural_language_cues": [
+      "海报主视觉",
+      "有网格和大色块",
+      "标题和图形关系清楚"
+    ],
+    "avoid_when": [
+      "不允许后期排版而执行能力无法保证精确文字。",
+      "需要无版式干预的纯资产多视角设定。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

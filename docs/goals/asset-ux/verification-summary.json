@@ -1,0 +1,13 @@
+{
+  "command": ".venv/Scripts/python.exe -X utf8 scripts/verify.py",
+  "working_directory": "D:\\ChatGPT\\图片网站",
+  "tests": 639,
+  "elapsed_seconds": 398.923,
+  "skipped": 4,
+  "exit_code": 0,
+  "source_fingerprint_stable": true,
+  "official_script_pricing_unchanged": true,
+  "browser_cases": 35,
+  "browser_uncaught_errors": 0,
+  "real_model_calls_in_browser_suites": 0
+}

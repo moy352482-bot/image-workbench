@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "calls_to_image_model": 0,
+  "cli_process_calls": 8,
+  "checks": [
+    "create-project",
+    "create-task-with-reference",
+    "local-run",
+    "output-file-query",
+    "create-edit-from-artifact",
+    "edit-local-run",
+    "source-version-link",
+    "original-preserved",
+    "status-query"
+  ],
+  "fixture": {
+    "format": "PNG",
+    "width": 128,
+    "height": 192
+  },
+  "temporary_data_cleaned_on_exit": true
+}

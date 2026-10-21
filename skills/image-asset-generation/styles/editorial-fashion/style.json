@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "editorial-fashion",
+  "name": "时装编辑摄影",
+  "category": "photography",
+  "visual_positioning": "用明确身体线条、服装轮廓和留白形成编辑感；姿态与光线强调服装语言，不能替换人物身份或服装设计。",
+  "use_cases": [
+    "服装系列形象",
+    "人物时尚主视觉",
+    "造型与配饰展示"
+  ],
+  "asset_types": [
+    "character",
+    "wardrobe",
+    "product",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "以身体或衣物轮廓形成一条主要方向，留白给呼吸感；不把手脚裁在关节处。"
+    ],
+    "lighting": [
+      "用侧向柔光或清晰硬光表达衣物的垂坠和折线，皮肤与布料亮度分开控制。"
+    ],
+    "color": [
+      "主体服装保持指定色，环境使用少量辅助色；避免用高级感滤镜统一改变染色。"
+    ],
+    "texture": [
+      "看得到织物组织、皮革纹路与自然皮肤质感；精修不抹掉真实结构。"
+    ],
+    "camera": [
+      "全身、半身与衣物细节有明确用途；相机高度不造成无意的肢体拉长。"
+    ],
+    "depth": [
+      "人物和衣物边界清楚，背景可简化但姿态必须有立足和受力关系。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "服装版型、层次与配饰位置遵守资产设定。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "姿态的线条有设计意图且解剖关系可信。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "画面留白与主体轮廓共同组织视觉节奏。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "光线硬度、取景距离和背景简繁可随系列变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "editorial_energy": {
+      "type": "enum",
+      "description": "表达的姿态气质；不覆盖已锁定的动作。",
+      "default": "从容静止",
+      "choices": [
+        "从容静止",
+        "利落有张力",
+        "松弛自然"
+      ]
+    },
+    "fabric_light": {
+      "type": "enum",
+      "description": "适用于衣物的光线表达。",
+      "default": "侧向柔光",
+      "choices": [
+        "侧向柔光",
+        "有控制的硬侧光",
+        "均匀高调光"
+      ]
+    },
+    "space_rhythm": {
+      "type": "string",
+      "description": "背景与主体的空间节奏。",
+      "default": "大片留白与单一轮廓"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用时装编辑摄影语汇，整体气质为 {{editorial_energy}}，以 {{fabric_light}} 表现衣物结构，以 {{space_rhythm}} 安排视觉节奏。重视轮廓、布料受力和自然皮肤细节，取景必须服务已确定的造型。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若是服装资产验收图，不以大面积遮挡或极端姿态掩盖版型。",
+    "若人物身份已锁定，不借时尚风格更换脸型、肤色或体型。",
+    "若用户未要求美妆或首饰，不自动添加与服装争夺注意的装饰。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不自动继承杂志参考的明星面貌、品牌套装、标志性摆姿或整页标题布局。"
+  ],
+  "examples": [
+    {
+      "example_id": "linen_suit",
+      "brief": "浅沙色亚麻套装的站姿服装展示。",
+      "asset_type": "wardrobe",
+      "variables": {
+        "editorial_energy": "从容静止",
+        "fabric_light": "侧向柔光",
+        "space_rhythm": "右侧人物轮廓与左侧竖向留白"
+      },
+      "adaptation_notes": [
+        "保持亚麻纹理与套装的宽松版型。",
+        "已固定的模特体型不变。"
+      ]
+    },
+    {
+      "example_id": "sculptural_bag",
+      "brief": "结构感手袋的编辑特写，用于配饰专题。",
+      "asset_type": "product",
+      "variables": {
+        "editorial_energy": "利落有张力",
+        "fabric_light": "有控制的硬侧光",
+        "space_rhythm": "对角线轮廓配合简洁浅色背景"
+      },
+      "adaptation_notes": [
+        "用光强调既定折面，不重塑包体。",
+        "精确标识的出现与否仅由 AssetSpec 决定。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "用姿态意图、受力关系和布料效果描述风格；不以设计师、摄影师或杂志名称替代视觉说明。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "时尚轮廓",
+      "造型气质",
+      "编辑留白"
+    ],
+    "natural_language_cues": [
+      "杂志感穿搭",
+      "服装有形",
+      "时装大片"
+    ],
+    "avoid_when": [
+      "需要直观无姿态干扰的规格图。",
+      "品牌固定展示规则不允许创意取景。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

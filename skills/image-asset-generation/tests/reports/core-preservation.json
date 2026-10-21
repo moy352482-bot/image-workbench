@@ -1,0 +1,18 @@
+{
+  "scope": "Existing source files captured before this Skill task",
+  "checked_files": 130,
+  "changed_or_missing": [
+    "image_workbench/video_store.py",
+    "image_workbench/web_static/video.js",
+    "image_workbench/web_templates/video.html",
+    "scripts/start_h3_worker.ps1",
+    "tests/test_h3_worker.py",
+    "tests/test_video.py"
+  ],
+  "unchanged": false,
+  "task_write_scope": "skills/image-asset-generation/** only; validator dependencies in isolated temp directory",
+  "interpretation": "The last hash comparison detected 6 video-related files changed after baseline. They were not edited by this task or its delegated agents. Origin is not established by this check; no rollback performed.",
+  "unchanged_count": 124,
+  "affected_image_core_files": [],
+  "checked_at_utc": "2026-10-16T04:55:21.921793+00:00"
+}

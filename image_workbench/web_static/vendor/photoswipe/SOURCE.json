@@ -1,0 +1,29 @@
+{
+  "name": "PhotoSwipe",
+  "version": "5.4.4",
+  "license": "MIT",
+  "repository": "https://github.com/dimsemenov/PhotoSwipe",
+  "source_tag": "https://github.com/dimsemenov/PhotoSwipe/tree/v5.4.4",
+  "retrieved_utc": "2026-10-13T07:11:17.0874020Z",
+  "modified": false,
+  "files": [
+    {
+      "file": "photoswipe.esm.min.js",
+      "source": "https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/v5.4.4/dist/photoswipe.esm.min.js",
+      "bytes": 54270,
+      "sha256": "542069771beb34dc461cdb9374da8af643c591ebf65d8ec36331dd9a0681ebd4"
+    },
+    {
+      "file": "photoswipe.css",
+      "source": "https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/v5.4.4/dist/photoswipe.css",
+      "bytes": 7003,
+      "sha256": "bb5e956812a813e1bd5be5d7641cc78d05d7e7d3f7ab10187bc2725d70b52c94"
+    },
+    {
+      "file": "LICENSE",
+      "source": "https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/v5.4.4/LICENSE",
+      "bytes": 1109,
+      "sha256": "cde09603222c99259f63c7d082fe20ecf855e86b5a4c5bd7ebff1fa93c653bc1"
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "retro-film",
+  "name": "复古胶片质感",
+  "category": "photography",
+  "visual_positioning": "以受控颗粒、柔和高光肩部和温和色彩偏移呈现胶片观感；保留清晰主体，不用破损和脏污代替年代气息。",
+  "use_cases": [
+    "怀旧人物与街景",
+    "生活方式宣传",
+    "具有时间感的物件影像"
+  ],
+  "asset_types": [
+    "character",
+    "location",
+    "environment",
+    "product",
+    "vehicle",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "保留自然构图与明确焦点，边缘可略松；相册边框只在需求指定时出现。"
+    ],
+    "lighting": [
+      "高光过渡柔和，亮点可有轻微溢散；暗部仍能读出固定细节。"
+    ],
+    "color": [
+      "环境可温和偏暖或偏冷，主体固定色保持可辨；不把复古直接等同于全图发黄。"
+    ],
+    "texture": [
+      "细颗粒随画面尺度分布，少量色彩颗粒与高光柔化共同成立，默认不添加划痕和霉斑。"
+    ],
+    "camera": [
+      "自然观察视距，焦点清楚；镜头柔化不吞没眼部、标识或产品边缘。"
+    ],
+    "depth": [
+      "景深符合场景目的，颗粒覆盖全画面但不把前后景糊成同一层。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "保留细颗粒和柔和高光过渡这两个核心信号。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "复古调色不改变资产固定颜色和关键材质。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "主体清晰度足以支持当前验收。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "暖冷偏向、颗粒强弱与亮点溢散可按画幅变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "film_palette": {
+      "type": "enum",
+      "description": "环境色彩倾向，不改主体固有色。",
+      "default": "温和暖调",
+      "choices": [
+        "温和暖调",
+        "清淡中性",
+        "微冷褪色"
+      ]
+    },
+    "grain_presence": {
+      "type": "enum",
+      "description": "颗粒强度，按最终分辨率判断。",
+      "default": "细微可见",
+      "choices": [
+        "细微可见",
+        "中等细颗粒",
+        "极轻颗粒"
+      ]
+    },
+    "highlight_rolloff": {
+      "type": "enum",
+      "description": "亮部边缘与高光肩部的观感。",
+      "default": "柔和压缩",
+      "choices": [
+        "柔和压缩",
+        "轻微光晕",
+        "保留清楚亮边"
+      ]
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 使用复古胶片质感，环境色调为 {{film_palette}}，颗粒表现为 {{grain_presence}}，亮部采用 {{highlight_rolloff}}。保留自然细节和可信材料，通过色彩、颗粒与高光过渡表达时间感，不靠无依据破损。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若需要辨认脸部或产品文字，不让颗粒、光晕和柔焦覆盖这些细节。",
+    "若没有旧物设定，不添加污点、裂纹、刮痕或折痕。",
+    "若图像需要保留胶片质感，不把 grain 或所有 noise 作为全局负向约束。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不照搬特定老照片的家庭成员、场所标识、日期印记和完整构图。"
+  ],
+  "examples": [
+    {
+      "example_id": "seaside_walk",
+      "brief": "原创成年角色在海边步道的生活方式照片。",
+      "asset_type": "character",
+      "variables": {
+        "film_palette": "温和暖调",
+        "grain_presence": "细微可见",
+        "highlight_rolloff": "轻微光晕"
+      },
+      "adaptation_notes": [
+        "肤色与衣物配色保持身份设定。",
+        "只在天空和亮边形成轻微溢散。"
+      ]
+    },
+    {
+      "example_id": "radio_catalog",
+      "brief": "现代复刻收音机的怀旧宣传图，产品处于全新状态。",
+      "asset_type": "product",
+      "variables": {
+        "film_palette": "清淡中性",
+        "grain_presence": "极轻颗粒",
+        "highlight_rolloff": "保留清楚亮边"
+      },
+      "adaptation_notes": [
+        "旋钮、频率面板和品牌文字仍需清楚。",
+        "不为了复古添加磨损或把材质变旧。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "胶片感只用可观察效果描述，不承诺准确复刻特定胶卷或扫描仪的色彩响应。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "温和怀旧",
+      "自然颗粒",
+      "柔和高光"
+    ],
+    "natural_language_cues": [
+      "胶片感",
+      "像旧相册的颜色但清楚",
+      "温柔颗粒"
+    ],
+    "avoid_when": [
+      "需要完全无颗粒的电商白底与精密颜色对照。",
+      "需要对真实年代或拍摄来源作证据性主张。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

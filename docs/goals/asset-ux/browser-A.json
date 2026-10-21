@@ -1,0 +1,64 @@
+{
+  "runner": "Python Playwright Chromium + real uvicorn + temporary SQLite/files",
+  "model_calls": 0,
+  "elapsed_seconds": 19.163,
+  "cases": [
+    {
+      "name": "test_root_edit_paste_sets_base_preserves_references_and_saves",
+      "status": "passed",
+      "elapsed_seconds": 2.189,
+      "page_errors": [],
+      "screenshot": "screenshots/test_root_edit_paste_sets_base_preserves_references_and_saves.png"
+    },
+    {
+      "name": "test_root_inflight_upload_stays_in_original_subproject",
+      "status": "passed",
+      "elapsed_seconds": 1.391,
+      "page_errors": [],
+      "screenshot": "screenshots/test_root_inflight_upload_stays_in_original_subproject.png"
+    },
+    {
+      "name": "test_root_upload_and_save_network_failures_retain_draft_and_retry",
+      "status": "passed",
+      "elapsed_seconds": 1.692,
+      "page_errors": [],
+      "screenshot": "screenshots/test_root_upload_and_save_network_failures_retain_draft_and_retry.png"
+    },
+    {
+      "name": "test_root_upload_paste_drop_are_direct_references_and_save",
+      "status": "passed",
+      "elapsed_seconds": 1.951,
+      "page_errors": [],
+      "screenshot": "screenshots/test_root_upload_paste_drop_are_direct_references_and_save.png"
+    },
+    {
+      "name": "test_video_inflight_upload_stays_in_original_project",
+      "status": "passed",
+      "elapsed_seconds": 2.018,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_inflight_upload_stays_in_original_project.png"
+    },
+    {
+      "name": "test_video_paste_upload_drop_deduplicate_and_artifact",
+      "status": "passed",
+      "elapsed_seconds": 2.739,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_paste_upload_drop_deduplicate_and_artifact.png"
+    },
+    {
+      "name": "test_video_stage_paste_uses_frames_and_script_stage_asks_purpose",
+      "status": "passed",
+      "elapsed_seconds": 2.647,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_stage_paste_uses_frames_and_script_stage_asks_purpose.png"
+    },
+    {
+      "name": "test_video_text_paste_invalid_input_and_network_failure_preserve_draft",
+      "status": "passed",
+      "elapsed_seconds": 2.187,
+      "page_errors": [],
+      "screenshot": "screenshots/test_video_text_paste_invalid_input_and_network_failure_preserve_draft.png"
+    }
+  ],
+  "note": "Clipboard image/drop events carry browser File/DataTransfer objects. Text paste also uses the real browser clipboard and Ctrl+V."
+}

@@ -1,0 +1,74 @@
+{
+  "status": "passed",
+  "scope": "Three independently planned requests, inspected and revalidated by parent; this is not real image/visual validation",
+  "results": [
+    {
+      "case": 1,
+      "request": "为青春校园故事创建一位23岁成年女主角，短黑发、深棕眼睛、左眉小痣、棉质浅蓝衬衫，暖窗光，16:9，预算最多1次，高清。",
+      "source_path": "C:\\Users\\win\\AppData\\Local\\Temp\\image-asset-forward-test-v1\\01-campus-heroine.packet.json",
+      "packet_sha256": "86b13bc23ee275d8487e34a75fab080f286223627e86cacc9e60990fc09530e6",
+      "schema_and_semantics": "passed",
+      "style": "cinematic-realism",
+      "budget": {
+        "max_model_calls": 1,
+        "max_credit": null
+      },
+      "blockers": [
+        "HOST_ADAPTER_REQUIRED",
+        "COST_UNQUOTED",
+        "MODEL_UNRESOLVED",
+        "UNSUPPORTED_RATIO"
+      ]
+    },
+    {
+      "case": 2,
+      "request": "将我已有的护肤瓶产品资产 product_test:v3 的背景局部换成灰色，瓶身、金色logo与包装文字不变。没有附底图和mask，预算0次。",
+      "source_path": "C:\\Users\\win\\AppData\\Local\\Temp\\image-asset-forward-test-v1\\02-product-inpaint.packet.json",
+      "packet_sha256": "2abcc64153b9fa9adff4d383a84e2a9735581e43b96830e5f7c6a809de066903",
+      "schema_and_semantics": "passed",
+      "style": "commercial-product",
+      "budget": {
+        "max_model_calls": 0,
+        "max_credit": null
+      },
+      "blockers": [
+        "HOST_ADAPTER_REQUIRED",
+        "COST_UNQUOTED",
+        "MODEL_UNRESOLVED",
+        "BUDGET_EXCEEDED",
+        "EDIT_BASE_REQUIRED",
+        "MASK_REQUIRED",
+        "UNSUPPORTED_OPERATION",
+        "REFERENCE_UNVERIFIED",
+        "ASSET_IDENTITY_UNRESOLVED"
+      ]
+    },
+    {
+      "case": 3,
+      "request": "用两次调用，先建立一个原创红色机器人基础图，再引用基础图做一张三维风格正面展示；不要产生同一机器人不同脸，预算最多2次。",
+      "source_path": "C:\\Users\\win\\AppData\\Local\\Temp\\image-asset-forward-test-v1\\03-red-robot-two-step.packet.json",
+      "packet_sha256": "1eb4d6b2a7cdbfd5e41974f90d411676f70c051596793075d1fc4b96916fc112",
+      "schema_and_semantics": "passed",
+      "style": "3d-stylized",
+      "budget": {
+        "max_model_calls": 2,
+        "max_credit": null
+      },
+      "blockers": [
+        "HOST_ADAPTER_REQUIRED",
+        "COST_UNQUOTED",
+        "MODEL_UNRESOLVED",
+        "REFERENCE_UNVERIFIED"
+      ]
+    }
+  ],
+  "issues_resolved": [
+    "per-step complete prompts and prior-output reference roles",
+    "zero budget distinct from required call count",
+    "unresolved existing identity explicitly blocked",
+    "test specification link available"
+  ],
+  "image_model_calls": 0,
+  "credit_operations": 0,
+  "raw_evaluation_artifacts": "Kept in isolated temporary directory, outside the project test fixture set"
+}

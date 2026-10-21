@@ -1,0 +1,6 @@
+{
+  "comfy_url": "http://127.0.0.1:8190",
+  "cache_root": "D:/ChatGPT/图片网站/.remote-cache/qwen-remote",
+  "gpu_lock_path": "D:/ChatGPT/图片网站/.remote-cache/h3-gpu.lock",
+  "peer_comfy_urls": ["http://127.0.0.1:8189"]
+}

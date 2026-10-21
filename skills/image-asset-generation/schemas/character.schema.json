@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/character.schema.json",
+  "title": "Character AssetSpec v1",
+  "allOf": [
+    {
+      "$ref": "asset-spec.schema.json"
+    },
+    {
+      "properties": {
+        "asset_type": {
+          "const": "character"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "profile": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "continuity_notes": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "continuity_notes"
+          ]
+        },
+        "identity": {
+          "required": [
+            "character_id"
+          ]
+        },
+        "appearance": {
+          "required": [
+            "age",
+            "face",
+            "hair",
+            "skin",
+            "body",
+            "accessories"
+          ]
+        },
+        "clothing": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

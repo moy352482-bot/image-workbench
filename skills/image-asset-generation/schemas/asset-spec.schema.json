@@ -1,0 +1,1349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/asset-spec.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "asset_type": {
+      "enum": [
+        "character",
+        "product",
+        "location",
+        "environment",
+        "prop",
+        "vehicle",
+        "wardrobe",
+        "style_reference",
+        "key_visual",
+        "logo",
+        "food",
+        "architecture"
+      ]
+    },
+    "asset_name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identity_description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "visual_signature": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "character_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        },
+        "product_identity": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "identity_description",
+        "visual_signature"
+      ]
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "age": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "face": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "hair": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "skin": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "accessories": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "summary"
+      ]
+    },
+    "clothing": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "base": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "accessories": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "base",
+            "accessories"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "material": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "shape": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "palette": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "locked": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "palette",
+        "locked"
+      ]
+    },
+    "environment": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "place": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "architecture": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "time": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "weather": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "details": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "place",
+            "architecture",
+            "time",
+            "weather",
+            "details"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "framing": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "negative_space": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "description",
+        "framing",
+        "negative_space"
+      ]
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "mood": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "description",
+        "mood"
+      ]
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "viewpoint": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "distance": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "lens_intent": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "viewpoint",
+        "distance",
+        "lens_intent"
+      ]
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      },
+      "required": [
+        "style_id",
+        "variables"
+      ]
+    },
+    "references": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "common.schema.json#/$defs/reference"
+      },
+      "uniqueItems": true
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "must": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "must_not": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "exact_text": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "branding_policy": {
+          "enum": [
+            "none",
+            "original",
+            "authorized"
+          ]
+        }
+      },
+      "required": [
+        "must",
+        "must_not",
+        "exact_text",
+        "branding_policy"
+      ]
+    },
+    "aspect_ratio": {
+      "$ref": "common.schema.json#/$defs/aspect_ratio"
+    },
+    "resolution": {
+      "$ref": "common.schema.json#/$defs/resolution"
+    },
+    "generation_strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": [
+            "generate",
+            "edit",
+            "inpaint",
+            "multi_reference"
+          ]
+        },
+        "purpose": {
+          "enum": [
+            "create",
+            "regenerate",
+            "edit_version",
+            "derive_variant"
+          ]
+        },
+        "base_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^v[1-9][0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "auto_retry": {
+          "const": false
+        },
+        "auto_fallback": {
+          "const": false
+        }
+      },
+      "required": [
+        "classification",
+        "purpose",
+        "base_version",
+        "max_model_calls",
+        "auto_retry",
+        "auto_fallback"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "purpose": {
+                "enum": [
+                  "regenerate",
+                  "edit_version",
+                  "derive_variant"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "base_version": {
+                "type": "string",
+                "pattern": "^v[1-9][0-9]*$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "preferred_model": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fallback_model": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "PLANNED",
+        "GENERATING",
+        "DRAFT",
+        "REVIEW",
+        "APPROVED",
+        "FAILED",
+        "UNCERTAIN"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "type_details": {
+      "type": "object"
+    },
+    "consistency": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "consistency_constraints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "canonical_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^v[1-9][0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary_reference": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "face_reference": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "full_body_reference": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "clothing_reference": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "primary_reference",
+            "face_reference",
+            "full_body_reference",
+            "clothing_reference"
+          ]
+        }
+      },
+      "required": [
+        "consistency_constraints",
+        "canonical_version",
+        "reference_bindings"
+      ]
+    },
+    "property_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fixed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^/(identity|appearance|clothing|material|shape|color|environment|type_details)(/[a-z_]+)*$"
+          },
+          "uniqueItems": true
+        },
+        "shot_overridable_fields": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "enum": [
+              "action",
+              "expression",
+              "pose",
+              "composition",
+              "camera",
+              "lighting",
+              "setting",
+              "time",
+              "weather"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "fixed_paths",
+        "shot_overridable_fields"
+      ]
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "enum": [
+            "user_brief",
+            "user_revision",
+            "original_planning_fixture"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "origin",
+        "notes"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "asset_id",
+    "asset_type",
+    "asset_name",
+    "role",
+    "description",
+    "identity",
+    "appearance",
+    "clothing",
+    "material",
+    "shape",
+    "color",
+    "environment",
+    "composition",
+    "lighting",
+    "camera",
+    "style",
+    "references",
+    "constraints",
+    "aspect_ratio",
+    "resolution",
+    "generation_strategy",
+    "preferred_model",
+    "fallback_model",
+    "status",
+    "version",
+    "type_details",
+    "consistency",
+    "property_policy",
+    "assumptions",
+    "provenance"
+  ],
+  "title": "Image AssetSpec v1 (semantic specification, not a core storage record)",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "character"
+          }
+        }
+      },
+      "then": {
+        "$ref": "character.schema.json#/$defs/profile"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "product"
+          }
+        }
+      },
+      "then": {
+        "$ref": "product.schema.json#/$defs/profile"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "location"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/location"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "environment"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/environment"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "prop"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/prop"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "vehicle"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/vehicle"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "wardrobe"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/wardrobe"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "style_reference"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/style_reference"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "key_visual"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/key_visual"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "logo"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/logo"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "food"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/food"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_type": {
+            "const": "architecture"
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/architecture"
+      }
+    }
+  ],
+  "$defs": {
+    "location": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "space_type": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "layout_anchors": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "spatial_relationships": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "space_type",
+            "layout_anchors",
+            "spatial_relationships"
+          ]
+        },
+        "environment": {
+          "type": "object"
+        }
+      }
+    },
+    "environment": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "environment_type": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "geographic_features": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "atmosphere": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "scale_cues": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "environment_type",
+            "geographic_features",
+            "atmosphere",
+            "scale_cues"
+          ]
+        },
+        "environment": {
+          "type": "object"
+        }
+      }
+    },
+    "prop": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "function": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "scale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "distinguishing_marks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "function",
+            "scale",
+            "distinguishing_marks"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "vehicle": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "vehicle_class": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "propulsion": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "wheel_or_support_layout": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "scale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "vehicle_class",
+            "propulsion",
+            "wheel_or_support_layout",
+            "scale"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "wardrobe": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "garment_type": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "silhouette": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "construction": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "fit": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "fastenings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "garment_type",
+            "silhouette",
+            "construction",
+            "fit",
+            "fastenings"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clothing": {
+          "type": "object"
+        }
+      }
+    },
+    "style_reference": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visual_rules": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "excluded_subject_attributes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "target_usage": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "visual_rules",
+            "excluded_subject_attributes",
+            "target_usage"
+          ]
+        }
+      }
+    },
+    "key_visual": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "hero_elements": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "hierarchy": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "safe_area": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "message",
+            "hero_elements",
+            "hierarchy",
+            "safe_area"
+          ]
+        }
+      }
+    },
+    "logo": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "brand_name": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "mark_type": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "geometry_rules": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "wordmark": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "minimum_size_intent": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "brand_name",
+            "mark_type",
+            "geometry_rules",
+            "wordmark",
+            "minimum_size_intent"
+          ]
+        }
+      }
+    },
+    "food": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dish_name": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "ingredients": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            },
+            "preparation": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "serving": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "edibility_cues": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "dish_name",
+            "ingredients",
+            "preparation",
+            "serving",
+            "edibility_cues"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "architecture": {
+      "properties": {
+        "type_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "building_type": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "structural_system": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "facade": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "scale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "site_relationship": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "building_type",
+            "structural_system",
+            "facade",
+            "scale",
+            "site_relationship"
+          ]
+        },
+        "material": {
+          "minItems": 1
+        },
+        "shape": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/style.schema.json",
+  "title": "Image Asset Style v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "style_id", "name", "category", "visual_positioning", "use_cases", "asset_types", "visual_language", "style_fidelity_anchors", "variables", "prompt_template", "negative_constraints", "source_content_to_avoid", "examples", "model_notes", "selection", "authorship"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "style_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"$ref": "#/$defs/text"},
+    "category": {"enum": ["photography", "illustration", "rendering", "graphic", "architecture"]},
+    "visual_positioning": {"$ref": "#/$defs/text"},
+    "use_cases": {"$ref": "#/$defs/texts"},
+    "asset_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["character", "product", "location", "environment", "prop", "vehicle", "wardrobe", "style_reference", "key_visual", "logo", "food", "architecture"]}},
+    "visual_language": {
+      "type": "object", "additionalProperties": false,
+      "required": ["composition", "lighting", "color", "texture", "camera", "depth"],
+      "properties": {
+        "composition": {"$ref": "#/$defs/texts"}, "lighting": {"$ref": "#/$defs/texts"},
+        "color": {"$ref": "#/$defs/texts"}, "texture": {"$ref": "#/$defs/texts"},
+        "camera": {"$ref": "#/$defs/texts"}, "depth": {"$ref": "#/$defs/texts"}
+      }
+    },
+    "style_fidelity_anchors": {
+      "type": "array", "minItems": 3,
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "requirement", "importance"], "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "requirement": {"$ref": "#/$defs/text"}, "importance": {"enum": ["core", "adaptable"]}
+      }}
+    },
+    "variables": {
+      "type": "object", "minProperties": 2,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["type", "description", "default"],
+        "properties": {
+          "type": {"enum": ["string", "enum"]}, "description": {"$ref": "#/$defs/text"},
+          "default": {"$ref": "#/$defs/text"},
+          "choices": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+        },
+        "allOf": [{"if": {"properties": {"type": {"const": "enum"}}}, "then": {"required": ["choices"]}, "else": {"not": {"required": ["choices"]}}}]
+      }
+    },
+    "prompt_template": {"$ref": "#/$defs/text"},
+    "negative_constraints": {"$ref": "#/$defs/texts"},
+    "source_content_to_avoid": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "examples": {
+      "type": "array", "minItems": 2,
+      "items": {"type": "object", "additionalProperties": false,
+        "required": ["example_id", "brief", "asset_type", "variables", "adaptation_notes"],
+        "properties": {
+          "example_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "brief": {"$ref": "#/$defs/text"},
+          "asset_type": {"enum": ["character", "product", "location", "environment", "prop", "vehicle", "wardrobe", "style_reference", "key_visual", "logo", "food", "architecture"]},
+          "variables": {"type": "object", "additionalProperties": {"$ref": "#/$defs/text"}},
+          "adaptation_notes": {"$ref": "#/$defs/texts"}
+        }
+      }
+    },
+    "model_notes": {"type": "object", "additionalProperties": false, "required": ["portability", "parameter_policy"], "properties": {
+      "portability": {"$ref": "#/$defs/texts"}, "parameter_policy": {"const": "capability_driven_no_model_lock"}
+    }},
+    "selection": {"type": "object", "additionalProperties": false, "required": ["visual_intents", "natural_language_cues", "avoid_when"], "properties": {
+      "visual_intents": {"$ref": "#/$defs/texts"}, "natural_language_cues": {"$ref": "#/$defs/texts"}, "avoid_when": {"$ref": "#/$defs/texts"}
+    }},
+    "authorship": {"const": "original_for_image_workbench_v1"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "texts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+  }
+}

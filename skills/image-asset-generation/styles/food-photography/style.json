@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "food-photography",
+  "name": "真实食物摄影",
+  "category": "photography",
+  "visual_positioning": "以可食用的结构、真实表面和有来源的光线表现食物状态；食欲感来自细节与层次，不自动添加油光、蒸汽或夸张食材。",
+  "use_cases": [
+    "菜单与餐饮主视觉",
+    "食材质感图",
+    "包装食品展示"
+  ],
+  "asset_types": [
+    "food",
+    "product",
+    "prop",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "让主食物的份量、层次与接触关系清楚；餐具和配料作为辅助，数量遵守简报。"
+    ],
+    "lighting": [
+      "侧向柔光突出凹凸，逆侧光可表现透明液体；高光不能把所有食物变油腻。"
+    ],
+    "color": [
+      "保持食材成熟度与烹饪状态的指定颜色，背景色用于衬托而非覆盖食物本色。"
+    ],
+    "texture": [
+      "区分酥脆、松软、湿润、纤维与液体表面；纹理尺度符合食物大小。"
+    ],
+    "camera": [
+      "根据结构选择顶视、斜俯视或侧面特写；不能为好看隐藏关键馅料或份量。"
+    ],
+    "depth": [
+      "主菜的关键层次清楚，景深只弱化次要餐具；食物与容器保持真实支撑关系。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "食物份量、组成和烹饪状态服从 AssetSpec。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "材质细节符合该食物的真实状态。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "餐具、食物与配料有可信接触和尺度关系。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "拍摄角度、背景与辅助光可以按菜单或食材用途调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "appetite_detail": {
+      "type": "string",
+      "description": "需要突出且确实属于该食物的质感。",
+      "default": "新鲜表面与自然层次"
+    },
+    "food_view": {
+      "type": "enum",
+      "description": "最适合呈现既定食物结构的视角。",
+      "default": "自然斜俯视",
+      "choices": [
+        "自然斜俯视",
+        "清楚顶视",
+        "接近水平的侧视"
+      ]
+    },
+    "table_mood": {
+      "type": "enum",
+      "description": "桌面环境的视觉气氛，不新增道具。",
+      "default": "简洁明亮",
+      "choices": [
+        "简洁明亮",
+        "温暖家常",
+        "深色精致"
+      ]
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用真实食物摄影，以 {{food_view}} 呈现既定结构，突出 {{appetite_detail}}，桌面气氛为 {{table_mood}}。让柔和方向光解释食物层次与接触关系，保持份量、组成及烹饪状态准确。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若食物是冷食、干食或未指定热状态，不凭空加入蒸汽。",
+    "若没有相应食材设定，不添加香草、酱汁、油滴或装饰性配菜。",
+    "若质感应干燥酥脆，不用过度高光把表面变湿；若本应湿润，也不能一律消除自然反光。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻连锁品牌的招牌摆盘、包装商标、菜单文字或第三方照片的完整餐桌组合。"
+  ],
+  "examples": [
+    {
+      "example_id": "sourdough_slice",
+      "brief": "酸种面包切片与整只面包的菜单素材，切片数量已确定。",
+      "asset_type": "food",
+      "variables": {
+        "appetite_detail": "干燥脆壳、自然裂纹与内部气孔",
+        "food_view": "接近水平的侧视",
+        "table_mood": "温暖家常"
+      },
+      "adaptation_notes": [
+        "气孔分布应自然，不新增切片。",
+        "不添加黄油、果酱或热蒸汽。"
+      ]
+    },
+    {
+      "example_id": "berry_yogurt",
+      "brief": "透明杯装莓果酸奶产品，果层比例和杯身标签已固定。",
+      "asset_type": "product",
+      "variables": {
+        "appetite_detail": "酸奶的稠度、莓果颗粒与杯壁层次",
+        "food_view": "自然斜俯视",
+        "table_mood": "简洁明亮"
+      },
+      "adaptation_notes": [
+        "透明杯反射不能掩盖层次和指定标签。",
+        "不要为了鲜艳增加果量或改变莓果种类。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "食物视觉不能证明成分、营养或卫生情况；画面不得自动补写这些宣传声明。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "可信食欲",
+      "食材质感",
+      "份量结构"
+    ],
+    "natural_language_cues": [
+      "看起来好吃但真实",
+      "菜单摄影",
+      "能看见食材层次"
+    ],
+    "avoid_when": [
+      "需要夸张食物造型而配方和份量要求完全固定。",
+      "图像被当作营养、卫生或品质检测结果。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

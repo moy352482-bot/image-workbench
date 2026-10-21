@@ -1,0 +1,58 @@
+{
+  "name": "img-comparison-slider",
+  "version": "8.0.7",
+  "local_patch_version": "8.0.7-workbench.1",
+  "license": "MIT",
+  "repository": {
+    "url": "git+https://github.com/sneas/img-comparison-slider.git",
+    "type": "git"
+  },
+  "metadata_url": "https://registry.npmjs.org/img-comparison-slider/8.0.7",
+  "source_tag": "https://github.com/sneas/img-comparison-slider/tree/img-comparison-slider-v8.0.7",
+  "retrieved_date": "2026-10-13",
+  "tarball_url": "https://registry.npmjs.org/img-comparison-slider/-/img-comparison-slider-8.0.7.tgz",
+  "npm_integrity": "sha512-BALViPtL2FgcCa9K8KkrmhWuyeDkVu6XVwBoRm9pU8Y6P1rjw31zujuEMBWTz2w6W30zzdQZNTccvg7J9Gf/LQ==",
+  "npm_integrity_verified": true,
+  "tarball_sha256": "380e9461edbf4ccba6a8dce989079de310085f90a9ebccf3be90f937fee45151",
+  "files": [
+    {
+      "file": "index.upstream.js",
+      "npm_path": "package/dist/index.js",
+      "bytes": 11382,
+      "sha256": "6e01335000bbafdd053f851db4e0025dc3e0fadd677deca51548d6fe95b42162"
+    },
+    {
+      "file": "index.js",
+      "bytes": 11557,
+      "sha256": "d7f79a3f102bfd89c18b9349baecde86cb3a389f9509900cc819fbb825c93c75",
+      "patched_from": "index.upstream.js"
+    },
+    {
+      "file": "styles.css",
+      "npm_path": "package/dist/styles.css",
+      "bytes": 237,
+      "sha256": "2e08fb99add8309d261056a13e9eac187832ddd76a777f2ffb2954c92c1b9a00"
+    },
+    {
+      "file": "LICENSE",
+      "source_url": "https://raw.githubusercontent.com/sneas/img-comparison-slider/img-comparison-slider-v8.0.7/LICENSE",
+      "bytes": 1074,
+      "sha256": "7ea86ea7d6b3bf7d1368064512d24bdbe8a5c7c66dd7e0e55f608ec3c39cc2b3"
+    }
+  ],
+  "modifications": "index.js includes the two documented lifecycle substitutions below. index.upstream.js and styles.css are byte-identical to the npm 8.0.7 archive. The npm package omits LICENSE; the license is copied from the matching official GitHub release tag.",
+  "local_patch": {
+    "reason": "Upstream creates an unreferenced ResizeObserver per connection and does not disconnect it on removal. Retain and disconnect that observer so closing comparisons releases detached instances. Reconnection creates and observes with a fresh observer.",
+    "scope": "Only ResizeObserver lifecycle; no image, drag, layout, or keyboard behavior changes.",
+    "substitutions": [
+      {
+        "before": "new ResizeObserver(this.resetDimensions).observe(this)",
+        "after": "this.resizeObserver&&this.resizeObserver.disconnect(),this.resizeObserver=new ResizeObserver(this.resetDimensions),this.resizeObserver.observe(this)"
+      },
+      {
+        "before": "disconnectedCallback(){this.transitionTimer&&window.clearTimeout(this.transitionTimer)}",
+        "after": "disconnectedCallback(){this.resizeObserver&&(this.resizeObserver.disconnect(),this.resizeObserver=null),this.transitionTimer&&window.clearTimeout(this.transitionTimer)}"
+      }
+    ]
+  }
+}

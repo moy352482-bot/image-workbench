@@ -1,0 +1,5 @@
+{
+  "validator": "skill-creator/scripts/quick_validate.py",
+  "result": "Skill is valid!",
+  "scope": "frontmatter, naming and unfinished scaffold checks; not behavior or image quality"
+}

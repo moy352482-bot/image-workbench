@@ -1,0 +1,117 @@
+.workbench-image-viewer {
+  --pswp-bg: #14201e;
+  --pswp-root-z-index: 1000;
+  --pswp-icon-color: #f3faf7;
+  --pswp-icon-color-secondary: #243f37;
+  color: #edf5f1;
+  font-family: inherit;
+}
+
+.workbench-image-viewer .pswp__top-bar {
+  align-items: center;
+  min-height: 64px;
+  padding: 0 14px;
+  background: linear-gradient(#14201ef5, #14201e00);
+}
+
+.workbench-image-viewer .pswp__workbench-title {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  color: #edf5f1;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-image-viewer .pswp__button {
+  flex: none;
+  border-radius: 8px;
+}
+
+.workbench-image-viewer .pswp__button:focus-visible,
+.workbench-image-viewer .image-viewer-link:focus-visible {
+  outline: 2px solid #80e0c4;
+  outline-offset: 3px;
+}
+
+.workbench-image-viewer .pswp__workbench-footer {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 14px 18px max(14px, env(safe-area-inset-bottom));
+  text-align: center;
+  background: linear-gradient(#14201e00, #14201ef5 30%);
+  pointer-events: none;
+}
+
+.workbench-image-viewer .image-viewer-meta {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #d7e5df;
+}
+
+.workbench-image-viewer .image-viewer-help {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a8bdb4;
+}
+
+.workbench-image-viewer .image-viewer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.workbench-image-viewer .image-viewer-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid #536d62;
+  border-radius: 7px;
+  color: #eef8f3;
+  background: #243b31;
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.workbench-image-viewer .image-viewer-link:hover {
+  background: #365346;
+  border-color: #85ad99;
+}
+
+.workbench-image-viewer .pswp__error-msg {
+  max-width: min(460px, 100%);
+  padding: 22px;
+  color: #e8f1ec;
+  text-align: center;
+  font-size: 14px;
+}
+
+.workbench-image-viewer .image-viewer-error-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.workbench-image-viewer .image-viewer-error-detail {
+  margin: 0;
+  color: #bdcec5;
+  line-height: 1.7;
+}
+
+@media (max-width: 520px) {
+  .workbench-image-viewer .pswp__top-bar { padding: 0 4px; }
+  .workbench-image-viewer .pswp__workbench-title { padding-left: 10px; font-size: 14px; }
+  .workbench-image-viewer .pswp__workbench-footer { padding-top: 10px; }
+  .workbench-image-viewer .image-viewer-help { font-size: 11px; }
+}

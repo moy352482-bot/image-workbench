@@ -1,0 +1,3758 @@
+{
+  "account": {
+    "DELETE /api/project-actions/{main_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "main_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /admin": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/admin/operations": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/admin/operations/{operation_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/admin/overview": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/admin/reports": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/auth/config": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/auth/me": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/credits": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/project-actions/deleted": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/qwen/config": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/qwen/jobs": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/qwen/jobs/{jid}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/qwen/jobs/{jid}/images/{name}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": [
+          {
+            "default": false,
+            "name": "download",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ]
+      },
+      "status_code": null
+    },
+    "GET /api/scripts/config": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/scripts/tasks": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": [
+          {
+            "default": null,
+            "name": "subproject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "status_code": null
+    },
+    "GET /api/scripts/tasks/{task_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/scripts/tasks/{task_id}/download": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/config": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}/assets/{asset_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}/pipeline": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}/shots/{sid}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}/shots/{sid}/output": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": [
+          {
+            "default": false,
+            "name": "download",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ]
+      },
+      "status_code": null
+    },
+    "GET /api/video/projects/{pid}/tray": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/worker/qwen/jobs/{jid}/inputs/{index}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/worker/video/jobs/{job_id}/assets/{asset_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/workspaces": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /login": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /qwen-test": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /scripts": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /video": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/admin/checks": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "EmptyAction",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": 202
+    },
+    "POST /api/admin/deployments": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "confirm": {
+                  "title": "Confirm",
+                  "type": "boolean"
+                },
+                "token": {
+                  "maxLength": 128,
+                  "minLength": 32,
+                  "title": "Token",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "token",
+                "confirm"
+              ],
+              "title": "DeploymentConfirmation",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": 202
+    },
+    "POST /api/admin/deployments/preview": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "release_id": {
+                  "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$",
+                  "title": "Release Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "release_id"
+              ],
+              "title": "DeploymentPreview",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/admin/operations/{operation_id}/acknowledge": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "confirm": {
+                  "title": "Confirm",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "confirm"
+              ],
+              "title": "Acknowledgment",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/admin/releases/prepare": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "EmptyAction",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": 202
+    },
+    "POST /api/auth/activate": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "activation_token": {
+                  "maxLength": 128,
+                  "minLength": 32,
+                  "title": "Activation Token",
+                  "type": "string"
+                },
+                "password": {
+                  "maxLength": 256,
+                  "minLength": 10,
+                  "title": "Password",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "activation_token",
+                "password"
+              ],
+              "title": "Activation",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/auth/login": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "password": {
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "title": "Password",
+                  "type": "string"
+                },
+                "username": {
+                  "maxLength": 40,
+                  "minLength": 3,
+                  "title": "Username",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "username",
+                "password"
+              ],
+              "title": "Credentials",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/auth/logout": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/auth/register": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "anyOf": [
+                    {
+                      "maxLength": 254,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Email"
+                },
+                "invitation_code": {
+                  "anyOf": [
+                    {
+                      "maxLength": 128,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Invitation Code"
+                },
+                "password": {
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "title": "Password",
+                  "type": "string"
+                },
+                "username": {
+                  "maxLength": 40,
+                  "minLength": 3,
+                  "title": "Username",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "username",
+                "password"
+              ],
+              "title": "Registration",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/project-actions/{main_id}/move": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "workspace_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Workspace Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "workspace_id"
+              ],
+              "title": "WorkspaceChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "main_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/project-actions/{main_id}/restore": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "main_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/qwen/jobs": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/qwen/jobs/{jid}/cancel": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/scripts/quote": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "aspect_ratio": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Aspect Ratio"
+                },
+                "change_reason": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Change Reason"
+                },
+                "characters": {
+                  "anyOf": [
+                    {
+                      "maxLength": 10000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Characters"
+                },
+                "constraints": {
+                  "anyOf": [
+                    {
+                      "maxLength": 12000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Constraints"
+                },
+                "duration": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Duration"
+                },
+                "generation_type": {
+                  "enum": [
+                    "script",
+                    "screenplay"
+                  ],
+                  "title": "Generation Type",
+                  "type": "string"
+                },
+                "input_request": {
+                  "maxLength": 20000,
+                  "minLength": 1,
+                  "title": "Input Request",
+                  "type": "string"
+                },
+                "model_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 100,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Model Id"
+                },
+                "parent_version_id": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Parent Version Id"
+                },
+                "product_ip": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Product Ip"
+                },
+                "selection_mode": {
+                  "default": "recommended",
+                  "enum": [
+                    "recommended",
+                    "manual"
+                  ],
+                  "title": "Selection Mode",
+                  "type": "string"
+                },
+                "subproject_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Subproject Id",
+                  "type": "string"
+                },
+                "target_audience": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Target Audience"
+                },
+                "template_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Template Id"
+                },
+                "thinking_level": {
+                  "anyOf": [
+                    {
+                      "maxLength": 60,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Thinking Level"
+                },
+                "tone": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Tone"
+                }
+              },
+              "required": [
+                "subproject_id",
+                "generation_type",
+                "input_request"
+              ],
+              "title": "ScriptRequest",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/scripts/tasks": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$defs": {
+                "PlanningOptions": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "aspect_ratio": {
+                      "default": "16:9",
+                      "enum": [
+                        "16:9",
+                        "9:16",
+                        "1:1"
+                      ],
+                      "title": "Aspect Ratio",
+                      "type": "string"
+                    },
+                    "characters": {
+                      "default": "",
+                      "maxLength": 12000,
+                      "title": "Characters",
+                      "type": "string"
+                    },
+                    "mode": {
+                      "default": "mock",
+                      "enum": [
+                        "mock",
+                        "codex"
+                      ],
+                      "title": "Mode",
+                      "type": "string"
+                    },
+                    "model_id": {
+                      "anyOf": [
+                        {
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": null,
+                      "title": "Model Id"
+                    },
+                    "reference_artifact_ids": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 9,
+                      "title": "Reference Artifact Ids",
+                      "type": "array"
+                    },
+                    "requirements": {
+                      "default": "",
+                      "maxLength": 12000,
+                      "title": "Requirements",
+                      "type": "string"
+                    },
+                    "scenes": {
+                      "default": "",
+                      "maxLength": 12000,
+                      "title": "Scenes",
+                      "type": "string"
+                    },
+                    "selection_mode": {
+                      "default": "recommended",
+                      "enum": [
+                        "recommended",
+                        "manual"
+                      ],
+                      "title": "Selection Mode",
+                      "type": "string"
+                    },
+                    "target_duration_ms": {
+                      "default": 60000,
+                      "maximum": 3600000,
+                      "minimum": 1000,
+                      "title": "Target Duration Ms",
+                      "type": "integer"
+                    },
+                    "thinking_level": {
+                      "anyOf": [
+                        {
+                          "maxLength": 100,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": null,
+                      "title": "Thinking Level"
+                    },
+                    "video_model_id": {
+                      "const": "h3",
+                      "default": "h3",
+                      "title": "Video Model Id",
+                      "type": "string"
+                    },
+                    "video_project_id": {
+                      "anyOf": [
+                        {
+                          "pattern": "^[0-9a-f]{32}$",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": null,
+                      "title": "Video Project Id"
+                    },
+                    "visual_style": {
+                      "default": "",
+                      "maxLength": 12000,
+                      "title": "Visual Style",
+                      "type": "string"
+                    }
+                  },
+                  "title": "PlanningOptions",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "properties": {
+                "aspect_ratio": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Aspect Ratio"
+                },
+                "change_reason": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Change Reason"
+                },
+                "characters": {
+                  "anyOf": [
+                    {
+                      "maxLength": 10000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Characters"
+                },
+                "conflicts_confirmed": {
+                  "default": false,
+                  "title": "Conflicts Confirmed",
+                  "type": "boolean"
+                },
+                "constraints": {
+                  "anyOf": [
+                    {
+                      "maxLength": 12000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Constraints"
+                },
+                "duration": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Duration"
+                },
+                "example_refs": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "maxItems": 6,
+                  "title": "Example Refs",
+                  "type": "array"
+                },
+                "generation_type": {
+                  "enum": [
+                    "script",
+                    "screenplay"
+                  ],
+                  "title": "Generation Type",
+                  "type": "string"
+                },
+                "input_request": {
+                  "maxLength": 20000,
+                  "minLength": 1,
+                  "title": "Input Request",
+                  "type": "string"
+                },
+                "model_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 100,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Model Id"
+                },
+                "parent_version_id": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Parent Version Id"
+                },
+                "product_ip": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Product Ip"
+                },
+                "quote_signature": {
+                  "anyOf": [
+                    {
+                      "maxLength": 256,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Quote Signature"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "selection_mode": {
+                  "default": "recommended",
+                  "enum": [
+                    "recommended",
+                    "manual"
+                  ],
+                  "title": "Selection Mode",
+                  "type": "string"
+                },
+                "storyboard_confirmed": {
+                  "default": false,
+                  "title": "Storyboard Confirmed",
+                  "type": "boolean"
+                },
+                "storyboard_options": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/PlanningOptions"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null
+                },
+                "style_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "title": "Style Ids",
+                  "type": "array"
+                },
+                "subproject_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Subproject Id",
+                  "type": "string"
+                },
+                "target_audience": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Target Audience"
+                },
+                "template_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Template Id"
+                },
+                "template_version": {
+                  "anyOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Template Version"
+                },
+                "thinking_level": {
+                  "anyOf": [
+                    {
+                      "maxLength": 60,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Thinking Level"
+                },
+                "tone": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Tone"
+                },
+                "variables": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Variables",
+                  "type": "object"
+                },
+                "warnings_confirmed": {
+                  "default": false,
+                  "title": "Warnings Confirmed",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "subproject_id",
+                "generation_type",
+                "input_request",
+                "request_id"
+              ],
+              "title": "ScriptSubmission",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/scripts/tasks/{task_id}/recover": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "ScriptBody",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/scripts/tasks/{task_id}/revisions": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "change_reason": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "title": "Change Reason",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "text": {
+                  "maxLength": 200000,
+                  "minLength": 1,
+                  "title": "Text",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "text",
+                "change_reason"
+              ],
+              "title": "ScriptRevision",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/scripts/tasks/{task_id}/run": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "ScriptBody",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "script": {
+                  "default": "",
+                  "maxLength": 100000,
+                  "title": "Script",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "name"
+              ],
+              "title": "Project",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/from-subproject": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "subproject_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Subproject Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "subproject_id"
+              ],
+              "title": "SubprojectChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/assets": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/images": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "aspect_ratio": {
+                  "default": "auto",
+                  "pattern": "^(auto|1:1|3:2|2:3)$",
+                  "title": "Aspect Ratio",
+                  "type": "string"
+                },
+                "prompt": {
+                  "maxLength": 12000,
+                  "minLength": 1,
+                  "title": "Prompt",
+                  "type": "string"
+                },
+                "reference_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 8,
+                  "title": "Reference Ids",
+                  "type": "array"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "prompt"
+              ],
+              "title": "ImageRequest",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/images/from-artifact": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Artifact Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "artifact_id"
+              ],
+              "title": "ArtifactChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/pipeline": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "ScriptBody",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/script/from-task": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "task_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Task Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "task_id"
+              ],
+              "title": "ScriptChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/script/upload": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/shots": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "aspect_ratio": {
+                  "enum": [
+                    "landscape",
+                    "portrait",
+                    "square"
+                  ],
+                  "title": "Aspect Ratio",
+                  "type": "string"
+                },
+                "duration": {
+                  "maximum": 15,
+                  "minimum": 4,
+                  "title": "Duration",
+                  "type": "integer"
+                },
+                "mode": {
+                  "enum": [
+                    "T2V",
+                    "I2V",
+                    "R2V"
+                  ],
+                  "title": "Mode",
+                  "type": "string"
+                },
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "prompt": {
+                  "maxLength": 12000,
+                  "minLength": 1,
+                  "title": "Prompt",
+                  "type": "string"
+                },
+                "reference_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 9,
+                  "title": "Reference Ids",
+                  "type": "array"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "resolution": {
+                  "default": "720p",
+                  "enum": [
+                    "720p",
+                    "1080p"
+                  ],
+                  "title": "Resolution",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "name",
+                "prompt",
+                "mode",
+                "duration",
+                "aspect_ratio"
+              ],
+              "title": "Shot",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/shots/{sid}/clip": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Artifact Id",
+                  "type": "string"
+                },
+                "source_shot_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Source Shot Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "artifact_id",
+                "source_shot_id"
+              ],
+              "title": "ClipChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/shots/{sid}/run": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "confirm_generation": {
+                  "const": true,
+                  "title": "Confirm Generation",
+                  "type": "boolean"
+                },
+                "expected_credit": {
+                  "minimum": 1,
+                  "title": "Expected Credit",
+                  "type": "integer"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "retry_of": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Retry Of"
+                }
+              },
+              "required": [
+                "request_id",
+                "confirm_generation",
+                "expected_credit"
+              ],
+              "title": "Run",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/tray": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "enum": [
+                    "add",
+                    "remove"
+                  ],
+                  "title": "Action",
+                  "type": "string"
+                },
+                "artifact_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Artifact Id",
+                  "type": "string"
+                },
+                "media_type": {
+                  "enum": [
+                    "image",
+                    "video"
+                  ],
+                  "title": "Media Type",
+                  "type": "string"
+                },
+                "shot_id": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Shot Id"
+                }
+              },
+              "required": [
+                "artifact_id",
+                "media_type",
+                "action"
+              ],
+              "title": "TrayChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/video/projects/{pid}/videos/upload": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/qwen/claim": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "message": {
+                  "default": "",
+                  "maxLength": 200,
+                  "title": "Message",
+                  "type": "string"
+                },
+                "ready": {
+                  "default": true,
+                  "title": "Ready",
+                  "type": "boolean"
+                },
+                "worker_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Worker Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "worker_id"
+              ],
+              "title": "Claim",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/qwen/heartbeat": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "message": {
+                  "default": "",
+                  "maxLength": 200,
+                  "title": "Message",
+                  "type": "string"
+                },
+                "ready": {
+                  "default": true,
+                  "title": "Ready",
+                  "type": "boolean"
+                },
+                "worker_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Worker Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "worker_id"
+              ],
+              "title": "Claim",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/qwen/jobs/{jid}/complete": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "elapsed_seconds": {
+                  "anyOf": [
+                    {
+                      "maximum": 86400,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Elapsed Seconds"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "maxLength": 1000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "sha256": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Sha256"
+                },
+                "status": {
+                  "enum": [
+                    "succeeded",
+                    "failed",
+                    "uncertain"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "title": "Complete",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/qwen/jobs/{jid}/heartbeat": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/qwen/jobs/{jid}/start": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "attempt_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Attempt Id",
+                  "type": "string"
+                },
+                "prompt_id": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[A-Za-z0-9-]{1,200}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Prompt Id"
+                }
+              },
+              "required": [
+                "attempt_id"
+              ],
+              "title": "Start",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/scripts/claim": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$defs": {
+                "Capability": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "efforts": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 10,
+                      "title": "Efforts",
+                      "type": "array"
+                    },
+                    "model_id": {
+                      "maxLength": 100,
+                      "title": "Model Id",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "model_id",
+                    "efforts"
+                  ],
+                  "title": "Capability",
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "properties": {
+                "models": {
+                  "items": {
+                    "$ref": "#/$defs/Capability"
+                  },
+                  "maxItems": 20,
+                  "title": "Models",
+                  "type": "array"
+                },
+                "worker_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Worker Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "worker_id",
+                "models"
+              ],
+              "title": "Claim",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/scripts/tasks/{tid}/complete": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "attempt_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Attempt Id",
+                  "type": "string"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "maxLength": 2000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "sha256": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Sha256"
+                },
+                "status": {
+                  "pattern": "^(succeeded|failed|uncertain)$",
+                  "title": "Status",
+                  "type": "string"
+                },
+                "text": {
+                  "anyOf": [
+                    {
+                      "maxLength": 262144,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Text"
+                }
+              },
+              "required": [
+                "attempt_id",
+                "status"
+              ],
+              "title": "Complete",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "tid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/scripts/tasks/{tid}/heartbeat": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "tid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/scripts/tasks/{tid}/start": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "attempt_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Attempt Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "attempt_id"
+              ],
+              "title": "Start",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "tid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/video/claim": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "worker_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Worker Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "worker_id"
+              ],
+              "title": "Claim",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/video/jobs/{job_id}/complete": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "error": {
+                  "anyOf": [
+                    {
+                      "maxLength": 2000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "sha256": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Sha256"
+                },
+                "status": {
+                  "enum": [
+                    "succeeded",
+                    "failed",
+                    "uncertain"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "title": "Complete",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/video/jobs/{job_id}/heartbeat": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/video/jobs/{job_id}/start": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "attempt_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Attempt Id",
+                  "type": "string"
+                },
+                "prompt_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Prompt Id"
+                }
+              },
+              "required": [
+                "attempt_id"
+              ],
+              "title": "Start",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/workspaces": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "WorkspaceName",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/workspaces/select": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "workspace_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Workspace Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "workspace_id"
+              ],
+              "title": "WorkspaceChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PUT /api/worker/qwen/jobs/{jid}/output": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "jid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PUT /api/worker/video/jobs/{job_id}/output": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    }
+  },
+  "workspace": {
+    "GET /": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/artifacts/{artifact_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": [
+          {
+            "default": false,
+            "name": "download",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ]
+      },
+      "status_code": null
+    },
+    "GET /api/config": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/main-projects": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/main-projects/{main_project_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "main_project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/projects": {
+      "parameters": {
+        "body": [],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/projects/{project_id}/tasks": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/projects/{project_id}/tasks/{task_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/subprojects/{subproject_id}/assets": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "subproject_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/subprojects/{subproject_id}/tasks": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "subproject_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/tasks/{task_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "GET /api/worker/jobs/{job_id}/assets/{artifact_id}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PATCH /api/main-projects/{main_project_id}": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Description"
+                },
+                "name": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Name"
+                },
+                "status": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Status"
+                }
+              },
+              "title": "ProjectUpdate",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "main_project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PATCH /api/subprojects/{subproject_id}": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Description"
+                },
+                "name": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Name"
+                },
+                "status": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Status"
+                }
+              },
+              "title": "ProjectUpdate",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "subproject_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PATCH /api/tasks/{task_id}": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "anyOf": [
+                    {
+                      "maxLength": 4000,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Description"
+                },
+                "name": {
+                  "anyOf": [
+                    {
+                      "maxLength": 120,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Name"
+                }
+              },
+              "title": "TaskUpdate",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/artifacts/{artifact_id}/approve": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {},
+              "title": "Payload",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/main-projects": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "default": "",
+                  "maxLength": 4000,
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "name"
+              ],
+              "title": "CreateProject",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/main-projects/{main_project_id}/subprojects": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "default": "",
+                  "maxLength": 4000,
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "name"
+              ],
+              "title": "CreateProject",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "main_project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/projects": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "default": "",
+                  "maxLength": 4000,
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "name"
+              ],
+              "title": "CreateProject",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/projects/{project_id}/tasks": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/projects/{project_id}/tasks/{task_id}/restore": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "execution_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Execution Id",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "execution_id"
+              ],
+              "title": "RestoreTask",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/projects/{project_id}/tasks/{task_id}/run": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "confirm_generation": {
+                  "default": false,
+                  "title": "Confirm Generation",
+                  "type": "boolean"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "retry_of": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Retry Of"
+                }
+              },
+              "required": [
+                "request_id"
+              ],
+              "title": "RunTask",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/subprojects/{subproject_id}/assets": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "subproject_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/subprojects/{subproject_id}/tasks": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "subproject_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/tasks/{task_id}/move": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "expected_subproject_id": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Expected Subproject Id"
+                },
+                "target_subproject_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Target Subproject Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "target_subproject_id"
+              ],
+              "title": "MoveTask",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/tasks/{task_id}/restore": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "execution_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Execution Id",
+                  "type": "string"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "request_id",
+                "execution_id"
+              ],
+              "title": "RestoreTask",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/tasks/{task_id}/run": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "confirm_generation": {
+                  "default": false,
+                  "title": "Confirm Generation",
+                  "type": "boolean"
+                },
+                "request_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Request Id",
+                  "type": "string"
+                },
+                "retry_of": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-f]{32}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Retry Of"
+                }
+              },
+              "required": [
+                "request_id"
+              ],
+              "title": "RunTask",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/claim": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "backend": {
+                  "pattern": "^(codex|local)$",
+                  "title": "Backend",
+                  "type": "string"
+                },
+                "worker_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Worker Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "worker_id",
+                "backend"
+              ],
+              "title": "Claim",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/jobs/{job_id}/complete": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "failure_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Failure Type"
+                },
+                "hashes": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "title": "Hashes",
+                  "type": "array"
+                },
+                "status": {
+                  "pattern": "^(succeeded|failed|uncertain)$",
+                  "title": "Status",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "title": "Complete",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/jobs/{job_id}/heartbeat": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "POST /api/worker/jobs/{job_id}/start": {
+      "parameters": {
+        "body": [
+          {
+            "name": "payload",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "attempt_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Attempt Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "attempt_id"
+              ],
+              "title": "Start",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
+    "PUT /api/worker/jobs/{job_id}/outputs/{index}": {
+      "parameters": {
+        "body": [],
+        "path": [
+          {
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    }
+  }
+}

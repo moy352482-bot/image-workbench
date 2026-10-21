@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/image-asset-generation/schemas/asset-version.schema.json",
+  "title": "Future AssetVersion metadata contract v1 (no registry implemented)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "parent_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^v[1-9][0-9]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "PLANNED",
+        "GENERATING",
+        "DRAFT",
+        "REVIEW",
+        "APPROVED",
+        "FAILED",
+        "UNCERTAIN"
+      ]
+    },
+    "artifact_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{32}$"
+      },
+      "minItems": 0
+    },
+    "task_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{32}$"
+      },
+      "minItems": 0
+    },
+    "spec_sha256": {
+      "$ref": "common.schema.json#/$defs/sha256"
+    },
+    "style_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "style_schema_version": {
+      "const": "1.0.0"
+    },
+    "style_content_sha256": {
+      "$ref": "common.schema.json#/$defs/sha256"
+    },
+    "quality_check": {
+      "anyOf": [
+        {
+          "$ref": "quality-check.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "approval": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decision": {
+              "const": "approved"
+            },
+            "reviewer_id": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "decided_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "plan_sha256": {
+              "$ref": "common.schema.json#/$defs/sha256"
+            },
+            "artifact_sha256": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/sha256"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "decision",
+            "reviewer_id",
+            "decided_at",
+            "plan_sha256",
+            "artifact_sha256"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "registration": {
+      "enum": [
+        "proposal",
+        "registered"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "asset_id",
+    "version",
+    "parent_version",
+    "status",
+    "artifact_ids",
+    "task_ids",
+    "spec_sha256",
+    "style_id",
+    "style_schema_version",
+    "style_content_sha256",
+    "quality_check",
+    "approval",
+    "registration"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "DRAFT",
+              "REVIEW",
+              "APPROVED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_ids": {
+            "minItems": 1
+          },
+          "task_ids": {
+            "minItems": 1
+          },
+          "registration": {
+            "const": "registered"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "APPROVED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "approval": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decision": {
+                "const": "approved"
+              },
+              "reviewer_id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "decided_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "plan_sha256": {
+                "$ref": "common.schema.json#/$defs/sha256"
+              },
+              "artifact_sha256": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/sha256"
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "decision",
+              "reviewer_id",
+              "decided_at",
+              "plan_sha256",
+              "artifact_sha256"
+            ]
+          },
+          "quality_check": {
+            "allOf": [
+              {
+                "$ref": "quality-check.schema.json"
+              },
+              {
+                "properties": {
+                  "overall": {
+                    "const": "pass"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "approval": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "PLANNED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_ids": {
+            "maxItems": 0
+          },
+          "task_ids": {
+            "maxItems": 0
+          },
+          "registration": {
+            "const": "proposal"
+          }
+        }
+      }
+    }
+  ]
+}

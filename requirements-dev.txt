@@ -1,0 +1,4 @@
+-r requirements-web.txt
+httpx>=0.28.1,<0.29
+playwright==1.58.0
+ruff==0.17.1

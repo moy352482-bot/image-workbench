@@ -1,0 +1,81 @@
+{
+  "project_id": "b8a59704d4ec46f4ae726c8cc3aea315",
+  "status": "passed",
+  "successful_real_image_executions": 2,
+  "versions": [
+    {
+      "artifact": {
+        "artifact_id": "c667e44b056340e0b13a119019d95d24",
+        "project_id": "b8a59704d4ec46f4ae726c8cc3aea315",
+        "task_id": "326e8358d38345b1ad905c92766bcbc1",
+        "kind": "output",
+        "role": null,
+        "original_filename": "0001.png",
+        "format": "PNG",
+        "width": 1024,
+        "height": 1536,
+        "size_bytes": 2548101,
+        "sha256": "fe798225f86d6e6f641ff3f2b0acde8d0cf2c3e31ca63640efc6a71aede9d585",
+        "relative_path": "projects/b8a59704d4ec46f4ae726c8cc3aea315/tasks/326e8358d38345b1ad905c92766bcbc1/outputs/c667e44b056340e0b13a119019d95d24.png",
+        "created_at": "2026-10-12T04:14:26.935170+00:00",
+        "source_artifact_id": null
+      },
+      "path": "D:\\ChatGPT\\图片网站\\data\\projects\\b8a59704d4ec46f4ae726c8cc3aea315\\tasks\\326e8358d38345b1ad905c92766bcbc1\\outputs\\c667e44b056340e0b13a119019d95d24.png",
+      "execution_id": "b471b81ca22b420888c33cfe2a862dde",
+      "duration_seconds": 44.163,
+      "image_arguments": [],
+      "generated_source_paths": [
+        "C:\\Users\\win\\.codex\\generated_images\\01a12e51-009a-7562-b596-8aeb3c2a6eb4\\exec-7fdd5936-1316-47df-a3a4-6215efbe88dd.png"
+      ],
+      "prompt": "生成一张仙侠风格的成年女修人物示意图。采用精致国风人物设定稿：人物完整全身展示，面容清秀沉静，黑色长发半挽，简洁玉簪，青白色层叠衣袍和轻盈披帛，衣料有克制的云纹细节，腰间佩剑，姿态自然。兼顾仙气与服装结构的可辨识性。浅色简洁背景，以淡墨远山点缀，人物轮廓清楚，脚部完整。只画一位成年女性角色，不要文字、标注、品牌、水印或界面。"
+    },
+    {
+      "artifact": {
+        "artifact_id": "7e7fee5b9651402eb8aafc0c4827668c",
+        "project_id": "b8a59704d4ec46f4ae726c8cc3aea315",
+        "task_id": "ac316f526b7b476bb4eff6959f7ab359",
+        "kind": "output",
+        "role": null,
+        "original_filename": "0001.png",
+        "format": "PNG",
+        "width": 1024,
+        "height": 1536,
+        "size_bytes": 2348289,
+        "sha256": "8e73ef0d4d69f5a344cc9764fe4b3e14600d17d24aea70359f728da74a3fbf4d",
+        "relative_path": "projects/b8a59704d4ec46f4ae726c8cc3aea315/tasks/ac316f526b7b476bb4eff6959f7ab359/outputs/7e7fee5b9651402eb8aafc0c4827668c.png",
+        "created_at": "2026-10-12T04:16:58.985375+00:00",
+        "source_artifact_id": "c667e44b056340e0b13a119019d95d24"
+      },
+      "path": "D:\\ChatGPT\\图片网站\\data\\projects\\b8a59704d4ec46f4ae726c8cc3aea315\\tasks\\ac316f526b7b476bb4eff6959f7ab359\\outputs\\7e7fee5b9651402eb8aafc0c4827668c.png",
+      "execution_id": "976e423a74ae424f8883a64b9c2bc6cb",
+      "duration_seconds": 61.951,
+      "image_arguments": [
+        "D:\\ChatGPT\\图片网站\\data\\projects\\b8a59704d4ec46f4ae726c8cc3aea315\\tasks\\ac316f526b7b476bb4eff6959f7ab359\\logs\\runs\\976e423a74ae424f8883a64b9c2bc6cb\\work\\references\\base-c667e44b056340e0b13a119019d95d24.png"
+      ],
+      "generated_source_paths": [
+        "C:\\Users\\win\\.codex\\generated_images\\01a12e53-0d50-7a32-a68d-757536e932fe\\exec-3874227d-99d5-4508-999a-8ac24caa0edb.png"
+      ],
+      "prompt": "以基底图中的同一位成年仙侠女修为对象，仅将服饰中青绿色的腰带、垂带、披帛和领缘改为浅紫色；保留白色衣料、人物面容、发型、姿势、佩剑、饰品细节、全身构图及原有山水背景。不要增加文字、水印或其他人物。"
+    }
+  ],
+  "checks": [
+    "real-codex-generation",
+    "real-codex-reference-edit",
+    "image-format-and-decode",
+    "file-hash",
+    "automatic-storage-registration",
+    "query-output-path",
+    "version-source-link",
+    "original-image-preserved",
+    "per-run-proxy-setting"
+  ],
+  "regression_tests": {
+    "command": "python -X utf8 -m unittest discover -s tests -v",
+    "tests_run": 29,
+    "passed": 28,
+    "skipped": 1,
+    "failed": 0,
+    "duration_seconds": 4.865,
+    "skip_reason": "Windows WinError 1314: file symlink creation privilege unavailable"
+  }
+}

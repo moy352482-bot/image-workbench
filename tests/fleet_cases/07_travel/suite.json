@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_07_07_travel",
+  "cases": [
+    {
+      "case_id": "07_travel_pure_01",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海边木栈道图片。画面内容：清晨木栈道通向宁静海湾，远处有低矮岛屿。视觉要求：无人风景，淡蓝色调。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_02",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张山城石阶图片。画面内容：窄石阶穿过彩色山城房屋，尽头能看见海面。视觉要求：上午自然光，透视线清晰。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "07_travel_pure_03",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张沙漠营地图片。画面内容：一顶米色帐篷坐落在红色沙漠平地，远处有山脊。视觉要求：日落侧光，环境开阔。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_04",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张林间露营桌图片。画面内容：松树林营地中的折叠桌、搪瓷杯和地图。视觉要求：无人生活方式场景，晨光柔和。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "07_travel_pure_05",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张湖畔木屋图片。画面内容：深绿色森林边缘的一座小木屋映在湖水里。视觉要求：阴天柔光，宁静写实。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_06",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张古桥清晨图片。画面内容：石拱桥跨过窄河，河岸有老街建筑。视觉要求：薄雾轻微，画面无游客。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_07",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张雪地缆车站图片。画面内容：雪山脚下的木质缆车小站与几辆红色缆车。视觉要求：晴朗冬日，建筑结构清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "07_travel_pure_08",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海岛渔港图片。画面内容：小渔港里停着几艘蓝白小船，岸边彩色房屋。视觉要求：上午光线，海面自然。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_09",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张城市自行车道图片。画面内容：河岸自行车道穿过现代城市公园，远处桥梁入镜。视觉要求：春日绿意，场景整洁。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_pure_10",
+      "project_name": "旅行场景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张高原观景台图片。画面内容：木制观景台望向层叠高原山脉与云海。视觉要求：竖向构图，色彩克制。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "旅行与户外"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "07_travel_ref_01",
+      "project_name": "旅行场景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：松树林营地中的折叠桌、搪瓷杯和地图。风格约束：无人生活方式场景，晨光柔和。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "旅行与户外",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "07_travel_ref_02",
+      "project_name": "旅行场景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：深绿色森林边缘的一座小木屋映在湖水里。风格约束：阴天柔光，宁静写实。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "旅行与户外",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_ref_03",
+      "project_name": "旅行场景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：石拱桥跨过窄河，河岸有老街建筑。风格约束：薄雾轻微，画面无游客。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "旅行与户外",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_ref_04",
+      "project_name": "旅行场景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：雪山脚下的木质缆车小站与几辆红色缆车。风格约束：晴朗冬日，建筑结构清楚。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "旅行与户外",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "07_travel_ref_05",
+      "project_name": "旅行场景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：小渔港里停着几艘蓝白小船，岸边彩色房屋。风格约束：上午光线，海面自然。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "旅行与户外",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "07_travel_edit_01",
+      "project_name": "旅行场景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“旅行与户外”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "07_travel_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "旅行与户外"
+      ]
+    },
+    {
+      "case_id": "07_travel_edit_02",
+      "project_name": "旅行场景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“旅行与户外”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "07_travel_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "旅行与户外"
+      ]
+    },
+    {
+      "case_id": "07_travel_edit_03",
+      "project_name": "旅行场景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“旅行与户外”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "07_travel_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "旅行与户外"
+      ]
+    },
+    {
+      "case_id": "07_travel_edit_04",
+      "project_name": "旅行场景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“旅行与户外”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "07_travel_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "旅行与户外"
+      ]
+    },
+    {
+      "case_id": "07_travel_edit_05",
+      "project_name": "旅行场景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“旅行与户外”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "07_travel_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "旅行与户外"
+      ]
+    }
+  ]
+}

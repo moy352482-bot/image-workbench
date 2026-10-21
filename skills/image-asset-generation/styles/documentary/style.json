@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "documentary",
+  "name": "日常纪实质感",
+  "category": "photography",
+  "visual_positioning": "以可信环境、自然光和未过度整理的细节营造在场感；生成资产可以具有纪实质感，但不因此声称记录了真实事件。",
+  "use_cases": [
+    "工作场景人物",
+    "地方空间气氛",
+    "日常活动视觉素材"
+  ],
+  "asset_types": [
+    "character",
+    "location",
+    "environment",
+    "vehicle",
+    "architecture",
+    "food",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "保留主体与场所的关系，允许边缘不完美但不丢失叙事重点；不为整齐搬走关键环境元素。"
+    ],
+    "lighting": [
+      "按窗外天光、现场灯或阴天等现有条件照明，避免处处都是棚拍轮廓光。"
+    ],
+    "color": [
+      "颜色接近场所本身，饱和度不过度统一；固定色仍以资产设定为准。"
+    ],
+    "texture": [
+      "表面磨损、生活痕迹与皮肤细节仅在需求允许时保留，不凭空增加贫困或污损叙事。"
+    ],
+    "camera": [
+      "接近人的观察高度与自然距离，轻微非中心构图可以存在，透视仍可信。"
+    ],
+    "depth": [
+      "环境有可理解的层次和空间连接，适量背景信息说明地点而不抢主体。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "主体与环境具有可解释的空间和活动关系。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "照明具有现场来源，不呈现全面精修的棚拍感。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "画面保留适量自然细节，而非故意制造粗糙。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "视线高度、构图偏移和细节密度可按叙事调整。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "observer_distance": {
+      "type": "enum",
+      "description": "观察距离与环境信息量。",
+      "default": "人与环境同等可读",
+      "choices": [
+        "人与环境同等可读",
+        "亲近但不侵入",
+        "以场所为主"
+      ]
+    },
+    "available_light": {
+      "type": "string",
+      "description": "场景已有光线的表达。",
+      "default": "自然窗光与室内环境光"
+    },
+    "surface_honesty": {
+      "type": "enum",
+      "description": "细节保留尺度，不凭空制造磨损。",
+      "default": "保留适量生活痕迹",
+      "choices": [
+        "保留适量生活痕迹",
+        "干净但不精修",
+        "细节丰富且可信"
+      ]
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 使用日常纪实质感，以 {{observer_distance}} 的视距观察场景，光线遵循 {{available_light}}，表面处理为 {{surface_honesty}}。强调自然透视、现场空间关系与低干预构图，不把生成画面表述为真实事件证据。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若需求未指定，不增加可识别的旁观者、私人物品或敏感场所线索。",
+    "若固定资产应保持新品或完好，不用纪实感添加划痕、污渍或损坏。",
+    "若用于事实传播，不生成日期水印或新闻台标来暗示实拍来源。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻新闻照片中的真实事件、人物关系与独特现场细节组合。"
+  ],
+  "examples": [
+    {
+      "example_id": "repair_worker",
+      "brief": "虚构维修工在授权设定的车间中检查工具。",
+      "asset_type": "character",
+      "variables": {
+        "observer_distance": "人与环境同等可读",
+        "available_light": "车间高窗散射光与既有顶灯",
+        "surface_honesty": "保留适量生活痕迹"
+      },
+      "adaptation_notes": [
+        "身份与工具数量遵守 AssetSpec。",
+        "人物活动只是项目设定，不标为真实采访照片。"
+      ]
+    },
+    {
+      "example_id": "community_market",
+      "brief": "用于地方项目概念展示的早市环境，无特定真实商户。",
+      "asset_type": "location",
+      "variables": {
+        "observer_distance": "以场所为主",
+        "available_light": "阴天早晨的柔和天光",
+        "surface_honesty": "细节丰富且可信"
+      },
+      "adaptation_notes": [
+        "保留通道与摊位空间逻辑。",
+        "不生成可识别私人账号或虚构真实商户招牌。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "手持感是构图与现场光的意图，不等于必须添加抖动、噪声或低清晰度。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "现场感",
+      "自然观察",
+      "真实环境关系"
+    ],
+    "natural_language_cues": [
+      "像日常随手记录",
+      "不要棚拍味",
+      "有生活细节"
+    ],
+    "avoid_when": [
+      "需要严格整齐的商品白底图。",
+      "用户要求证明某件真实事件发生。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

@@ -1,0 +1,6 @@
+{
+  "host": "YOUR_SERVER_IP",
+  "user": "ubuntu",
+  "port": 22,
+  "private_key": "C:\\Users\\win\\.ssh\\tencent_image_site_rsa"
+}

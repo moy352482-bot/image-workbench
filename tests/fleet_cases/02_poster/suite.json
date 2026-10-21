@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_02_02_poster",
+  "cases": [
+    {
+      "case_id": "02_poster_pure_01",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张春日城市读书节图片。画面内容：竖版活动海报，顶部标题“春日读书节”，下方小字“4月20日 城市图书馆”，中央用翻开的书与嫩绿枝叶构图。视觉要求：暖白纸感底色，标题清楚且中文准确。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_pure_02",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张夏夜露天电影图片。画面内容：横版活动海报，标题“夏夜露天电影”，副标题“星空下的周末放映”，画面有幕布、草地和月亮。视觉要求：靛蓝夜色搭配温暖灯串，文字分层易读。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "02_poster_pure_03",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张周末花市图片。画面内容：正方形市集海报，准确写出“周末花市”和“周六 9:00—16:00”，以花束和摊位为主视觉。视觉要求：珊瑚粉与奶油黄配色，留白充足。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "02_poster_pure_04",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张山野徒步招募图片。画面内容：竖版招募海报，标题“周末山野徒步”，信息“轻装出发 · 新手友好”，插画表现山径与松树。视觉要求：森林绿、雾白和少量橙色点缀。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_pure_05",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张社区音乐会图片。画面内容：横向海报，标题“街角音乐会”，小字“周五 19:30 · 河畔草坪”，中央有吉他与舞台灯光。视觉要求：温暖复古色块、字体醒目。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "02_poster_pure_06",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张旧书交换日图片。画面内容：方形海报，标题“旧书交换日”，说明“带一本书，遇见新故事”，用书本堆叠和小叶片做插画。视觉要求：纸张纹理与砖红、米色。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "02_poster_pure_07",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海边环保行动图片。画面内容：竖版公益海报，标题“净滩行动”，说明“少一片塑料，多一片蓝海”，画面有海岸、手套和收集袋。视觉要求：明亮蓝绿，简洁有行动感。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_pure_08",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张手作陶艺体验图片。画面内容：横版课程海报，标题“周末陶艺体验”，小字“捏一只属于自己的杯子”，桌面展示陶土与工具。视觉要求：陶土棕、浅杏色，亲切自然。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "02_poster_pure_09",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张秋季咖啡节图片。画面内容：方形海报，准确标题“秋日咖啡节”，小字“手冲 · 烘焙 · 音乐”，中央是一杯咖啡与枫叶。视觉要求：焦糖色和深绿，秋日氛围。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "02_poster_pure_10",
+      "project_name": "海报版式设计",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张城市夜跑活动图片。画面内容：竖版海报，标题“城市夜跑”，信息“5公里轻松跑 · 周三 20:00”，用跑者剪影和城市灯光表达。视觉要求：深蓝背景配荧光黄路线。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "图文海报"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_ref_01",
+      "project_name": "海报版式设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：竖版招募海报，标题“周末山野徒步”，信息“轻装出发 · 新手友好”，插画表现山径与松树。风格约束：森林绿、雾白和少量橙色点缀。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "图文海报",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_ref_02",
+      "project_name": "海报版式设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：横向海报，标题“街角音乐会”，小字“周五 19:30 · 河畔草坪”，中央有吉他与舞台灯光。风格约束：温暖复古色块、字体醒目。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "图文海报",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "02_poster_ref_03",
+      "project_name": "海报版式设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：方形海报，标题“旧书交换日”，说明“带一本书，遇见新故事”，用书本堆叠和小叶片做插画。风格约束：纸张纹理与砖红、米色。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "图文海报",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "02_poster_ref_04",
+      "project_name": "海报版式设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：竖版公益海报，标题“净滩行动”，说明“少一片塑料，多一片蓝海”，画面有海岸、手套和收集袋。风格约束：明亮蓝绿，简洁有行动感。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "图文海报",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "02_poster_ref_05",
+      "project_name": "海报版式设计",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：横版课程海报，标题“周末陶艺体验”，小字“捏一只属于自己的杯子”，桌面展示陶土与工具。风格约束：陶土棕、浅杏色，亲切自然。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "图文海报",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "02_poster_edit_01",
+      "project_name": "海报版式设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“图文海报”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "02_poster_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "图文海报"
+      ]
+    },
+    {
+      "case_id": "02_poster_edit_02",
+      "project_name": "海报版式设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“图文海报”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "02_poster_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "图文海报"
+      ]
+    },
+    {
+      "case_id": "02_poster_edit_03",
+      "project_name": "海报版式设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“图文海报”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "02_poster_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "图文海报"
+      ]
+    },
+    {
+      "case_id": "02_poster_edit_04",
+      "project_name": "海报版式设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“图文海报”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "02_poster_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "图文海报"
+      ]
+    },
+    {
+      "case_id": "02_poster_edit_05",
+      "project_name": "海报版式设计",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“图文海报”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "02_poster_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "图文海报"
+      ]
+    }
+  ]
+}

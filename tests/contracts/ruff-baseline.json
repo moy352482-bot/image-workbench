@@ -1,0 +1,925 @@
+{
+  "schema_version": 1,
+  "ruff_version": "0.17.1",
+  "captured_at": "2026-10-20",
+  "rules": [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "B"
+  ],
+  "description": "Reviewed historical diagnostics; do not regenerate to approve new violations. Retire entries when fixing old debt.",
+  "diagnostics": [
+    {
+      "path": "image_workbench/account_migration.py",
+      "code": "F401",
+      "message": "`pathlib.Path` imported but unused",
+      "source": "from pathlib import Path",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/accounts.py",
+      "code": "B007",
+      "message": "Loop control variable `maximum` not used within loop body",
+      "source": "for key, maximum, seconds in budgets:",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/accounts.py",
+      "code": "B007",
+      "message": "Loop control variable `seconds` not used within loop body",
+      "source": "for key, maximum, seconds in budgets:",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/accounts.py",
+      "code": "F401",
+      "message": "`pathlib.Path` imported but unused",
+      "source": "from pathlib import Path",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def acknowledge(operation_id: str, body: Acknowledgment, session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def checks(body: EmptyAction, session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def deploy(body: DeploymentConfirmation, request: Request, session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def overview(session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def prepare(body: EmptyAction, session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/admin_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def preview(body: DeploymentPreview, request: Request, session=Depends(require_admin)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/asset_library.py",
+      "code": "F401",
+      "message": "`.storage._now` imported but unused",
+      "source": "from .storage import _now, _validate_id",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/batch_runner.py",
+      "code": "E731",
+      "message": "Do not assign a `lambda` expression, use a `def`",
+      "source": "seconds = lambda v: \"未调用\" if v is None else f\"{v:.3f} 秒\"",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/codex_backend.py",
+      "code": "F401",
+      "message": "`shutil` imported but unused",
+      "source": "import shutil",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/codex_backend.py",
+      "code": "F401",
+      "message": "`signal` imported but unused",
+      "source": "import signal",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/composition.py",
+      "code": "E731",
+      "message": "Do not assign a `lambda` expression, use a `def`",
+      "source": "images = lambda aid, wid: application.scoped_app(aid, wid).state.workbench",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/composition.py",
+      "code": "E731",
+      "message": "Do not assign a `lambda` expression, use a `def`",
+      "source": "scripts = lambda: application.script_service",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/h3_worker.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .atomic_files import write_bytes as _write, write_json as _json_write, read_json as _json_read",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/h3_worker.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .domain_errors import ComfyRejected, ArtifactInvalid",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/http_api/uploads.py",
+      "code": "B904",
+      "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+      "source": "raise HTTPException(400, \"参考素材列表无效，请重新选择图片\")",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/image_queries.py",
+      "code": "E731",
+      "message": "Do not assign a `lambda` expression, use a `def`",
+      "source": "empty = lambda item: {**item, \"task_count\": 0, \"image_count\": 0, \"input_count\": 0,\n\"output_count\": 0, \"counts_by_status\": {}}",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/locking.py",
+      "code": "B904",
+      "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+      "source": "raise LockBusyError(\"已有执行进程持有锁\")",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/pipeline_service.py",
+      "code": "E731",
+      "message": "Do not assign a `lambda` expression, use a `def`",
+      "source": "key = lambda item: item[\"media_type\"] + \":\" + item[\"artifact_id\"]",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/qwen_web.py",
+      "code": "F401",
+      "message": "`.qwen_lab.QwenLabStore` imported but unused",
+      "source": "from .qwen_lab import MAX_IMAGE_BYTES, QwenLabStore",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .atomic_files import atomic_bytes",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .contracts.image_queue import Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "F401",
+      "message": "`.contracts.image_queue.Claim` imported but unused",
+      "source": "from .contracts.image_queue import Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "F401",
+      "message": "`.contracts.image_queue.Complete` imported but unused",
+      "source": "from .contracts.image_queue import Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "F401",
+      "message": "`.contracts.image_queue.Start` imported but unused",
+      "source": "from .contracts.image_queue import Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/remote_queue.py",
+      "code": "F401",
+      "message": "`pathlib.Path` imported but unused",
+      "source": "from pathlib import Path",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_remote.py",
+      "code": "F401",
+      "message": "`.contracts.script_queue.Capability` imported but unused",
+      "source": "from .contracts.script_queue import Capability, Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_remote.py",
+      "code": "F401",
+      "message": "`.contracts.script_queue.Claim` imported but unused",
+      "source": "from .contracts.script_queue import Capability, Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_remote.py",
+      "code": "F401",
+      "message": "`.contracts.script_queue.Complete` imported but unused",
+      "source": "from .contracts.script_queue import Capability, Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_remote.py",
+      "code": "F401",
+      "message": "`.contracts.script_queue.Start` imported but unused",
+      "source": "from .contracts.script_queue import Capability, Claim, Start, Complete",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_remote_worker.py",
+      "code": "F401",
+      "message": "`.script_adapter.ScriptGenerationError` imported but unused",
+      "source": "from .script_adapter import CodexTextAdapter, ScriptGenerationError",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_resource_web.py",
+      "code": "B008",
+      "message": "Do not perform function call `File` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "async def upload_example(request: Request, file: UploadFile = File(), subproject_id: str = Form(),",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_resources.py",
+      "code": "F841",
+      "message": "Local variable `exc` is assigned to but never used",
+      "source": "except ValidationError as exc:",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/script_service.py",
+      "code": "F401",
+      "message": "`.script_adapter.ScriptGenerationError` imported but unused",
+      "source": "from .script_adapter import CodexTextAdapter, ScriptGenerationError",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_planner.py",
+      "code": "B007",
+      "message": "Loop control variable `index` not used within loop body",
+      "source": "for index, ((scene, beat), duration) in enumerate(zip(beats, allocations)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_planner.py",
+      "code": "B905",
+      "message": "`zip()` without an explicit `strict=` parameter",
+      "source": "allocations = [n + int(extra * w / sum(weights)) for n, w in zip(minimums, weights)]",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_planner.py",
+      "code": "B905",
+      "message": "`zip()` without an explicit `strict=` parameter",
+      "source": "for index, ((scene, beat), duration) in enumerate(zip(beats, allocations)):",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_service.py",
+      "code": "E741",
+      "message": "Ambiguous variable name: `l`",
+      "source": "candidate = next(((m, l) for m, l in candidates if l[\"price\"] is not None), candidates[0] if candidates else None)",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_service.py",
+      "code": "E741",
+      "message": "Ambiguous variable name: `l`",
+      "source": "for l in m[\"thinking_levels\"] if l[\"id\"] == effort]",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_service.py",
+      "code": "E741",
+      "message": "Ambiguous variable name: `l`",
+      "source": "if not model or not model[\"available\"] or job[\"thinking_level\"] not in [l[\"id\"] for l in model[\"thinking_levels\"]]:",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/storyboard_service.py",
+      "code": "E741",
+      "message": "Ambiguous variable name: `l`",
+      "source": "level = next((l for l in (model or {}).get(\"thinking_levels\", []) if l[\"id\"] == options.get(\"thinking_level\")), None)",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/video_store.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .media_validation import MAX_OUTPUT_BYTES",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/video_store.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from .media_validation import inspect_mp4",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/video_web.py",
+      "code": "F401",
+      "message": "`.video_store.VideoStore` imported but unused",
+      "source": "from .video_store import VideoStore",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/workbench_state.py",
+      "code": "F401",
+      "message": "`.image_status.FAILURE_MESSAGES` imported but unused",
+      "source": "from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/workbench_state.py",
+      "code": "F401",
+      "message": "`.image_status.STATUS_LABELS` imported but unused",
+      "source": "from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/workbench_state.py",
+      "code": "F401",
+      "message": "`.image_status._execution_timing` imported but unused",
+      "source": "from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/workbench_state.py",
+      "code": "F401",
+      "message": "`.image_status._seconds_between` imported but unused",
+      "source": "from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between",
+      "count": 1
+    },
+    {
+      "path": "image_workbench/worker.py",
+      "code": "F401",
+      "message": "`.storage.StorageManager` imported but unused",
+      "source": "from .storage import StorageManager, _now",
+      "count": 1
+    },
+    {
+      "path": "scripts/deploy_release.py",
+      "code": "F401",
+      "message": "`os` imported but unused",
+      "source": "import os",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_calibrate.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import CodexImageBackend, StorageConfig, StorageManager",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_calibrate.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.batch_runner import _write_json",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_calibrate.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.task_runner import TaskRunner",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_recover_calibration.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import BackendRequest, CodexImageBackend, LocalFileBackend, StorageConfig, StorageManager",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_recover_calibration.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.batch_runner import _write_json",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_recover_calibration.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.task_runner import TaskRunner",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_report.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import StorageConfig, StorageManager",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_report.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.batch_runner import _write_json, _atomic_text",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_report.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.task_runner import TaskRunner",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_report.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.timing import utc_now",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_run.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import CodexImageBackend, StorageConfig, StorageManager",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_run.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.batch_runner import BatchRunner, _write_json, _atomic_text, summarize, CSV_FIELDS",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_run.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.locking import FileLock",
+      "count": 1
+    },
+    {
+      "path": "scripts/fleet_run.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.timing import utc_now",
+      "count": 1
+    },
+    {
+      "path": "scripts/qwen_preview_server.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import StorageConfig, StorageManager",
+      "count": 1
+    },
+    {
+      "path": "scripts/qwen_preview_server.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.remote_access import RemoteAccess",
+      "count": 1
+    },
+    {
+      "path": "scripts/qwen_preview_server.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.web import create_app",
+      "count": 1
+    },
+    {
+      "path": "scripts/remote_rehearsal.py",
+      "code": "B007",
+      "message": "Loop control variable `attempt` not used within loop body",
+      "source": "for attempt in range(100):",
+      "count": 1
+    },
+    {
+      "path": "scripts/run_performance_benchmark.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench import CodexImageBackend, StorageConfig, StorageManager, TaskRunner",
+      "count": 1
+    },
+    {
+      "path": "scripts/run_performance_benchmark.py",
+      "code": "F401",
+      "message": "`dataclasses.asdict` imported but unused",
+      "source": "from dataclasses import asdict",
+      "count": 1
+    },
+    {
+      "path": "scripts/run_performance_benchmark.py",
+      "code": "F401",
+      "message": "`hashlib` imported but unused",
+      "source": "import hashlib",
+      "count": 1
+    },
+    {
+      "path": "tests/fleet_performance_probe.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.config import StorageConfig",
+      "count": 1
+    },
+    {
+      "path": "tests/fleet_performance_probe.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.models import Artifact",
+      "count": 1
+    },
+    {
+      "path": "tests/fleet_performance_probe.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "source": "from image_workbench.storage import StorageManager",
+      "count": 1
+    },
+    {
+      "path": "tests/test_accounts.py",
+      "code": "F401",
+      "message": "`io` imported but unused",
+      "source": "import io",
+      "count": 1
+    },
+    {
+      "path": "tests/test_admin.py",
+      "code": "F401",
+      "message": "`image_workbench.admin_operations.file_sha` imported but unused",
+      "source": "from image_workbench.admin_operations import AdminOperations, file_sha, parse_test_report, source_fingerprint",
+      "count": 1
+    },
+    {
+      "path": "tests/test_admin.py",
+      "code": "F401",
+      "message": "`image_workbench.admin_operations.source_fingerprint` imported but unused",
+      "source": "from image_workbench.admin_operations import AdminOperations, file_sha, parse_test_report, source_fingerprint",
+      "count": 1
+    },
+    {
+      "path": "tests/test_admin.py",
+      "code": "F401",
+      "message": "`subprocess` imported but unused",
+      "source": "import subprocess",
+      "count": 1
+    },
+    {
+      "path": "tests/test_atomic_replace.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `attempts`",
+      "source": "attempts.append((source, destination))",
+      "count": 1
+    },
+    {
+      "path": "tests/test_atomic_replace.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `attempts`",
+      "source": "if len(attempts) <= 2:",
+      "count": 1
+    },
+    {
+      "path": "tests/test_atomic_replace.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `code`",
+      "source": "raise windows_permission_error(code)",
+      "count": 1
+    },
+    {
+      "path": "tests/test_deploy_release.py",
+      "code": "E702",
+      "message": "Multiple statements on one line (semicolon)",
+      "source": "path = self.root / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_text(\"{}\")",
+      "count": 2
+    },
+    {
+      "path": "tests/test_h3_worker.py",
+      "code": "F841",
+      "message": "Local variable `original` is assigned to but never used",
+      "source": "original = self.adapter.finalize_output",
+      "count": 1
+    },
+    {
+      "path": "tests/test_module_isolation.py",
+      "code": "B009",
+      "message": "Do not call `getattr` with a constant attribute value. It is not any safer than normal property access.",
+      "source": "getattr(image_workbench, \"not_a_feature\")",
+      "count": 1
+    },
+    {
+      "path": "tests/test_observability.py",
+      "code": "F401",
+      "message": "`image_workbench.BackendError` imported but unused",
+      "source": "BackendError, BackendResult, CodexImageBackend, StorageConfig, StorageManager,",
+      "count": 1
+    },
+    {
+      "path": "tests/test_observability.py",
+      "code": "F401",
+      "message": "`sys` imported but unused",
+      "source": "import sys",
+      "count": 1
+    },
+    {
+      "path": "tests/test_qwen.py",
+      "code": "E701",
+      "message": "Multiple statements on one line (colon)",
+      "source": "with self.assertRaises(httpx.ReadTimeout): engine.run_once()",
+      "count": 1
+    },
+    {
+      "path": "tests/test_qwen.py",
+      "code": "E702",
+      "message": "Multiple statements on one line (semicolon)",
+      "source": "value=_json_read(path);value['time']=time.time()-60;_json_write(path,value)",
+      "count": 2
+    },
+    {
+      "path": "tests/test_remote.py",
+      "code": "F401",
+      "message": "`hashlib` imported but unused",
+      "source": "import hashlib",
+      "count": 1
+    },
+    {
+      "path": "tests/test_scheduling.py",
+      "code": "B905",
+      "message": "`zip()` without an explicit `strict=` parameter",
+      "source": "for backend, expected_hash in zip(backends, expected_hashes):",
+      "count": 1
+    },
+    {
+      "path": "tests/test_scheduling.py",
+      "code": "B905",
+      "message": "`zip()` without an explicit `strict=` parameter",
+      "source": "for owner, claim in zip(owners, claims):",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `detail_failures`",
+      "source": "detail_failures.append(route.request.url)",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `detail_failures`",
+      "source": "if route.request.method == \"GET\" and not detail_failures:",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `entered`",
+      "source": "entered.set()",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `pending`",
+      "source": "if not pending:",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `pending`",
+      "source": "pending.append(route)",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `pending`",
+      "source": "self.page.expect_request_finished(lambda request: request == pending[0].request):",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `pending`",
+      "source": "with self.page.expect_response(lambda response: response.request == pending[0].request) as released, \\",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_generation_browser.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `release`",
+      "source": "if not release.wait(8):",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_models.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `invalid`",
+      "source": "self.update(\"script_pricing.json\", lambda value: value[\"models\"][\"gpt-6-astra\"].update(high=invalid))",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_models.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `spec`",
+      "source": "DemandRouter(self.registry, fallback=lambda request: spec).route(self.request(input_request=\"请制作内容\"), {})",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_recovery.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `path`",
+      "source": "if target == path:",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_remote.py",
+      "code": "E702",
+      "message": "Multiple statements on one line (semicolon)",
+      "source": "work = kwargs[\"work_dir\"]; work.mkdir(parents=True); (work/\"completed.json\").write_text(\"{}\")",
+      "count": 2
+    },
+    {
+      "path": "tests/test_script_remote.py",
+      "code": "E702",
+      "message": "Multiple statements on one line (semicolon)",
+      "source": "work = self.worker._directory(task[\"task_id\"])/\"codex\"; work.mkdir(); (work/\"completed.json\").write_text(\"{}\")",
+      "count": 2
+    },
+    {
+      "path": "tests/test_script_remote.py",
+      "code": "F401",
+      "message": "`hashlib` imported but unused",
+      "source": "import hashlib",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_remote.py",
+      "code": "F401",
+      "message": "`json` imported but unused",
+      "source": "import json",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.detail(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.download(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.quote(aid, wid, self.body()),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.recover(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.run(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.save_revision(aid, wid, task[\"task_id\"], {\"request_id\": uuid4().hex, \"text\": TEXT, \"change_reason\": \"修改\"}),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `aid`",
+      "source": "lambda: self.service.storyboard_source(aid, wid, task[\"version_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.detail(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.download(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.quote(aid, wid, self.body()),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.recover(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.run(aid, wid, task[\"task_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.save_revision(aid, wid, task[\"task_id\"], {\"request_id\": uuid4().hex, \"text\": TEXT, \"change_reason\": \"修改\"}),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_service.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `wid`",
+      "source": "lambda: self.service.storyboard_source(aid, wid, task[\"version_id\"]),",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_templates.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `example_id`",
+      "source": "self.change_registry(\"templates.json\", lambda r: r[\"templates\"][0].update(example_refs=[example_id]))",
+      "count": 1
+    },
+    {
+      "path": "tests/test_script_templates.py",
+      "code": "B023",
+      "message": "Function definition does not bind loop variable `file`",
+      "source": "self.change_registry(\"templates.json\", lambda r: r[\"templates\"][0].update(template_file=file))",
+      "count": 1
+    },
+    {
+      "path": "tests/test_storage.py",
+      "code": "F841",
+      "message": "Local variable `link_created` is assigned to but never used",
+      "source": "link_created = True",
+      "count": 1
+    },
+    {
+      "path": "tests/test_video_pipeline.py",
+      "code": "B008",
+      "message": "Do not perform function call `mp4` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "source": "def upload(data=mp4()):",
+      "count": 1
+    },
+    {
+      "path": "tests/test_video_pipeline.py",
+      "code": "E702",
+      "message": "Multiple statements on one line (semicolon)",
+      "source": "source = self.root / \"generated.png\"; source.write_bytes(png(\"blue\"))",
+      "count": 1
+    },
+    {
+      "path": "tests/test_workbench_state.py",
+      "code": "F401",
+      "message": "`json` imported but unused",
+      "source": "import json",
+      "count": 1
+    },
+    {
+      "path": "tests/test_worker.py",
+      "code": "F401",
+      "message": "`json` imported but unused",
+      "source": "import json",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "3d-stylized",
+  "name": "立体风格化",
+  "category": "rendering",
+  "visual_positioning": "以明确体积、简洁受光和有层次的表面响应呈现亲切或雕塑感的立体资产；形状夸张必须得到 AssetSpec 允许。",
+  "use_cases": [
+    "原创吉祥物资产",
+    "抽象物件与道具",
+    "有体积感的主题主视觉"
+  ],
+  "asset_types": [
+    "character",
+    "prop",
+    "product",
+    "environment",
+    "logo",
+    "key_visual",
+    "style_reference"
+  ],
+  "visual_language": {
+    "composition": [
+      "主形与次形体量关系清楚，轮廓在不同视角下成立；附属物不能无依据融合或漂浮。"
+    ],
+    "lighting": [
+      "使用宽面积主光塑造体积，接触阴影说明支撑点；轮廓光少量且有方向。"
+    ],
+    "color": [
+      "颜色分区清楚，可用环境色衬托主体；不将所有资产统一染为糖果色。"
+    ],
+    "texture": [
+      "表面粗糙度和高光范围区分材质，固定金属、玻璃、织物不能自动替换成黏土或塑料。"
+    ],
+    "camera": [
+      "自然透视或轻微等距倾向按用途选择；锁定比例时不用夸张近大远小。"
+    ],
+    "depth": [
+      "形体遮挡、接触阴影与明暗梯度共同解释体积，不依赖厚重环境雾。"
+    ]
+  },
+  "style_fidelity_anchors": [
+    {
+      "id": "anchor_1",
+      "requirement": "每个主要体块都具有清楚的朝向和受光变化。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_2",
+      "requirement": "支撑、连接与接触关系可信。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_3",
+      "requirement": "风格化后的形体仍保留资产的固定识别结构。",
+      "importance": "core"
+    },
+    {
+      "id": "anchor_4",
+      "requirement": "边缘柔化程度、背景与光线对比可根据用途变化。",
+      "importance": "adaptable"
+    }
+  ],
+  "variables": {
+    "volume_expression": {
+      "type": "enum",
+      "description": "体积塑造的视觉倾向；固定尺寸比例不变。",
+      "default": "清楚圆润",
+      "choices": [
+        "清楚圆润",
+        "简洁雕塑感",
+        "几何分面"
+      ]
+    },
+    "light_wrap": {
+      "type": "enum",
+      "description": "主光在表面的包裹程度。",
+      "default": "柔和包裹",
+      "choices": [
+        "柔和包裹",
+        "清晰侧光",
+        "均匀明亮"
+      ]
+    },
+    "backdrop_tone": {
+      "type": "string",
+      "description": "衬托主体的背景色调与干扰程度。",
+      "default": "低干扰浅灰背景"
+    }
+  },
+  "prompt_template": "为 {{asset_name}} 采用立体风格化表达，体积语言为 {{volume_expression}}，主光采用 {{light_wrap}}，由 {{backdrop_tone}} 提供衬托。以形体朝向、材质响应和接触阴影构成立体感，只在资产允许范围内简化细节。 风格层仅调整视觉表达；主体身份、结构比例、固定颜色与材质、必需标识、用户精确文字及输出规格均服从 AssetSpec，不据风格自行改写。",
+  "negative_constraints": [
+    "若产品尺寸与结构已锁定，不圆角化接口、缩短零件或改动支撑关系。",
+    "若 logo 要求平面精确轮廓，不擅自挤出、倒角或增加阴影；仅在指定允许时呈现立体版本。",
+    "若材质已固定，不一律变成黏土、橡胶或高亮塑料。"
+  ],
+  "source_content_to_avoid": [
+    "不从风格样例自动继承人物身份、商品外形、品牌标识、广告文案或水印；资产身份只从已确认 AssetSpec 与绑定身份参考取得。",
+    "不复刻知名动画形象、玩具外形、设计师摆件或第三方标识的立体版本。"
+  ],
+  "examples": [
+    {
+      "example_id": "library_mascot",
+      "brief": "原创图书馆吉祥物的立体角色展示，轮廓与配色已经确认。",
+      "asset_type": "character",
+      "variables": {
+        "volume_expression": "清楚圆润",
+        "light_wrap": "柔和包裹",
+        "backdrop_tone": "暖灰背景与轻接触阴影"
+      },
+      "adaptation_notes": [
+        "圆润仅作用于允许的表面表达，不改变头身比。",
+        "服装材质与脸部特征继承 AssetSpec。"
+      ]
+    },
+    {
+      "example_id": "learning_blocks",
+      "brief": "三块抽象教学积木的立体示意，用于课程主视觉。",
+      "asset_type": "prop",
+      "variables": {
+        "volume_expression": "几何分面",
+        "light_wrap": "清晰侧光",
+        "backdrop_tone": "偏冷浅灰背景"
+      },
+      "adaptation_notes": [
+        "积木数量和相互位置保持确定。",
+        "每块形体独立可读，不能融合成一块。"
+      ]
+    }
+  ],
+  "model_notes": {
+    "portability": [
+      "生成图片不等于获得三维模型、法线贴图或多视角一致网格；这些交付需要独立能力与验证。",
+      "以下均为视觉意图；是否支持负向字段、透明背景、参考图强度或精确尺寸由当前执行能力决定，不能仅因风格名称假定支持。"
+    ],
+    "parameter_policy": "capability_driven_no_model_lock"
+  },
+  "selection": {
+    "visual_intents": [
+      "亲切体积",
+      "简化立体形体",
+      "清楚受光"
+    ],
+    "natural_language_cues": [
+      "三维卡通感",
+      "柔和立体图标",
+      "雕塑般的形体"
+    ],
+    "avoid_when": [
+      "必须输出可编辑三维网格或真实工程模型。",
+      "不能允许任何形体简化且需严格材质校样。"
+    ]
+  },
+  "authorship": "original_for_image_workbench_v1"
+}

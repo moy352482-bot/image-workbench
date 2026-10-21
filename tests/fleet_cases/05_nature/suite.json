@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "suite_name": "fleet_05_05_nature",
+  "cases": [
+    {
+      "case_id": "05_nature_pure_01",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张雨后苔藓森林图片。画面内容：近景苔藓覆盖的树根延伸到雾气中的杉树林。视觉要求：清晨散射光，保留丰富绿色层次。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_pure_02",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张高山湖泊图片。画面内容：平静湖面倒映雪山，岸边有稀疏松树。视觉要求：清晰的冷色晨光，地平线端正。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_pure_03",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张沙丘日落图片。画面内容：弧形沙丘上留下细致风纹，太阳靠近地平线。视觉要求：金色侧光，画面中不出现人物。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "05_nature_pure_04",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张野花草甸图片。画面内容：夏季草甸里有蓝紫色野花，远处是柔和山脉。视觉要求：微风感的自然光，细节真实。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_pure_05",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张海蚀拱门图片。画面内容：碧蓝海水穿过天然岩石拱门，礁石纹理清楚。视觉要求：晴朗午后，构图平衡。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_pure_06",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张秋日溪流图片。画面内容：溪水绕过红黄落叶和圆石，背景是枫树林。视觉要求：柔和阴天光，水面自然。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "05_nature_pure_07",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张竹林小径图片。画面内容：石板小路穿过高低错落的竹林，尽头有薄雾。视觉要求：竖向纵深构图，安静克制。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "05_nature_pure_08",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张冰川山谷图片。画面内容：蓝白色冰川、深色岩壁与一线远山共同构成景观。视觉要求：冷冽清晨色彩，层次清楚。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_pure_09",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张热带瀑布图片。画面内容：瀑布落入蕨类环绕的清澈水潭，水雾轻微。视觉要求：明亮湿润的绿色调。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "05_nature_pure_10",
+      "project_name": "自然与风景摄影",
+      "group": "pure_generation",
+      "operation": "generate",
+      "prompt": "请生成一张星空旷野图片。画面内容：旷野剪影上方有清晰银河，地面留少量营地灯光。视觉要求：夜景真实，不出现可读文字。只输出一张完整图片，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "纯生成",
+        "自然风景"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_ref_01",
+      "project_name": "自然与风景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：夏季草甸里有蓝紫色野花，远处是柔和山脉。风格约束：微风感的自然光，细节真实。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "自然风景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_ref_02",
+      "project_name": "自然与风景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：碧蓝海水穿过天然岩石拱门，礁石纹理清楚。风格约束：晴朗午后，构图平衡。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "自然风景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_ref_03",
+      "project_name": "自然与风景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：溪水绕过红黄落叶和圆石，背景是枫树林。风格约束：柔和阴天光，水面自然。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 1:1。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/fragrance.webp",
+          "role": "style"
+        },
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "自然风景",
+        "multi_reference"
+      ],
+      "expected_aspect_ratio": "1:1"
+    },
+    {
+      "case_id": "05_nature_ref_04",
+      "project_name": "自然与风景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：石板小路穿过高低错落的竹林，尽头有薄雾。风格约束：竖向纵深构图，安静克制。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 2:3。",
+      "input_images": [
+        {
+          "path": "assets/smartphone.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "自然风景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "2:3"
+    },
+    {
+      "case_id": "05_nature_ref_05",
+      "project_name": "自然与风景摄影",
+      "group": "reference_generation",
+      "operation": "generate",
+      "prompt": "根据文字要求生成一张图片。所有参考图仅用于借鉴灯光、材质质感与配色；忽略参考图中的主体、商品造型、包装、文字和商标。主体与场景严格按以下文字内容生成：蓝白色冰川、深色岩壁与一线远山共同构成景观。风格约束：冷冽清晨色彩，层次清楚。主体结构完整、画面清晰，只输出一张，不要拼图、边框、水印或额外文字。画面宽高比 3:2。",
+      "input_images": [
+        {
+          "path": "assets/mascara.webp",
+          "role": "style"
+        }
+      ],
+      "base_case": null,
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "参考图",
+        "自然风景",
+        "single_reference"
+      ],
+      "expected_aspect_ratio": "3:2"
+    },
+    {
+      "case_id": "05_nature_edit_01",
+      "project_name": "自然与风景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“自然风景”主题系列的历史版本进行编辑。保持主体外观、位置和画幅不变，只将背景改为带有浅色自然纹理的环境；输出一张完整编辑结果。",
+      "input_images": [],
+      "base_case": "05_nature_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "自然风景"
+      ]
+    },
+    {
+      "case_id": "05_nature_edit_02",
+      "project_name": "自然与风景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“自然风景”主题系列的历史版本进行编辑。在当前版本上只调整主光方向为柔和右侧窗光，商品/主体边缘和原有构图保持不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "05_nature_edit_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "自然风景"
+      ]
+    },
+    {
+      "case_id": "05_nature_edit_03",
+      "project_name": "自然与风景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“自然风景”主题系列的历史版本进行编辑。从第一代版本另开历史分支：保留原主体与画面比例，仅增加轻微接触阴影或空间层次；输出一张图片。",
+      "input_images": [],
+      "base_case": "05_nature_ref_01",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "自然风景"
+      ]
+    },
+    {
+      "case_id": "05_nature_edit_04",
+      "project_name": "自然与风景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“自然风景”主题系列的历史版本进行编辑。以第二张参考生成结果为分支基底，仅将色彩改成更中性的自然色调，主体细节不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "05_nature_ref_02",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "历史分支",
+        "自然风景"
+      ]
+    },
+    {
+      "case_id": "05_nature_edit_05",
+      "project_name": "自然与风景摄影",
+      "group": "edit",
+      "operation": "edit",
+      "prompt": "本次针对“自然风景”主题系列的历史版本进行编辑。沿当前历史分支只微调背景明暗和细节清晰度，保持主体、布局及比例不变；输出一张图片。",
+      "input_images": [],
+      "base_case": "05_nature_edit_04",
+      "expected_mode": "success",
+      "tags": [
+        "fleet",
+        "连续编辑",
+        "自然风景"
+      ]
+    }
+  ]
+}
