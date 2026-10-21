@@ -45,3 +45,5 @@ data/users/*
 /交付/
 .ruff_cache/
 deploy/*.local.json
+/docs/goals/asset-ux/browser-*.json
+/docs/goals/asset-ux/screenshots/
