@@ -1,5 +1,11 @@
 # 第四阶段本地 Web 接口约定
 
+后续兼容扩展（2026-10-20）：脚本页面和 `/api/scripts/*` 路径、请求字段与已有响应字段保持兼容。
+`GET /api/scripts/config` 增加 `generation_plugin`（描述及 `enabled`），不替代模型目录的实际可用性。
+脚本插件停用后，新 quote/submit 返回 409；相同已受理请求的 submit 仍返回原任务，
+detail/list/download/recover 和手动版本入口继续按原权限与恢复合同工作。
+这是注册表明确停用时的新增行为，默认启用保持原流程。没有增加公开启停写接口。
+
 仅 localhost；同源请求。所有写操作附 `X-Workbench-CSRF`，值来自 `GET /api/config`。所有ID为32位小写十六进制；网页不传服务器路径。JSON错误为 `{detail: "可读中文摘要"}`，不返回内部异常或日志。
 
 - `GET /api/config` → `{csrf_token, backend: "codex"|"local", worker_running, max_input_images:8, max_image_bytes:20971520, max_upload_bytes:41943040, ratios:["auto","1:1","3:2","2:3"]}`。local显示“演练模式 · 不消耗生图额度”；codex显示“本地 Codex · 手动启动”。比例由提示词约束，不保证精确像素尺寸。

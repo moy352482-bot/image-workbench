@@ -6,14 +6,15 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-COMMON = ["test_architecture", "test_module_isolation", "test_http_contract", "test_frontend_modules", "test_request_boundaries"]
+COMMON = ["test_architecture", "test_quality_guard", "test_module_isolation", "test_http_contract", "test_frontend_modules", "test_request_boundaries"]
 SUITES = {
     "images": ["test_web", "test_worker", "test_workbench_state", "test_remote", "test_runner", "test_task_timing", "test_scheduling", "test_asset_inputs", "test_asset_browser", "test_asset_e2e_browser"],
     "projects": ["test_project_web", "test_project_manager", "test_project_cli", "test_request_metadata_cache"],
     "accounts": ["test_accounts", "test_registration", "test_capacity", "test_script_limits"],
     "scripts": ["test_script_web", "test_script_service", "test_script_storage", "test_script_models",
                 "test_script_templates", "test_script_remote", "test_script_adapter", "test_script_recovery", "test_video_pipeline",
-                "test_script_creative_core", "test_script_creative_http", "test_script_direct_submit", "test_script_generation_browser"],
+                "test_script_creative_core", "test_script_creative_http", "test_script_direct_submit", "test_script_generation_browser",
+                "test_plugins"],
     "storyboards": ["test_storyboard_http", "test_storyboard_planner", "test_storyboard_recovery", "test_storyboard_followup",
                    "test_video_pipeline", "test_script_web", "test_asset_storyboard_browser"],
     "video": ["test_video", "test_h3_worker", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser"],
@@ -32,7 +33,8 @@ def source_fingerprint():
         files.update((ROOT / folder).glob("*.py"))
     for folder in ("tests/contracts", "tests/frontend"):
         files.update(p for p in (ROOT / folder).rglob("*") if p.is_file())
-    files.add(ROOT / "architecture.json")
+    for name in ("architecture.json", "ruff.toml", "requirements-dev.txt", ".github/workflows/verify.yml"):
+        files.add(ROOT / name)
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
 
 
@@ -45,11 +47,12 @@ def main(argv=None):
     if args.list:
         print("\n".join(selected) if selected else "All tests (unittest discover -s tests)")
         return 0
-    # This runs before imports/tests, so invalid dependencies fail fast.
+    # Lint and dependency checks run before importing the application.
     before = source_fingerprint()
-    result = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts/check_architecture.py")], cwd=ROOT)
-    if result.returncode:
-        return result.returncode
+    for check in ("check_quality.py", "check_architecture.py"):
+        result = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts" / check)], cwd=ROOT)
+        if result.returncode:
+            return result.returncode
     command = [sys.executable, "-X", "utf8", "-m", "unittest"]
     command += ["-v", *("tests." + name for name in selected)] if selected else ["discover", "-s", "tests", "-v"]
     result = subprocess.run(command, cwd=ROOT)

@@ -168,11 +168,16 @@ class ScriptService:
                 "generation_types": [{"id": "script", "name": "脚本"}, {"id": "screenplay", "name": "剧本"}],
                 "credits": self.identity.wallet(account_id)}
 
-    def quote(self, account_id, workspace_id, body, *, _prepared=None):
+    def validate_input(self, account_id, workspace_id, body):
+        """Validate a generation request and ownership without reserving or executing."""
         req = self._normalize(body)
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
         projects.get_subproject(req["subproject_id"])
         self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
+        return req
+
+    def quote(self, account_id, workspace_id, body, *, _prepared=None):
+        req = self.validate_input(account_id, workspace_id, body)
         template = _prepared if _prepared is not None else resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
         choice, reason, spec = self.router.route(req, template, allow_external=False)
         warnings = []
@@ -202,7 +207,7 @@ class ScriptService:
             row = db.execute("SELECT transaction_id FROM credit_transactions WHERE job_id=? AND type=? ORDER BY created_at LIMIT 1", (job_id, kind)).fetchone()
         return row[0] if row else None
 
-    def submit(self, account_id, workspace_id, body):
+    def submit(self, account_id, workspace_id, body, *, admission=None):
         req = self._normalize(body)
         rid = _validate_id(body.get("request_id"))
         tid = uuid5(NAMESPACE_URL, "script:" + account_id + ":" + rid).hex
@@ -224,6 +229,8 @@ class ScriptService:
                     old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
                     self._write(old)
                 return self._public(self._reconcile(old))
+            if admission is not None:
+                admission()
             template = resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
             quote = self.quote(account_id, workspace_id, req, _prepared=template)
             if quote["shortfall"]:

@@ -16,3 +16,36 @@
   协议改动需明确兼容策略，并更新相应契约测试。
 - 测试使用独立临时数据目录与本地/Mock 后端。`data/`、`deploy/*.local.json`
   和真实执行器环境属于业务运行资源，不能作为测试夹具。
+
+## 新功能与架构治理
+
+新增功能前，在任务说明或实现记录中简洁回答以下问题，不要求为小改动建立额外流程文件：
+
+1. 属于 Core、Application Service、Plugin、Skill、Workflow、Provider 还是 Frontend？
+2. 依赖哪些现有模块，方向是否符合 `architecture.json`？
+3. 哪些公开服务可以复用，为什么不能直接复用时才新增？
+4. 是否需要新数据模型，兼容现有记录和历史版本的方式是什么？
+5. 是否必须修改 Core，能否先通过应用服务/端口扩展？
+6. 对其他模块、权限、积分、执行和恢复有什么实际影响？
+7. 用哪些单元、服务/HTTP 集成和必要回归验证？
+8. 如何按变更范围回滚，是否需要数据迁移或保留恢复证据？
+
+优先调用既有服务：保存正式产物用 `StorageManager.register_output_*`，
+先核验 Workspace；积分沿用 `IdentityStore.reserve/record_job`，
+不可在插件、前端或 Skill 自行扣款。Skill 提供创作规则、Prompt 和结构约束，
+确定性事务、路径、幂等和归档由 Python 服务维护。
+
+插件只接收所需的公开服务端口，在 composition 显式注册；不得导入相邻插件私有实现、
+绕过存储/账本或自行调用付费模型。停用只阻止新工作，历史、已受理任务及恢复继续由原服务维护。
+跨功能 Workflow 记录阶段、源版本和依赖，通过公开接口协作；不把工作流写进共享 Core。
+增加 Core 特例、动态发现或更换任务框架前，先给出实际需求、兼容方案和可验证收益。
+
+统一检查先执行 Ruff 与架构防护，再运行测试；Ruff 历史基线不能自动刷新以接纳新问题，
+不能用动态导入、入口重导出或反射规避依赖规则。细则见
+[质量检查](docs/architecture/QUALITY_GATES.md)、
+[插件试点](docs/architecture/PLUGIN_PILOT.md)、
+[并行开发](docs/parallel_development.md)。
+
+## 并行开发
+
+每个任务使用独立 worktree 和分支，以 `git rev-parse --show-toplevel` 确认当前目录；聊天历史中的路径不能代替当前目录。每个工作区使用独立环境、数据目录和端口。完成验证后推送功能分支，通过 Pull Request 合并到 `main`。

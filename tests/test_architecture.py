@@ -7,6 +7,31 @@ from scripts.check_architecture import analyze, cycles, imports
 
 
 class ArchitectureTests(unittest.TestCase):
+    def test_current_policy_rejects_plugin_persistence_and_cross_feature_imports(self):
+        root_config = Path(__file__).resolve().parents[1] / "architecture.json"
+        config = json.loads(root_config.read_text(encoding="utf-8"))
+        config.pop("frontend", None)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            package = root / "image_workbench"
+            package.mkdir()
+            (root / "architecture.json").write_text(json.dumps(config), encoding="utf-8")
+            sources = {
+                "config": "from . import script_web\n",
+                "storage": "",
+                "video_store": "",
+                "script_web": "",
+                "script_service": "from . import video_store\n",
+                "script_plugin": "from . import storage\nfrom fastapi import Request\n",
+            }
+            for name, source in sources.items():
+                (package / (name + ".py")).write_text(source, encoding="utf-8")
+            errors = "\n".join(analyze(root)["errors"])
+            self.assertIn("foundation -> http is forbidden", errors)
+            self.assertIn("scripts -> video is forbidden", errors)
+            self.assertIn("script_plugin -> storage is forbidden", errors)
+            self.assertIn("imports HTTP framework", errors)
+
     def test_repository_dependency_contracts(self):
         result = analyze()
         self.assertEqual(result["errors"], [], "\n".join(result["errors"]))

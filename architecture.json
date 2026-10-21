@@ -1,6 +1,14 @@
 {
   "root_package": "image_workbench",
   "groups": {
+    "plugin_api": {
+      "modules": ["plugin_api"],
+      "may_import": ["foundation"]
+    },
+    "script_plugin": {
+      "modules": ["script_plugin"],
+      "may_import": ["plugin_api", "contracts"]
+    },
     "foundation": {
       "modules": [
         "config",
@@ -183,6 +191,7 @@
         "storyboard_web"
       ],
       "may_import": [
+        "plugin_api",
         "foundation",
         "contracts",
         "storage",

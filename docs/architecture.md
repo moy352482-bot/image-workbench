@@ -4,6 +4,10 @@
 模块按职责维护，通过服务接口协作。改一个功能前，可先运行该功能检查；发布前运行完整检查。
 架构检查、接口兼容检查和行为回归共同降低跨功能回归风险，不能保证任意修改都不影响其他功能。
 
+日常开发还可参阅 [质量检查](architecture/QUALITY_GATES.md)、
+[插件试点](architecture/PLUGIN_PILOT.md) 与 [并行开发](parallel_development.md)。
+静态导入边界和运行时耦合需要分别验证，候选扩展能力不代表已经实现。
+
 ## 从哪里修改
 
 | 修改目标 | 实现入口 | 需守住的边界 |
@@ -18,6 +22,7 @@
 | 图片状态写入、提交 | `workbench_state.py` | 任务锁、请求去重、冻结与恢复 |
 | 图片列表和详情 | `image_queries.py`、`image_status.py` | 查询投影、状态推导、计时口径；不启动任务 |
 | 脚本生成 | `script_service.py`、`script_models.py`、`script_templates.py` | 固定报价、版本不可覆盖、仅显式执行 |
+| 脚本插件与启停 | `plugin_api.py`、`script_plugin.py` | 显式注册；通过 ScriptServicePort 复用任务、积分、产物、版本；停用保留历史和恢复 |
 | 脚本素材与模板 | `script_resources.py`、`script_engine.py`、`script_resource_web.py` | 空间隔离、结构解析、上传内容作为数据 |
 | 分镜规划 | `storyboard_service.py`、`storyboard_models.py`、`storyboard_planner.py` | 独立规划服务，通过已有脚本/视频服务衔接 |
 | 视频任务 | `video_store.py`、`h3_worker.py`、`video_web.py` | 任务回执、计费、媒体限制；视频持久化由 VideoStore 维护 |
@@ -102,6 +107,7 @@ flowchart TD
 
 检查包括：
 
+- 固定版本 Ruff 的历史基线增量检查；新诊断失败，旧问题不批量自动修复，详见 [质量检查](architecture/QUALITY_GATES.md)。
 - Python 静态导入（含函数内和条件分支内导入）的模块归属、允许方向与循环。
 - 业务/底层模块不得导入 FastAPI 或 Starlette。
 - 前端组件先于入口加载，组件不访问页面状态或相邻组件全局对象。
@@ -113,7 +119,7 @@ flowchart TD
 `tests/test_architecture.py`、`tests/test_http_contract.py` 与 `tests/test_frontend_modules.py`
 在普通 `unittest discover` 中执行，因此现有发布程序和管理中心的完整检查也会运行它们。
 没有 Node 时，普通 unittest 会明确跳过前端运行检查；CI 配置安装 Node 24 后执行完整验证。
-GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 时运行同一检查入口。
+工作流调用统一 `verify.py`；当前修改是否已在 GitHub 或生产执行，须查对应运行记录，不由本指南推断。
 
 静态导入检查不能证明运行时对象调用完全独立，也不替代业务测试；
 不要用动态导入、`getattr` 或从入口重新导出实现来规避边界。
@@ -129,8 +135,9 @@ GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 
 不能直接用新快照覆盖测试失败。本轮接口快照基于重构前的真实应用生成；
 同期新增的可选脚本/分镜字段使用兼容性检查放行，旧约束仍逐项核对。
 
-回滚应以 Git 提交和发布清单确定代码范围。业务数据与代码版本分开保存；
-回退代码不能撤销数据写入。实际部署与验证范围见 [发布记录](verified-release.md)。
+回滚以 Git 提交和实际变更范围为依据，优先在独立分支中撤销对应提交，再运行受影响模块和公共检查。
+存在后续修改时先解决冲突，避免整目录覆盖导致其他改动丢失。
+插件回滚步骤见 [试点说明](architecture/PLUGIN_PILOT.md)；插件接入没有迁移业务数据。
 
 ## 参考与取舍
 
@@ -141,3 +148,5 @@ GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 
 
 当前项目已有 unittest 和成熟的任务/积分持久化路径，因此采用小型标准库 AST 检查器、
 现有回归和公开服务接口，没有安装上述项目的插件，也没有引入新的业务运行依赖。
+后续治理增加 Ruff 开发依赖和显式 Python 插件契约。
+是否采用 Import Linter、Pluggy 等框架，应以实际扩展需求和可验证收益为依据。
