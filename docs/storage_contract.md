@@ -125,3 +125,13 @@ data/
 
 视频片段采用真实 MP4 Artifact ID。已有视频首次进入素材引用时登记确定性任务和 Artifact，规范产物路径与原视频文件建立同卷硬链接，不复制视频字节；不支持硬链接时明确报错，不隐式复制。原视频 URL、文件与生成事务保持不变。`shot.output_artifacts` 或上传输出的 `artifact_id` 记录关联。
 
+## 公开文件端口（2026-10-22）
+
+`StorageManager.files` 提供 `ManagedFiles` 的 scope/path/check/read_json/write_json/cleanup/child_ids。
+作用域同时验证数据根锚点与指定目录，拒绝越界、符号链接和 junction；原子 JSON 写、schema_version、
+临时文件清理和异常类型不变。旧 StorageManager 私有文件方法保留兼容代理，应用代码使用公开端口。
+ScriptResourceStore 按账号/空间限定子目录，VideoStore/Qwen/远程 Worker 按其持久目录限定。
+文件端口是可信服务的路径能力，不代替 Workspace 授权；正式产物仍通过 register_output_* 登记。
+公开的 inspect_image、copy_image_source、artifact_file、require_image_source、decode_task、task_files
+复用原校验，WorkspaceStorage 对项目与 Artifact 访问继续核验所属空间。没有磁盘格式或数据迁移。
+

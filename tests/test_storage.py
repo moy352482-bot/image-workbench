@@ -210,8 +210,8 @@ class StorageTests(unittest.TestCase):
         first = self.manager.add_input_image(project.project_id, task.task_id, self.image("indexed-first.png"))
         self.assertEqual(self.manager.get_artifact(first.artifact_id), first)
 
-        read_json = self.manager._read_json
-        with mock.patch.object(self.manager, "_read_json", wraps=read_json) as reads:
+        read_json = self.manager.files.read_json
+        with mock.patch.object(self.manager.files, "read_json", wraps=read_json) as reads:
             self.assertEqual(self.manager.get_artifact(first.artifact_id), first)
             self.assertEqual(reads.call_count, 0)
 
@@ -311,14 +311,14 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in input_dir.iterdir()), [existing.artifact_id + ".png"])
 
     def test_project_task_failure_rolls_back_and_uuid_collision_does_not_overwrite(self):
-        with mock.patch.object(self.manager, "_write_json", side_effect=OSError("project write failure")):
+        with mock.patch.object(self.manager.files, "write_json", side_effect=OSError("project write failure")):
             with self.assertRaisesRegex(OSError, "project write failure"):
                 self.manager.create_project("失败项目")
         self.assertEqual(self.manager.list_projects(), [])
         self.assertEqual(list((self.data / "projects").iterdir()), [])
 
         project = self.manager.create_project("任务回滚")
-        with mock.patch.object(self.manager, "_write_json", side_effect=OSError("task write failure")):
+        with mock.patch.object(self.manager.files, "write_json", side_effect=OSError("task write failure")):
             with self.assertRaisesRegex(OSError, "task write failure"):
                 self.manager.create_task(project.project_id, "generate", "失败任务")
         self.assertEqual(self.manager.list_tasks(project.project_id), [])

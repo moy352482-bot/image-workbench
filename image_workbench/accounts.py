@@ -75,9 +75,9 @@ class IdentityStore:
         self.storage = storage
         self.registration_policy = registration_policy or RegistrationPolicy.from_environment()
         self.capacity_policy = capacity_policy or CapacityPolicy.from_environment()
-        self.root = storage._path(".identity")
+        self.root = storage.files.path(".identity")
         self.root.mkdir(exist_ok=True)
-        self.path = storage._path(".identity", "accounts.sqlite3")
+        self.path = storage.files.path(".identity", "accounts.sqlite3")
         with self.connect() as db:
             db.executescript("""
             CREATE TABLE IF NOT EXISTS accounts (
@@ -173,7 +173,7 @@ class IdentityStore:
                     token = None
                 else:
                     try:
-                        saved = self.storage._read_json(self.storage._path(".identity", "moy-activation.json"))["activation_token"]
+                        saved = self.storage.files.read_json(self.storage.files.path(".identity", "moy-activation.json"))["activation_token"]
                     except (OSError, ValueError, KeyError):
                         saved = ""
                     if saved and hmac.compare_digest(digest(saved), owner["activation_hash"] or ""):
@@ -186,7 +186,7 @@ class IdentityStore:
                 db.execute("INSERT OR IGNORE INTO project_ownership VALUES (?,?,0,?)", (_validate_id(pid), wid, _now()))
             # 写入启用凭据失败则整个账号/归属事务回滚；重启可重新准备。
             if token:
-                self.storage._write_json(self.storage._path(".identity", "moy-activation.json"), {"schema_version": 1, "username": "moy", "activation_token": token})
+                self.storage.files.write_json(self.storage.files.path(".identity", "moy-activation.json"), {"schema_version": 1, "username": "moy", "activation_token": token})
         return {"account_id": aid, "workspace_id": wid, "activation_required": not bool(owner and owner["password_hash"])}
 
     def create_invitation(self, *, expires_hours=72):

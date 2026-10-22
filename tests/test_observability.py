@@ -194,7 +194,7 @@ class ObservabilityTests(unittest.TestCase):
 
     def test_persistent_initial_state_write_failure_raises_record_for_batch_caller(self):
         backend = self.success_backend()
-        with mock.patch.object(self.storage, "_write_json", side_effect=OSError("metadata disk unavailable")):
+        with mock.patch.object(self.storage.files, "write_json", side_effect=OSError("metadata disk unavailable")):
             with self.assertRaises(StateUpdateError) as raised:
                 self.run_execution(backend)
         self.assertEqual(raised.exception.record.failure_type, "state_update_failed")

@@ -12,7 +12,6 @@ import httpx
 from .config import StorageConfig
 from .image_backend import BackendError, BackendRequest
 from .locking import FileLock
-from .models import Task
 from .remote_access import validate_origin
 from .atomic_files import atomic_bytes
 from .storage import StorageManager, _validate_id
@@ -26,7 +25,8 @@ class RemoteWorker:
         if token.startswith("REPLACE_"):
             raise ValueError("请先替换示例配置中的执行器令牌")
         self.storage = StorageManager(StorageConfig(data_root=cache_root))
-        self.root = self.storage._path(".remote-worker")
+        self.files = self.storage.files.scope(".remote-worker")
+        self.root = self.files.root
         self.root.mkdir(exist_ok=True)
         self.backend, self.timeout = backend, timeout
         self.client = client or httpx.Client(base_url=self.server, timeout=30, follow_redirects=False,
@@ -35,12 +35,12 @@ class RemoteWorker:
         identity_path = self.root / "identity.json"
         with FileLock(self.root / "client.lock"):
             if identity_path.exists():
-                identity = self.storage._read_json(identity_path)
+                identity = self.files.read_json(identity_path)
                 if identity["server"] != self.server or identity["backend"] != backend.name:
                     raise ValueError("此缓存属于其他服务器或后端，请使用独立缓存目录")
             else:
                 identity = {"schema_version": 1, "server": self.server, "backend": backend.name, "worker_id": uuid4().hex}
-                self.storage._write_json(identity_path, identity)
+                self.files.write_json(identity_path, identity)
         self.worker_id = _validate_id(identity["worker_id"])
         self.last_job_id = None
 
@@ -56,15 +56,15 @@ class RemoteWorker:
         return response
 
     def _path(self, job_id):
-        return self.storage._check_path(self.root / _validate_id(job_id))
+        return self.files.check(self.root / _validate_id(job_id))
 
     def _save(self, journal):
-        self.storage._write_json(self._path(journal["manifest"]["job_id"]) / "journal.json", journal)
+        self.files.write_json(self._path(journal["manifest"]["job_id"]) / "journal.json", journal)
 
     def _download(self, manifest, asset, directory):
         aid = _validate_id(asset["artifact_id"])
         extension = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp"}[asset["format"]]
-        path = self.storage._check_path(directory / (aid + extension))
+        path = self.files.check(directory / (aid + extension))
         limit = min(manifest["max_image_bytes"], self.storage.config.max_image_bytes)
         if not 0 < asset["size_bytes"] <= limit:
             raise ValueError("参考图片超过本机限制")
@@ -83,7 +83,7 @@ class RemoteWorker:
             atomic_bytes(self.storage, path, data)
         if hashlib.sha256(path.read_bytes()).hexdigest() != asset["sha256"]:
             raise ValueError("本机参考图片校验失败")
-        self.storage._inspect_image(path)
+        self.storage.inspect_image(path)
         return path
 
     def _execute(self, journal):
@@ -93,10 +93,10 @@ class RemoteWorker:
             self._save(journal)
             return
         directory = self._path(manifest["job_id"])
-        references = self.storage._check_path(directory / "references")
+        references = self.files.check(directory / "references")
         references.mkdir(exist_ok=True)
-        self.storage._check_path(directory / "products").mkdir(exist_ok=True)
-        task = self.storage._decode_record(Task, manifest["task"])
+        self.files.check(directory / "products").mkdir(exist_ok=True)
+        task = self.storage.decode_task(manifest["task"])
         inputs = tuple(self._download(manifest, asset, references) for asset in manifest["inputs"])
         base = self._download(manifest, manifest["base"], references) if manifest["base"] else None
         if (task.operation == "edit") != (base is not None):
@@ -118,10 +118,10 @@ class RemoteWorker:
                 raise BackendError("没有合法图片产物", status="invalid_artifact")
             paths, hashes = [], []
             for raw in result.image_paths:
-                path = self.storage._check_path(Path(raw))
+                path = self.files.check(Path(raw))
                 if not path.is_relative_to(directory / "products") or path in paths:
                     raise BackendError("产物不属于当前作业", status="invalid_artifact")
-                self.storage._inspect_image(path)
+                self.storage.inspect_image(path)
                 paths.append(path)
                 hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
             journal.update(phase="result", result={"status": "succeeded", "hashes": hashes},
@@ -139,7 +139,7 @@ class RemoteWorker:
         manifest = journal["manifest"]
         base = f"/api/worker/jobs/{manifest['job_id']}"
         for index, relative in enumerate(journal.get("outputs", [])):
-            path = self.storage._check_path(self.root / relative)
+            path = self.files.check(self.root / relative)
             if not path.is_relative_to(self._path(manifest["job_id"]) / "products"):
                 raise ValueError("回传路径越界")
             data = path.read_bytes()
@@ -160,9 +160,9 @@ class RemoteWorker:
         with FileLock(self.root / "client.lock"):
             pending = []
             for directory in sorted(self.root.iterdir()):
-                self.storage._check_path(directory)
+                self.files.check(directory)
                 if directory.is_dir() and (directory / "journal.json").exists():
-                    journal = self.storage._read_json(directory / "journal.json")
+                    journal = self.files.read_json(directory / "journal.json")
                     if journal["phase"] != "done":
                         pending.append(journal)
             if pending:
@@ -209,7 +209,7 @@ class RemoteWorker:
 
     def confirm_stopped(self, job_id):
         with FileLock(self.root / "client.lock"):
-            journal = self.storage._read_json(self._path(job_id) / "journal.json")
+            journal = self.files.read_json(self._path(job_id) / "journal.json")
             if journal["phase"] not in {"started", "uncertain"}:
                 raise ValueError("只能解除状态待确认任务")
             journal.update(phase="result", result={"status": "failed", "failure_type": "interrupted"}, outputs=[])

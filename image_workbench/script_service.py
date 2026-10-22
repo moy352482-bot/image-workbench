@@ -16,6 +16,7 @@ from .script_templates import ScriptTemplateLoader, build_prompt, validate_gener
 from .script_adapter import CodexTextAdapter, ScriptGenerationError
 from .script_resources import ScriptResourceStore, roles
 from .script_engine import resolve_resources, resource_summary, creative_snapshot, check_structure
+from .task_recovery import recovery_projection
 
 
 class ScriptService:
@@ -26,31 +27,30 @@ class ScriptService:
         self.resources = ScriptResourceStore(storage, identity)
         self.adapter = adapter or CodexTextAdapter()
         self.router = DemandRouter(self.registry)
-        self.storyboards = None
-        self.root = storage._path(".workbench", "script-tasks")
+        self.root = storage.files.path(".workbench", "script-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _control(self):
-        return FileLock(self.storage._path(".workbench", "control.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".workbench", "control.lock"), timeout=30)
 
     def _path(self, tid):
-        return self.storage._check_path(self.root / (_validate_id(tid) + ".json"))
+        return self.storage.files.check(self.root / (_validate_id(tid) + ".json"))
 
     def _lock(self, tid):
-        return FileLock(self.storage._check_path(self.root / (_validate_id(tid) + ".lock")))
+        return FileLock(self.storage.files.check(self.root / (_validate_id(tid) + ".lock")))
 
     def _load(self, tid):
-        value = self.storage._read_json(self._path(tid))
+        value = self.storage.files.read_json(self._path(tid))
         if value.get("kind") != "script" or value.get("task_id") != tid:
             raise ValueError("脚本任务记录不匹配")
         return value
 
     def _write(self, job, *, settle=True):
         job["updated_at"] = _now()
-        self.storage._write_json(self._path(job["task_id"]), job)
+        self.storage.files.write_json(self._path(job["task_id"]), job)
         if settle and job.get("job_id"):
             self.identity.record_job(job)
-            self.storage._write_json(self._path(job["task_id"]), job)
+            self.storage.files.write_json(self._path(job["task_id"]), job)
 
     def _authorized(self, aid, wid, tid):
         projects = WorkspaceProjects(self.storage, self.identity, aid, wid)
@@ -68,12 +68,12 @@ class ScriptService:
                 self._write(job)
             elif job.get("credit_status") != settled.get("credit_status"):
                 job = settled
-                self.storage._write_json(self._path(job["task_id"]), job)
+                self.storage.files.write_json(self._path(job["task_id"]), job)
         return job
 
     def _versions(self):
-        path = self.storage._path(".workbench", "script-versions.json")
-        return self.storage._read_json(path) if path.exists() else {"schema_version": 1, "versions": {}}
+        path = self.storage.files.path(".workbench", "script-versions.json")
+        return self.storage.files.read_json(path) if path.exists() else {"schema_version": 1, "versions": {}}
 
     def _task_paths(self):
         # StorageManager stages atomic replacements as .tmp-*.json. They may
@@ -103,7 +103,7 @@ class ScriptService:
             raise ValueError("修改版本不能改变脚本或剧本类型")
         return version
 
-    def _normalize(self, body):
+    def _normalize(self, body, *, storyboard_options=None):
         keys = ("subproject_id", "generation_type", "template_id", "input_request", "selection_mode", "model_id", "thinking_level",
                 "duration", "aspect_ratio", "target_audience", "tone", "characters", "product_ip", "constraints", "parent_version_id", "change_reason",
                 "template_version", "style_ids", "example_refs", "variables", "conflicts_confirmed")
@@ -155,9 +155,9 @@ class ScriptService:
         if req.get("parent_version_id") and not str(req.get("change_reason", "")).strip():
             raise ValueError("生成修改版本时请填写修改原因")
         if body.get("storyboard_options") is not None:
-            if self.storyboards is None:
-                raise ValueError("独立分镜服务尚未装配")
-            req["storyboard_options"] = self.storyboards.normalize_options(body["storyboard_options"])
+            if storyboard_options is None:
+                raise ValueError("两阶段请求必须通过脚本分镜协调器提交")
+            req["storyboard_options"] = storyboard_options
         return req
 
     def config(self, account_id, workspace_id):
@@ -168,16 +168,17 @@ class ScriptService:
                 "generation_types": [{"id": "script", "name": "脚本"}, {"id": "screenplay", "name": "剧本"}],
                 "credits": self.identity.wallet(account_id)}
 
-    def validate_input(self, account_id, workspace_id, body):
+    def validate_input(self, account_id, workspace_id, body, *, storyboard_options=None):
         """Validate a generation request and ownership without reserving or executing."""
-        req = self._normalize(body)
+        req = self._normalize(body, storyboard_options=storyboard_options)
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
         projects.get_subproject(req["subproject_id"])
         self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
         return req
 
-    def quote(self, account_id, workspace_id, body, *, _prepared=None):
-        req = self.validate_input(account_id, workspace_id, body)
+    def quote(self, account_id, workspace_id, body, *, _prepared=None, storyboard_plan=None):
+        req = self.validate_input(account_id, workspace_id, body,
+                                  storyboard_options=storyboard_plan["options"] if storyboard_plan else None)
         template = _prepared if _prepared is not None else resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
         choice, reason, spec = self.router.route(req, template, allow_external=False)
         warnings = []
@@ -193,7 +194,8 @@ class ScriptService:
                   "pricing_status": "priced"}
         quoted["quote_signature"] = signature({"request": req, "choice": choice, "references": refs})
         if req.get("storyboard_options"):
-            planning = self.storyboards.quote_options(account_id, workspace_id, req["storyboard_options"], request=req)
+            # The coordinator supplies data, never a service or execution callback.
+            planning = storyboard_plan["quote"]
             combined = choice["price"] + (planning["price"] or 0)
             quoted["storyboard_quote"] = planning
             quoted["total_estimated_credit"] = combined if planning["price"] is not None else None
@@ -207,32 +209,45 @@ class ScriptService:
             row = db.execute("SELECT transaction_id FROM credit_transactions WHERE job_id=? AND type=? ORDER BY created_at LIMIT 1", (job_id, kind)).fetchone()
         return row[0] if row else None
 
-    def submit(self, account_id, workspace_id, body, *, admission=None):
-        req = self._normalize(body)
+    def _replay_submission(self, account_id, workspace_id, rid, tid, fingerprint):
+        with self.identity.connect() as db:
+            prior = db.execute("SELECT task_id,payload FROM reservations WHERE account_id=? AND request_id=?", (account_id, rid)).fetchone()
+        if prior and (prior["task_id"] != tid or json.loads(prior["payload"]).get("kind") != "script"):
+            raise ConflictError("该请求标识已用于另一项任务")
+        pending = next((j for j in self.identity.pending_jobs() if j.get("task_id") == tid and j.get("kind") == "script"), None)
+        if not self._path(tid).exists() and pending:
+            self.storage.files.write_json(self._path(tid), pending)
+        if not self._path(tid).exists():
+            return None
+        old = self._authorized(account_id, workspace_id, tid)
+        if old["request_fingerprint"] != fingerprint:
+            raise ConflictError("该请求标识已用于不同内容，请重新提交")
+        if old.get("job_id") and not old.get("credit_transaction_id"):
+            old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
+            self._write(old)
+        return self._public(self._reconcile(old))
+
+    def replay_submission(self, account_id, workspace_id, body, *, storyboard_options=None):
+        """Recover an accepted request before a coordinator checks current prices/admission."""
+        req = self._normalize(body, storyboard_options=storyboard_options)
+        rid = _validate_id(body.get("request_id"))
+        tid = uuid5(NAMESPACE_URL, "script:" + account_id + ":" + rid).hex
+        with self._control():
+            return self._replay_submission(account_id, workspace_id, rid, tid, signature(req))
+
+    def submit(self, account_id, workspace_id, body, *, admission=None, storyboard_plan=None):
+        req = self._normalize(body, storyboard_options=storyboard_plan["options"] if storyboard_plan else None)
         rid = _validate_id(body.get("request_id"))
         tid = uuid5(NAMESPACE_URL, "script:" + account_id + ":" + rid).hex
         fingerprint = signature(req)
         with self._control():
-            with self.identity.connect() as db:
-                prior = db.execute("SELECT task_id,payload FROM reservations WHERE account_id=? AND request_id=?", (account_id, rid)).fetchone()
-            if prior and (prior["task_id"] != tid or json.loads(prior["payload"]).get("kind") != "script"):
-                raise ConflictError("该请求标识已用于另一项任务")
-            # Restore reserved outbox before deciding whether this is a new request.
-            pending = next((j for j in self.identity.pending_jobs() if j.get("task_id") == tid and j.get("kind") == "script"), None)
-            if not self._path(tid).exists() and pending:
-                self.storage._write_json(self._path(tid), pending)
-            if self._path(tid).exists():
-                old = self._authorized(account_id, workspace_id, tid)
-                if old["request_fingerprint"] != fingerprint:
-                    raise ConflictError("该请求标识已用于不同内容，请重新提交")
-                if old.get("job_id") and not old.get("credit_transaction_id"):
-                    old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
-                    self._write(old)
-                return self._public(self._reconcile(old))
+            old = self._replay_submission(account_id, workspace_id, rid, tid, fingerprint)
+            if old is not None:
+                return old
             if admission is not None:
                 admission()
             template = resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
-            quote = self.quote(account_id, workspace_id, req, _prepared=template)
+            quote = self.quote(account_id, workspace_id, req, _prepared=template, storyboard_plan=storyboard_plan)
             if quote["shortfall"]:
                 raise CreditInsufficient(quote.get("total_estimated_credit") or quote["price"], quote["remaining_credit"])
             if body.get("quote_signature") is not None and body["quote_signature"] != quote["quote_signature"]:
@@ -273,10 +288,11 @@ class ScriptService:
             self._write(job)
             return self._public(job)
 
-    def _candidate(self, job):
-        directory = self.storage._path("projects", job["project_id"], "tasks", job["task_id"], "logs", "script")
-        directory.mkdir(parents=True, exist_ok=True)
-        return self.storage._check_path(directory / "candidate.txt")
+    def _candidate(self, job, *, create=True):
+        directory = self.storage.files.path("projects", job["project_id"], "tasks", job["task_id"], "logs", "script")
+        if create:
+            directory.mkdir(parents=True, exist_ok=True)
+        return self.storage.files.check(directory / "candidate.txt")
 
     def _publish_candidate(self, job, text):
         candidate = self._candidate(job)
@@ -287,8 +303,8 @@ class ScriptService:
             return
         receipt = {"schema_version": 1, "task_id": job["task_id"], "request_fingerprint": job["request_fingerprint"],
                    "size_bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
-        self.storage._write_json(candidate.with_suffix(".complete.json"), receipt)
-        temporary = self.storage._check_path(candidate.parent / (".candidate-" + uuid4().hex + ".tmp"))
+        self.storage.files.write_json(candidate.with_suffix(".complete.json"), receipt)
+        temporary = self.storage.files.check(candidate.parent / (".candidate-" + uuid4().hex + ".tmp"))
         try:
             with temporary.open("xb") as stream:
                 stream.write(data)
@@ -298,11 +314,11 @@ class ScriptService:
                 raise ConflictError("已有候选正文，不能覆盖原执行")
             os.replace(temporary, candidate)
         finally:
-            self.storage._cleanup(temporary)
+            self.storage.files.cleanup(temporary)
 
     def _candidate_bytes(self, job):
-        candidate = self._candidate(job)
-        receipt = self.storage._read_json(candidate.with_suffix(".complete.json"))
+        candidate = self._candidate(job, create=False)
+        receipt = self.storage.files.read_json(candidate.with_suffix(".complete.json"))
         if candidate.stat().st_size > self.storage.config.max_text_bytes:
             raise ValueError("候选正文超过大小限制")
         data = candidate.read_bytes()
@@ -339,21 +355,13 @@ class ScriptService:
                            "resource_references": job.get("resource_references", {}),
                            "price": job.get("price", 0), "credit_transaction_id": job.get("credit_transaction_id")}
                 value["versions"][job["version_id"]] = version
-                self.storage._write_json(self.storage._path(".workbench", "script-versions.json"), value)
+                self.storage.files.write_json(self.storage.files.path(".workbench", "script-versions.json"), value)
             job["validation_report"] = {**check_structure(data.decode("utf-8"), job.get("creative_snapshot", {})),
                                         "file_exists": candidate.is_file(), "artifact_registered": True,
                                         "version_registered": True, "artifact_id": artifact.artifact_id,
                                         "version_id": version["version_id"]}
             job.update(output_version=version["version"], status="completed", completed_at=_now(), finished_at=_now(), error=None)
             self._write(job, settle=bool(job.get("job_id")))
-        # The script has already been committed and settled. Its downstream stage
-        # cannot turn a valid TXT into a failed script, including remote completion.
-        if self.storyboards and job.get("storyboard_options") and job.get("source") != "manual_edit":
-            try:
-                self.storyboards.dependency_completed(job)
-            except Exception:
-                # The durable options remain available for stage recovery.
-                pass
 
     def run(self, account_id, workspace_id, task_id):
         try:
@@ -373,7 +381,7 @@ class ScriptService:
                     # Keep the quoted exact model/effort; availability changes cause a refund, never substitution.
                     self.registry.resolve(job["model_id"], job["thinking_level"], job["generation_type"])
                     raw = self.adapter.generate(prompt=job["generation_prompt"], model_id=job["model_id"],
-                                                thinking_level=job["thinking_level"], work_dir=self.storage._check_path(candidate.parent / "codex"))
+                                                thinking_level=job["thinking_level"], work_dir=self.storage.files.check(candidate.parent / "codex"))
                     phase = "validate"
                     text = validate_generated_text(raw)
                     phase = "persist"
@@ -383,10 +391,10 @@ class ScriptService:
                     self._archive(job)
                 except Exception as exc:
                     # A returned product/failed archive is recoverable without replaying inference.
-                    uncertain = getattr(exc, "uncertain", False) or (phase == "persist" and (candidate.exists() or self.storage._check_path(candidate.parent / "codex" / "completed.json").exists()))
+                    uncertain = getattr(exc, "uncertain", False) or (phase == "persist" and (candidate.exists() or self.storage.files.check(candidate.parent / "codex" / "completed.json").exists()))
                     job.update(status="uncertain" if uncertain else "failed", finished_at=_now(), error=("正文已保留，归档状态待恢复；不会再次调用模型" if uncertain else str(exc)))
                     try:
-                        self.storage._check_path(candidate.parent / "error.log").write_text(traceback.format_exc(), encoding="utf-8")
+                        self.storage.files.check(candidate.parent / "error.log").write_text(traceback.format_exc(), encoding="utf-8")
                     except (OSError, ValueError):
                         pass  # Diagnostics must never prevent refund/terminal-state publication.
                     self._write(job)
@@ -402,9 +410,9 @@ class ScriptService:
             if job["status"] not in {"uncertain", "archiving", "running"}:
                 raise ConflictError("暂无已完成正文可恢复，请核实原执行状态")
             if not self._candidate(job).is_file():
-                work = self.storage._check_path(self._candidate(job).parent / "codex")
-                self.storage._check_path(work / "completed.json")
-                self.storage._check_path(work / "response.txt")
+                work = self.storage.files.check(self._candidate(job).parent / "codex")
+                self.storage.files.check(work / "completed.json")
+                self.storage.files.check(work / "response.txt")
                 if not hasattr(self.adapter, "recover") or not (work / "completed.json").is_file():
                     raise ConflictError("暂无已完成正文可恢复，请核实原执行状态")
                 text = self.adapter.recover(prompt=job["generation_prompt"], model_id=job["model_id"], thinking_level=job["thinking_level"], work_dir=work)
@@ -439,11 +447,48 @@ class ScriptService:
 
     def _public(self, job):
         value = {k: v for k, v in job.items() if k not in {"generation_prompt", "request_fingerprint", "claim_id", "worker_id", "attempt_id", "creative_snapshot"}}
-        if self.storyboards and job.get("storyboard_options"):
-            stage = self.storyboards.dependency_task(job["account_id"], job["workspace_id"], job)
-            value["storyboard_task"] = stage
-            value["storyboard_task_id"] = stage["task_id"] if stage else None
+        value["recovery"] = self._recovery(job)
         return value
+
+    def _recovery(self, job):
+        candidate = self._candidate(job, create=False)
+        work = self.storage.files.check(candidate.parent / "codex")
+        receipt = self.storage.files.check(work / "completed.json")
+        has_candidate, has_receipt = candidate.is_file(), receipt.is_file()
+        verified = False
+        if job["status"] in {"uncertain", "running", "archiving"}:
+            try:
+                if has_candidate:
+                    self._candidate_bytes(job)
+                    verified = True
+                elif has_receipt:
+                    # The concrete receipt reader is pure; never call an injected
+                    # generation adapter while answering a diagnostic query.
+                    self.storage.files.check(work / "response.txt")
+                    text = CodexTextAdapter().recover(prompt=job["generation_prompt"], model_id=job["model_id"],
+                                                     thinking_level=job["thinking_level"], work_dir=work)
+                    validate_generated_text(text)
+                    verified = True
+            except (OSError, ValueError, KeyError):
+                pass  # Incomplete/corrupt evidence must not advertise archive recovery.
+        actions = []
+        if job["status"] == "uncertain":
+            actions.append("restore_archive" if verified else "inspect_original")
+            if not verified:
+                actions.append("confirm_stopped")
+        elif job["status"] == "failed":
+            actions.append("retry")
+        return recovery_projection(
+            "script", job["task_id"], job["status"], job_id=job.get("job_id"), credit_status=job.get("credit_status"),
+            stage="archive" if verified else None, failure_message=job.get("error"),
+            evidence={"has_candidate": has_candidate, "candidate_verified": verified,
+                      "has_completion_receipt": has_receipt,
+                      "has_backend_reference": bool(job.get("attempt_id")), "has_output": job["status"] == "completed"},
+            actions=actions)
+
+    def recovery_view(self, account_id, workspace_id, task_id):
+        """Inspect persisted evidence without reconciliation, settlement or model calls."""
+        return self._recovery(self._authorized(account_id, workspace_id, task_id))
 
     def list_tasks(self, account_id, workspace_id, subproject_id=None):
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
@@ -487,8 +532,9 @@ class ScriptService:
                 pass
         text = self._read_artifact(job["output_artifact_id"])[0].decode("utf-8") if job["status"] == "completed" else ""
         versions = [{k: v for k, v in version.items() if k != "prompt"} for version in self._versions()["versions"].values() if version["document_id"] == job["document_id"]]
-        return {**self._public(job), "text": text, "versions": sorted(versions, key=lambda v: v["version"]),
-                "can_recover": job["status"] == "uncertain" and (self._candidate(job).is_file() or self.storage._check_path(self._candidate(job).parent / "codex" / "completed.json").is_file())}
+        value = self._public(job)
+        return {**value, "text": text, "versions": sorted(versions, key=lambda v: v["version"]),
+                "can_recover": any(action["code"] == "restore_archive" for action in value["recovery"]["actions"])}
 
     def download(self, account_id, workspace_id, task_id):
         job = self._authorized(account_id, workspace_id, task_id)

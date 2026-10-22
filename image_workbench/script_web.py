@@ -15,7 +15,7 @@ from .plugin_api import PluginContext
 from .contracts.scripts import ID, ScriptBody, ScriptRequest, ScriptSubmission, ScriptRevision
 
 
-def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=None, describe_plugin=None):
+def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=None, describe_plugin=None, get_workflow=None):
     from .script_resource_web import install_script_resources
     install_script_resources(app, get_service)
     directory = Path(__file__).resolve().parent
@@ -29,7 +29,7 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
 
     def log_error(exc):
         try:
-            path = storage._path(".workbench", "web-errors.log")
+            path = storage.files.path(".workbench", "web-errors.log")
             with path.open("a", encoding="utf-8") as stream:
                 stream.write(f"\n{_now()}\n{''.join(traceback.format_exception(exc))}\n")
         except OSError:
@@ -41,7 +41,9 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
                 context = PluginContext(args[0], args[1])
                 plugin = get_plugin()
                 return (plugin.estimate_cost if method == "quote" else plugin.submit)(context, args[2])
-            return getattr(get_service(), method)(*args)
+            service = (get_workflow() if get_workflow and method in {"quote", "submit", "detail", "list_tasks", "recover"}
+                       else get_service())
+            return getattr(service, method)(*args)
         except (ValueError, FileNotFoundError, HTTPException):
             raise
         except Exception as exc:
@@ -52,7 +54,7 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
         # Service persists failures and releases the reservation. An unexpected
         # failure still receives the same local diagnostic record as Web errors.
         try:
-            get_service().run(account_id, workspace_id, task_id)
+            (get_workflow or get_service)().run(account_id, workspace_id, task_id)
         except Exception as exc:
             log_error(exc)
 
@@ -98,6 +100,10 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
             "Content-Disposition": f"attachment; filename=\"script.txt\"; filename*=UTF-8''{quote(filename, safe='')}",
             "Cache-Control": "no-store",
         })
+
+    @app.get("/api/scripts/tasks/{task_id}/recovery")
+    def recovery_view(task_id: str, request: Request):
+        return invoke("recovery_view", *owner(request), _validate_id(task_id))
 
     @app.post("/api/scripts/tasks/{task_id}/run")
     def resume(task_id: str, body: ScriptBody, request: Request, background_tasks: BackgroundTasks):

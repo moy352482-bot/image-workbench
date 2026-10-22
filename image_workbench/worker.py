@@ -84,12 +84,12 @@ class LocalWorker:
         return True
 
     def _log(self, message):
-        with self.state.storage._path(".workbench", "worker-errors.log").open("a", encoding="utf-8") as stream:
+        with self.state.storage.files.path(".workbench", "worker-errors.log").open("a", encoding="utf-8") as stream:
             stream.write(f"\n{_now()}\n{message}\n")
 
     def serve(self, *, stop_event=None, once=False):
         with self.state.worker_lock():
-            self.state.storage._write_json(self.state.storage._path(".workbench", "worker.json"), {
+            self.state.storage.files.write_json(self.state.storage.files.path(".workbench", "worker.json"), {
                 "schema_version": 1, "pid": os.getpid(), "backend": self.backend.name, "started_at": _now(),
             })
             self.reconcile()
@@ -120,7 +120,7 @@ def confirm_stopped(state, project_id, task_id):
 
 def ensure_worker(state, *, local_images=(), timeout_seconds=600):
     if state.worker_running():
-        info = state.storage._read_json(state.storage._path(".workbench", "worker.json"))
+        info = state.storage.files.read_json(state.storage.files.path(".workbench", "worker.json"))
         if info["backend"] != state.backend:
             raise ConflictError("该数据目录已有不同后端的 Worker；请使用独立测试数据目录")
         return
@@ -129,7 +129,7 @@ def ensure_worker(state, *, local_images=(), timeout_seconds=600):
     for path in local_images:
         command.extend(["--image", str(Path(path).absolute())])
     options = {"creationflags": subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
-    log_path = state.storage._path(".workbench", "worker-process.log")
+    log_path = state.storage.files.path(".workbench", "worker-process.log")
     with log_path.open("ab") as stream:
         process = subprocess.Popen(command, cwd=Path(__file__).resolve().parent.parent, stdin=subprocess.DEVNULL,
                                    stdout=stream, stderr=stream, shell=False, **options)

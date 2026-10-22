@@ -11,8 +11,9 @@
 
 顺序为 Ruff → 架构边界 → unittest 单元/服务/HTTP 集成/浏览器回归。
 `.github/workflows/verify.yml` 已调用该入口并安装开发依赖，无需新增第二个工作流。
-GitHub Actions 的执行结果以对应提交的检查状态为准。
-普通 `unittest discover` 与管理中心既有测试仍可用，但不替代包含 Ruff 的统一入口。
+管理中心 `AdminOperations.execute_checks` 和命令行发布 `deploy_release.validate_local` 同样调用该入口。
+任何前置检查失败、缺少 Node.js 或验证期间源码改变都会阻止发布；不把单独 `unittest discover` 当作发布通过。
+具体提交、CI 和发布状态见 [稳定性修复记录](STABILITY_FIXES.md)，文档不代表生产实时状态。
 
 ## Ruff
 
@@ -20,9 +21,10 @@ GitHub Actions 的执行结果以对应提交的检查状态为准。
 `scripts/check_quality.py` 扫描 application、scripts、tests 和 example，排除业务数据、部署副本及 work/reports。
 未安装、版本不符、配置无效或无法读基线均失败，不把“没有工具输出”当作通过。
 
+修改前原始诊断在 `work/architecture-governance-20261020/ruff-before.json`；
 审核基线为 `tests/contracts/ruff-baseline.json`：134 条诊断、54 个文件。
 按相对文件名、规则、消息、问题所在代码及出现次数匹配；不依赖 Git 历史或易漂移的行号，
-不依赖特定本机工作区。插入正常行不会使旧问题变新，修改问题代码或增加同类诊断则失败。
+适用于本工作区初始没有提交的状态。插入正常行不会使旧问题变新，修改问题代码或增加同类诊断则失败。
 
 这不是全库无告警，也不是所有被修改文件都必须清零历史债务。每次运行仍检查全部目标代码；
 只有原样保留的已记录问题得到基线豁免。问题消失后旧条目可在对应修复中删除。
@@ -49,6 +51,7 @@ GitHub Actions 的执行结果以对应提交的检查状态为准。
 已有测试继续保护 HTTP 路径/请求字段、Workspace、积分事务、幂等、恢复、文件安全和前端交互。
 新增插件测试使用临时目录、真实本地存储/账本与假文本 Adapter，不读取生产 data、不调用付费模型。
 本轮还增加使用当前配置的负例，确保 Core→HTTP、脚本→视频、插件→Storage/HTTP 被拒绝。
+2026-10-22 增加私有 `storage._*` 调用防护，以及视频可变状态导出/消费者越过端口的负例。
 
-统一入口在前后核对源码指纹，现包含 Ruff 配置、开发依赖、CI 工作流及基线；
+统一入口在前后核对源码指纹，包含运行配置、Skill、发布脚本、Ruff 配置、开发依赖、CI 工作流及基线；
 验证期间代码发生改变则不能据此证明当前版本通过。依赖边界和验证结果仍不能证明真实模型、GPU 或生产环境健康。

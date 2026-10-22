@@ -73,7 +73,7 @@ $env:IMAGE_WORKBENCH_DISABLED_PLUGINS = 'script-generation'
 
 ## 回滚
 
-以 Git 中引入插件的提交为回滚依据，在独立分支撤销对应变更并解决后续修改的冲突。
-如需单独回退插件，按变更范围回退 composition/script_web/script_service 与 architecture 中的插件接入，再移除两个插件模块和对应测试；
-运行完整验证后再合并回滚。Ruff 与文档可以独立保留或回退，不依赖插件数据。
+修改前源文件在 `work/architecture-governance-20261020/source-before.zip`，带整包 SHA256 和逐文件清单。
+按变更范围回退 composition/script_web/script_service 与 architecture 中的插件接入，再移除本轮两个插件模块和对应测试；
+不要整包覆盖工作区。Ruff 与文档可以独立保留或回退，不依赖插件数据。
 本轮没有新持久业务格式；原任务和 Artifact/Version 仍由旧服务可读。不得删除业务数据或 Worker journal 来“清理插件”。

@@ -49,7 +49,7 @@ def read_json(path):
 
 
 def atomic_bytes(storage, path, data):
-    storage._check_path(path)
+    storage.files.check(path)
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".upload-", delete=False) as stream:
@@ -60,4 +60,4 @@ def atomic_bytes(storage, path, data):
         replace_file(temporary, path)
     finally:
         if temporary is not None:
-            storage._cleanup(temporary)
+            storage.files.cleanup(temporary)

@@ -13,6 +13,7 @@ from .accounts import IdentityStore
 from .locking import FileLock
 from .storage import _now, _validate_id
 from .domain_errors import ConflictError
+from .task_recovery import recovery_projection
 
 
 RATIOS = {"landscape": (1280, 720), "portrait": (720, 1280), "square": (720, 720)}
@@ -41,19 +42,20 @@ class VideoStore:
     def __init__(self, storage, identity=None):
         self.storage = storage
         self.identity = identity or IdentityStore(storage)
-        self.root = storage._path(".video")
+        self.files = storage.files.scope(".video")
+        self.root = self.files.root
         self.root.mkdir(exist_ok=True)
         for name in ("projects", "jobs", "outputs", "workers"):
             self._path(name).mkdir(exist_ok=True)
 
     def _path(self, *parts):
-        return self.storage._path(".video", *parts)
+        return self.files.path(*parts)
 
     def lock(self):
         return FileLock(self._path("control.lock"), timeout=30)
 
     def _read(self, path):
-        return self.storage._read_json(self.storage._check_path(path))
+        return self.files.read_json(self.files.check(path))
 
     def _optional(self, path):
         try:
@@ -62,11 +64,11 @@ class VideoStore:
             return None
 
     def _write(self, path, value):
-        self.storage._write_json(self.storage._check_path(path), {"schema_version": 1, **value})
+        self.files.write_json(self.files.check(path), {"schema_version": 1, **value})
 
     def _bytes(self, path, data):
-        path = self.storage._check_path(path)
-        temporary = self.storage._check_path(path.parent / (".tmp-" + uuid4().hex))
+        path = self.files.check(path)
+        temporary = self.files.check(path.parent / (".tmp-" + uuid4().hex))
         try:
             with temporary.open("xb") as stream:
                 stream.write(data)
@@ -74,7 +76,7 @@ class VideoStore:
                 os.fsync(stream.fileno())
             os.replace(temporary, path)
         finally:
-            self.storage._cleanup(temporary)
+            self.files.cleanup(temporary)
 
     def config(self):
         saved = self._optional(self._path("config.json")) or {}
@@ -188,7 +190,7 @@ class VideoStore:
         self.identity.require_workspace(account_id, workspace_id)
         result = []
         for directory in self._path("projects").iterdir():
-            self.storage._check_path(directory)
+            self.files.check(directory)
             if not directory.is_dir():
                 continue
             value = self._optional(directory / "project.json")
@@ -419,7 +421,7 @@ class VideoStore:
         with self.lock():
             self._project(account_id, workspace_id, pid)
             for directory in self._path("projects").iterdir():
-                if directory.name != pid and self.storage._check_path(directory / "shots" / (request_id + ".json")).exists():
+                if directory.name != pid and self.files.check(directory / "shots" / (request_id + ".json")).exists():
                     raise ConflictError("分镜标识已使用，请创建新的请求标识")
             for aid in reference_ids:
                 self._asset(pid, aid)
@@ -470,7 +472,37 @@ class VideoStore:
         keys = ("job_id", "project_id", "task_id", "status", "credit_status", "credit_cost", "credits_per_second",
                 "resolution", "duration", "created_at", "started_at", "finished_at", "updated_at", "error",
                 "storyboard_id", "storyboard_version", "storyboard_shot_id", "output_artifact_id", "video_version")
-        return {key: job[key] for key in keys if key in job}
+        return {**{key: job[key] for key in keys if key in job}, "recovery": VideoStore._recovery(job, job["task_id"])}
+
+    @staticmethod
+    def _recovery(job, task_id):
+        job = job or {}
+        status, actions = job.get("status", "draft"), []
+        if status == "uncertain":
+            actions.append("finalize_output" if job.get("output") else
+                           "reconcile_backend" if job.get("attempt_id") else "inspect_original")
+        elif status == "failed":
+            actions.append("retry")
+        return recovery_projection(
+            "video", task_id, status, job_id=job.get("job_id"), credit_status=job.get("credit_status"),
+            stage="archive" if job.get("output") and status in {"running", "uncertain"} else None,
+            failure_message=job.get("error"),
+            evidence={"has_backend_reference": bool(job.get("prompt_id")), "has_output": bool(job.get("output"))},
+            actions=actions)
+
+    def recovery_view(self, account_id, workspace_id, pid, sid):
+        """Read JSON/outbox snapshots without running _jobs' settlement recovery."""
+        self._project(account_id, workspace_id, pid)
+        shot = self._shot(pid, sid)
+        if shot.get("source") == "upload":
+            return recovery_projection("video", sid, "completed", evidence={"has_output": True})
+        jobs = {j["job_id"]: j for j in self.identity.pending_jobs() if j.get("kind") == "video"}
+        for path in self._path("jobs").glob("*.json"):
+            if not path.name.startswith(".tmp-"):
+                job = self._read(path)
+                jobs[job["job_id"]] = job
+        ordered = sorted(jobs.values(), key=lambda j: (j["created_at"], j["job_id"]))
+        return self._recovery(self._current(pid, sid, ordered), sid)
 
     @staticmethod
     def _is_hd_shot(shot):

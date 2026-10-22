@@ -74,13 +74,13 @@ class ProjectManager:
 
     def __init__(self, storage: StorageManager):
         self.storage = storage
-        self.root = storage._path(".project_management")
+        self.root = storage.files.path(".project_management")
 
     def _lock(self, *, readonly=False):
         if readonly:
             return nullcontext()  # catalog 的原子替换使读取无需落盘锁；dry-run 也不创建文件。
         self.root.mkdir(exist_ok=True)
-        return FileLock(self.storage._path(".project_management", "catalog.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".project_management", "catalog.lock"), timeout=30)
 
     @staticmethod
     def _empty():
@@ -88,9 +88,9 @@ class ProjectManager:
                 "task_placements": {}, "storage_namespaces": {}, "default_subprojects": {}}
 
     def _load(self):
-        path = self.storage._path(".project_management", "catalog.json")
+        path = self.storage.files.path(".project_management", "catalog.json")
         try:
-            value = self.storage._read_json(path)
+            value = self.storage.files.read_json(path)
         except FileNotFoundError:
             return self._empty()
         self._validate(value)
@@ -98,7 +98,7 @@ class ProjectManager:
 
     @property
     def migration_required(self):
-        return not self.storage._path(".project_management", "catalog.json").exists() and bool(self.storage.list_projects())
+        return not self.storage.files.path(".project_management", "catalog.json").exists() and bool(self.storage.list_projects())
 
     def catalog_view(self):
         """未迁移时提供纯内存兼容视图；不会把读取伪装成已批准的数据迁移。"""
@@ -160,7 +160,7 @@ class ProjectManager:
     def _save(self, value):
         self._validate(value)
         value["revision"] += 1
-        self.storage._write_json(self.storage._path(".project_management", "catalog.json"), value)
+        self.storage.files.write_json(self.storage.files.path(".project_management", "catalog.json"), value)
 
     @staticmethod
     def _required(collection, key, label):
@@ -223,11 +223,11 @@ class ProjectManager:
                 for artifact in self.storage.list_task_artifacts(project.project_id, task.task_id):
                     if artifact.artifact_id in artifact_ids:
                         raise MetadataError("检测到重复 artifact_id；迁移未执行")
-                    path = self.storage._artifact_file(artifact)
+                    path = self.storage.artifact_file(artifact)
                     raw = path.read_bytes()
                     if len(raw) != artifact.size_bytes or hashlib.sha256(raw).hexdigest() != artifact.sha256:
                         raise MetadataError(f"图片内容与登记不符：{artifact.artifact_id}")
-                    self.storage._inspect_image(path)
+                    self.storage.inspect_image(path)
                     artifact_ids[artifact.artifact_id] = artifact
                     artifacts.append(asdict(artifact))
         for task in tasks:
@@ -242,10 +242,10 @@ class ProjectManager:
                     raise MetadataError("图片版本来源丢失或越界")
         # 备份包括旧 JSON、队列与审核状态；日志正文和图片均保持原地。
         for name in ("projects", ".workbench"):
-            directory = self.storage._path(name)
+            directory = self.storage.files.path(name)
             if directory.exists():
                 for path in sorted(directory.rglob("*.json")):
-                    self.storage._check_path(path)
+                    self.storage.files.check(path)
                     relative = path.relative_to(self.storage.data_root).as_posix()
                     metadata[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
         result = {"projects": sorted(projects, key=lambda item: item["project_id"]),
@@ -271,7 +271,7 @@ class ProjectManager:
         ready = {(item["storage_project_id"], item["task_id"]) for item in current["task_placements"].values() if item["state"] == "ready"}
         if physical != ready:
             raise MetadataError("任务集合已变化或存在失效归属；请确认无写入后重做 dry-run")
-        catalog_path = self.storage._path(".project_management", "catalog.json")
+        catalog_path = self.storage.files.path(".project_management", "catalog.json")
         catalog_bytes = catalog_path.read_bytes() if catalog_path.exists() else None
         fingerprint = self._fingerprint({"inventory": inventory, "catalog_sha256": hashlib.sha256(catalog_bytes).hexdigest() if catalog_bytes is not None else None})
         plan = {"schema_version": 1, "status": "dry_run", "fingerprint": fingerprint, "changes": changes,
@@ -293,7 +293,7 @@ class ProjectManager:
         destination = directory / (_now()[:19].replace(":", "").replace("-", "") + "-" + uuid4().hex[:8])
         destination.mkdir(parents=True, exist_ok=False)
         for relative, expected in inventory["metadata_hashes"].items():
-            data = self.storage._path(*relative.split("/")).read_bytes()
+            data = self.storage.files.path(*relative.split("/")).read_bytes()
             if hashlib.sha256(data).hexdigest() != expected:
                 raise MetadataError("备份过程中元数据变化；未提交迁移")
             target = destination / "metadata" / relative
@@ -315,11 +315,11 @@ class ProjectManager:
         return {**plan, "status": "backup_prepared", "backup_directory": str(destination)}
 
     def _restore_catalog(self, original):
-        path = self.storage._path(".project_management", "catalog.json")
+        path = self.storage.files.path(".project_management", "catalog.json")
         if original is None:
             path.unlink(missing_ok=True)  # 仅移除本次新建逻辑目录，不触碰任何物理项目文件。
             return
-        temporary = self.storage._path(".project_management", ".restore-" + uuid4().hex + ".json")
+        temporary = self.storage.files.path(".project_management", ".restore-" + uuid4().hex + ".json")
         try:
             with temporary.open("xb") as stream:
                 stream.write(original)
@@ -347,9 +347,9 @@ class ProjectManager:
             return self.migration_plan()
         if not expected_fingerprint or backup_directory is None:
             raise ValueError("应用迁移需要 dry-run 指纹和备份目录")
-        control = self.storage._path(".workbench", "control.lock")
+        control = self.storage.files.path(".workbench", "control.lock")
         guard = FileLock(control, timeout=5) if control.parent.exists() else nullcontext()
-        with guard, FileLock(self.storage._path(".execution.lock")), self._lock():
+        with guard, FileLock(self.storage.files.path(".execution.lock")), self._lock():
             plan, value, inventory, original = self._migration_materials()
             if expected_fingerprint != plan["fingerprint"]:
                 raise ValueError("数据在 dry-run 后发生变化，请重新预览并确认，迁移未执行")
@@ -562,7 +562,7 @@ class ProjectManager:
         sub = self.get_subproject(subproject_id)
         pid = self.ensure_storage_namespace(sub.main_project_id)
         if operation == "edit":
-            self.storage._require_source(pid, base_artifact_id)
+            self.storage.require_image_source(pid, base_artifact_id)
         self.reserve_task(subproject_id, tid, title, description)
         try:
             task = self.storage.get_task(pid, tid)

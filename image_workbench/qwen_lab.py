@@ -63,7 +63,8 @@ def validate_task(task):
 class QwenLabStore:
     def __init__(self, storage, identity):
         self.storage, self.identity = storage, identity
-        self.root = storage._path(".qwen-lab")
+        self.files = storage.files.scope(".qwen-lab")
+        self.root = self.files.root
         self.root.mkdir(exist_ok=True)
         self.jobs = self.root / "jobs"
         self.workers = self.root / "workers"
@@ -74,16 +75,16 @@ class QwenLabStore:
         return FileLock(self.root / "queue.lock", timeout=30)
 
     def _dir(self, jid):
-        return self.storage._check_path(self.jobs / _validate_id(jid))
+        return self.files.check(self.jobs / _validate_id(jid))
 
     def _load(self, jid):
-        return self.storage._read_json(self._dir(jid) / "job.json")
+        return self.files.read_json(self._dir(jid) / "job.json")
 
     def _save(self, job):
-        self.storage._write_json(self._dir(job["job_id"]) / "job.json", job)
+        self.files.write_json(self._dir(job["job_id"]) / "job.json", job)
 
     def _all(self):
-        return [self.storage._read_json(self.storage._check_path(p)) for p in self.jobs.glob("*/job.json")]
+        return [self.files.read_json(self.files.check(p)) for p in self.jobs.glob("*/job.json")]
 
     def _owned(self, aid, wid, jid):
         self.identity.require_workspace(aid, wid)
@@ -153,7 +154,7 @@ class QwenLabStore:
             allowed["output"] = job["output"]
         if name not in allowed:
             raise FileNotFoundError("图片不存在")
-        data = self.storage._check_path(self._dir(job["job_id"]) / (name + ".png")).read_bytes()
+        data = self.files.check(self._dir(job["job_id"]) / (name + ".png")).read_bytes()
         if hashlib.sha256(data).hexdigest() != allowed[name]["sha256"]:
             raise ValueError("图片完整性校验失败")
         return data
@@ -166,11 +167,11 @@ class QwenLabStore:
             return self._image(job, name)
 
     def beat(self, worker_id, ready, message=""):
-        self.storage._write_json(self.workers / (_validate_id(worker_id) + ".json"),
+        self.files.write_json(self.workers / (_validate_id(worker_id) + ".json"),
                                  {"schema_version": 1, "time": time.time(), "ready": bool(ready), "message": message[:200]})
 
     def availability(self):
-        workers = [self.storage._read_json(self.storage._check_path(p)) for p in self.workers.glob("*.json")]
+        workers = [self.files.read_json(self.files.check(p)) for p in self.workers.glob("*.json")]
         recent = [w for w in workers if time.time() - w["time"] < 45]
         return {"online": bool(recent), "ready": any(w["ready"] for w in recent),
                 "message": next((w["message"] for w in recent if w["message"]), "")}

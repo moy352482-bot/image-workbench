@@ -74,14 +74,14 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(len(list((self.storage.data_root / "logs" / "performance").glob("*.json"))), 1)
 
     def test_telemetry_write_failure_does_not_fail_successful_generation(self):
-        original = self.storage._write_json
+        original = self.storage.files.write_json
 
         def write(path, payload):
             if path.parent.name == "performance":
                 raise OSError("synthetic telemetry write failure")
             return original(path, payload)
 
-        with mock.patch.object(self.storage, "_write_json", side_effect=write), self.assertLogs("image_workbench.performance", level="WARNING"):
+        with mock.patch.object(self.storage.files, "write_json", side_effect=write), self.assertLogs("image_workbench.performance", level="WARNING"):
             record = self.runner.run(self.project.project_id, self.task.task_id, LocalFileBackend([self.source]))
         self.assertEqual(record.status, "succeeded")
         self.assertTrue(self.storage.get_artifact_path(record.output_artifact_ids[0]).is_file())

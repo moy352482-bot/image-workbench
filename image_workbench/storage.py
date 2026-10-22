@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
 from datetime import datetime, timezone
-from .atomic_files import replace_file
 
 import hashlib
 import json
@@ -25,8 +24,7 @@ from .locking import FileLock
 from .models import Artifact, Project, Task
 
 
-class MetadataError(ValueError):
-    """JSON 内容或记录与目录不一致；不应静默跳过此类错误。"""
+from .managed_files import ManagedFiles, MetadataError
 
 
 _ID = re.compile(r"[0-9a-f]{32}")
@@ -74,6 +72,7 @@ class StorageManager:
     def __init__(self, config: StorageConfig | None = None) -> None:
         self.config = config if config is not None else StorageConfig()
         self.data_root = self.config.data_root
+        self.files = ManagedFiles(self.data_root)
         self._path().mkdir(parents=True, exist_ok=True)
         self._path("projects").mkdir(exist_ok=True)
         # 仅预留目录；模板记录、用户身份和访问权限由后续阶段实现。
@@ -84,85 +83,52 @@ class StorageManager:
         self._artifact_index_by_id = None
         self._artifact_index_lock = RLock()
 
-    # 路径检查不信任磁盘 JSON，也拒绝 Windows junction 等重解析点。
+    # Compatibility methods for existing integrations. New services receive
+    # ManagedFiles scopes; filesystem policy is independent of artifact storage.
     def _path(self, *parts: str) -> Path:
-        root = self.data_root
-        candidate = root.joinpath(*parts)
-        if not candidate.is_relative_to(root):
-            raise ValueError("受管理路径超出数据根目录")
-        relative = candidate.relative_to(root)
-        if ".." in relative.parts:
-            raise ValueError("受管理路径包含路径穿越")
-        current = root
-        for part in (None, *relative.parts):
-            if part is not None:
-                current = current / part
-            try:
-                info = current.lstat()
-            except FileNotFoundError:
-                continue
-            if stat.S_ISLNK(info.st_mode) or (
-                getattr(info, "st_file_attributes", 0)
-                & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-            ):
-                raise ValueError(f"受管理路径不允许符号链接或重解析点: {current}")
-        if not candidate.resolve().is_relative_to(root):
-            raise ValueError("受管理路径解析后超出数据根目录")
-        return candidate
+        return self.files.path(*parts)
 
     def _project_dir(self, project_id: str) -> Path:
-        return self._path("projects", _validate_id(project_id))
+        return self.files.path("projects", _validate_id(project_id))
 
     def _task_dir(self, project_id: str, task_id: str) -> Path:
-        return self._path("projects", _validate_id(project_id), "tasks", _validate_id(task_id))
+        return self.files.path("projects", _validate_id(project_id), "tasks", _validate_id(task_id))
 
     def _check_path(self, path: Path) -> Path:
-        return self._path(*path.relative_to(self.data_root).parts)
+        return self.files.check(path)
 
     def _cleanup(self, path: Path, *, directory: bool = False) -> None:
-        # 仅对本次创建的路径调用。清理失败不掩盖最初的异常；残留不进入清单。
-        try:
-            self._check_path(path)
-            if directory:
-                shutil.rmtree(path)
-            else:
-                path.unlink(missing_ok=True)
-        except (OSError, ValueError):
-            pass
+        self.files.cleanup(path, directory=directory)
 
     def _write_json(self, path: Path, payload: dict) -> None:
-        self._check_path(path)
-        temporary = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                mode="w", encoding="utf-8", newline="\n", prefix=".tmp-",
-                suffix=".tmp", dir=path.parent, delete=False,
-            ) as stream:
-                temporary = Path(stream.name)
-                json.dump(payload, stream, ensure_ascii=False, indent=2)
-                stream.write("\n")
-                stream.flush()
-                os.fsync(stream.fileno())
-            self._check_path(path)
-            replace_file(temporary, path)
-        finally:
-            if temporary is not None:
-                self._cleanup(temporary)
+        self.files.write_json(path, payload)
 
     def _read_json(self, path: Path) -> dict:
-        self._check_path(path)
-        try:
-            with path.open("r", encoding="utf-8") as stream:
-                payload = json.load(stream)
-        except (UnicodeError, json.JSONDecodeError) as exc:
-            raise MetadataError(f"元数据不是有效的 UTF-8 JSON: {path}") from exc
-        if (
-            not isinstance(payload, dict)
-            or type(payload.get("schema_version")) is not int
-            or payload["schema_version"] != 1
-        ):
-            raise MetadataError(f"不支持的元数据结构或版本: {path}")
-        return payload
+        return self.files.read_json(path)
+
+    def task_files(self, project_id, task_id, *parts):
+        """A task-local file scope after the caller has checked Workspace access."""
+        self.get_task(project_id, task_id)
+        return self.files.scope("projects", project_id, "tasks", task_id, *parts)
+
+    def inspect_image(self, path):
+        """Validate an input image without copying or registering an artifact."""
+        return self._inspect_image(Path(path))
+
+    def copy_image_source(self, source, destination):
+        """Copy a bounded image into managed execution scratch space."""
+        return self._copy_source(Path(source), self.files.check(destination))
+
+    def artifact_file(self, artifact):
+        """Resolve an already loaded Artifact, retaining all record/path checks."""
+        return self._artifact_file(artifact)
+
+    def require_image_source(self, project_id, artifact_id):
+        return self._require_source(project_id, artifact_id)
+
+    def decode_task(self, payload):
+        """Validate a task received over a worker transport without persisting it."""
+        return self._decode_record(Task, payload)
 
     @staticmethod
     def _record_payload(record: Project | Task) -> dict:
@@ -225,19 +191,7 @@ class StorageManager:
             raise MetadataError(f"{record_type.__name__} 记录无效: {exc}") from exc
 
     def _child_ids(self, directory: Path) -> list[str]:
-        self._check_path(directory)
-        ids = []
-        for child in directory.iterdir():
-            # 隐藏临时目录未发布，.gitkeep 也不是记录。
-            if child.name.startswith("."):
-                continue
-            self._check_path(child)
-            if child.is_dir():
-                try:
-                    ids.append(_validate_id(child.name))
-                except ValueError as exc:
-                    raise MetadataError(f"无效的资源目录: {child}") from exc
-        return ids
+        return self.files.child_ids(directory)
 
     def create_project(self, name: str, *, project_id: str | None = None) -> Project:
         _text(name, "name")

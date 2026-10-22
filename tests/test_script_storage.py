@@ -144,7 +144,7 @@ class ScriptStorageTests(unittest.TestCase):
         original = self.output(task)
         source = self.text("新正文")
         before = source.read_bytes()
-        with patch.object(self.storage, "_write_json", side_effect=OSError("simulated write failure")):
+        with patch.object(self.storage.files, "write_json", side_effect=OSError("simulated write failure")):
             with self.assertRaises(OSError):
                 self.storage.register_output_text(self.pid, task.task_id, source)
         self.assertEqual(source.read_bytes(), before)

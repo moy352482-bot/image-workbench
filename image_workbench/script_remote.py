@@ -22,7 +22,7 @@ class RemoteScriptRegistry(ScriptModelRegistry):
     def models(self):
         entries = {}
         for path in self.queue.workers.glob("*.json"):
-            worker = self.queue.storage._read_json(path)
+            worker = self.queue.storage.files.read_json(path)
             if not 0 <= time.time() - worker.get("time", 0) <= 120:
                 continue
             for model in worker.get("models", []):
@@ -40,13 +40,13 @@ class RemoteScriptRegistry(ScriptModelRegistry):
 class ScriptRemoteQueue:
     def __init__(self, service):
         self.service, self.storage = service, service.storage
-        self.workers = self.storage._path(".workbench", "script-workers")
+        self.workers = self.storage.files.path(".workbench", "script-workers")
         self.workers.mkdir(exist_ok=True)
 
     def _beat(self, wid, models=None):
-        path = self.storage._check_path(self.workers / (_validate_id(wid) + ".json"))
-        old = self.storage._read_json(path) if path.exists() else {}
-        self.storage._write_json(path, {"schema_version": 1, "worker_id": wid, "time": time.time(), "models": models if models is not None else old.get("models", [])})
+        path = self.storage.files.check(self.workers / (_validate_id(wid) + ".json"))
+        old = self.storage.files.read_json(path) if path.exists() else {}
+        self.storage.files.write_json(path, {"schema_version": 1, "worker_id": wid, "time": time.time(), "models": models if models is not None else old.get("models", [])})
 
     def _manifest(self, job):
         keys = ("task_id", "claim_id", "worker_id", "status", "attempt_id", "model_id", "thinking_level", "generation_type", "generation_prompt")
@@ -57,7 +57,7 @@ class ScriptRemoteQueue:
         allowed = {m["model_id"] for m in self.service.registry.configs()[0]["models"]}
         if any(m["model_id"] not in allowed or not m["efforts"] or any(e not in {"low", "medium", "high", "xhigh", "max", "ultra"} for e in m["efforts"]) for m in models):
             raise ValueError("脚本执行器能力声明无效")
-        with FileLock(self.storage._path(".workbench", "script-remote.lock"), timeout=30):
+        with FileLock(self.storage.files.path(".workbench", "script-remote.lock"), timeout=30):
             self._beat(wid, models)
             jobs = [j for j in self.service.pending_jobs() if j.get("job_id")]
             for job in jobs:
