@@ -3,7 +3,7 @@ from fastapi import Request
 from ..storage import _validate_id
 from ..contracts.script_queue import Claim, Start, Complete
 
-def install_script_worker(app, queue):
+def install_script_worker(app, queue, *, after_script=None):
 
     def worker(request):
         return (_validate_id(request.headers.get("x-worker-id", "")), _validate_id(request.headers.get("x-claim-id", "")))
@@ -22,4 +22,6 @@ def install_script_worker(app, queue):
 
     @app.post("/api/worker/scripts/tasks/{tid}/complete")
     def complete(tid: str, body: Complete, request: Request):
-        return queue.complete(tid, *worker(request), body.model_dump())
+        task = queue.complete(tid, *worker(request), body.model_dump())
+        # Queue completion releases the script lock before the next stage starts.
+        return after_script(task) if after_script is not None else task

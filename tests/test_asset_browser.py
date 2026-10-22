@@ -126,7 +126,7 @@ class AssetBrowserTests(unittest.TestCase):
 
     def video(self):
         self.page.goto(self.origin + "/video", wait_until="networkidle")
-        self.page.wait_for_function("(id) => window.IWVideo?.state.project?.project_id === id", arg=self.pid)
+        self.page.wait_for_function("(id) => window.IWVideo?.snapshot().project?.project_id === id", arg=self.pid)
         self.page.locator('[data-pipeline-tab="image"][data-mode="generate"]').click()
 
     def root_page(self):
@@ -240,18 +240,18 @@ class AssetBrowserTests(unittest.TestCase):
         expect(self.page.locator("#videoReferenceChoices input:checked")).to_have_count(2)
         expect(self.page.locator(".video-reference-order").filter(has_text="首帧")).to_have_count(1)
         expect(self.page.locator(".video-reference-order").filter(has_text="尾帧")).to_have_count(1)
-        original = self.page.evaluate("() => [...window.IWVideo.state.referenceOrder]")
+        original = self.page.evaluate("() => [...window.IWVideo.snapshot().referenceOrder]")
         self.event(colors=("green",))
         self.idle()
         expect(self.page.locator("#videoNotice")).to_contain_text("最多选择 2 张")
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), original)
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), original)
         self.page.locator('[data-pipeline-step="script"]').click()
         self.event(colors=("yellow",))
         dialog = self.page.locator("dialog[open]")
         expect(dialog).to_contain_text("请选择用途")
         dialog.get_by_role("button", name="保存到项目素材库").click()
         self.idle()
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), original)
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), original)
         self.assertEqual(len(self.get(f"/api/video/projects/{self.pid}")["assets"]), 4)
 
     def test_root_upload_paste_drop_are_direct_references_and_save(self):
@@ -336,14 +336,14 @@ class AssetBrowserTests(unittest.TestCase):
         other_link = self.post(f"/api/video/projects/{other_pid}/pipeline", json={})
         self.page.goto(self.origin + f"/video?project={self.pid}", wait_until="networkidle")
         self.page.locator("#videoProjectList").get_by_role("button", name="浏览器项目 A", exact=True).click()
-        self.page.wait_for_function("(id) => window.IWVideo?.state.project?.project_id === id", arg=self.pid)
+        self.page.wait_for_function("(id) => window.IWVideo?.snapshot().project?.project_id === id", arg=self.pid)
         self.page.locator('[data-pipeline-tab="image"][data-mode="generate"]').click()
         pending = []
         self.page.route(f"**/api/video/projects/{self.pid}/assets", lambda route: pending.append(route))
         self.event(colors=("red",))
         expect(self.page.locator(".asset-input-progress")).to_be_visible()
         self.page.locator("#videoProjectList").get_by_role("button", name="浏览器项目 B", exact=True).click()
-        self.page.wait_for_function("(id) => window.IWVideo.state.project?.project_id === id", arg=other_pid)
+        self.page.wait_for_function("(id) => window.IWVideo.snapshot().project?.project_id === id", arg=other_pid)
         self.assertEqual(len(pending), 1)
         pending[0].continue_()
         self.idle()

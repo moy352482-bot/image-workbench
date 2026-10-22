@@ -460,7 +460,7 @@ class AccountTests(unittest.TestCase):
         anon = self.client()
         headers = {"X-Workbench-CSRF": anon.get("/api/auth/config").json()["csrf_token"]}
         self.assertEqual(anon.post("/api/auth/register", headers=headers, json={"username": "moy", "password": "test-password-123"}).status_code, 400)
-        activation = self.storage._read_json(self.storage._path(".identity", "moy-activation.json"))["activation_token"]
+        activation = self.storage.files.read_json(self.storage._path(".identity", "moy-activation.json"))["activation_token"]
         self.assertEqual(anon.post("/api/auth/activate", headers=headers, json={"activation_token": activation, "password": "admin-password-123"}).status_code, 200)
         self.assertEqual(anon.post("/api/auth/activate", headers=headers, json={"activation_token": activation, "password": "admin-password-123"}).status_code, 400)
         self.assertEqual(anon.post("/api/auth/login", headers=headers, json={"username": "moy", "password": "admin-password-123"}).status_code, 200)
@@ -555,7 +555,7 @@ class MigrationTests(unittest.TestCase):
         with TestClient(app, base_url="http://localhost") as client:
             token = client.get("/api/auth/config").json()["csrf_token"]
             headers = {"X-Workbench-CSRF": token}
-            activation = self.storage._read_json(self.storage._path(".identity", "moy-activation.json"))["activation_token"]
+            activation = self.storage.files.read_json(self.storage._path(".identity", "moy-activation.json"))["activation_token"]
             self.assertEqual(client.post("/api/auth/activate", headers=headers, json={"activation_token": activation, "password": "admin-password-123"}).status_code, 200)
             self.assertEqual(client.post("/api/auth/login", headers=headers, json={"username": "moy", "password": "admin-password-123"}).status_code, 200)
             projects = client.get("/api/main-projects").json()["main_projects"]
@@ -571,7 +571,7 @@ class MigrationTests(unittest.TestCase):
 
     def test_activation_file_failure_rolls_back_account_and_ownership(self):
         identity = IdentityStore(self.storage)
-        with patch.object(self.storage, "_write_json", side_effect=OSError("simulated disk error")):
+        with patch.object(self.storage.files, "write_json", side_effect=OSError("simulated disk error")):
             with self.assertRaises(OSError):
                 identity.bootstrap([self.project.project_id])
         with identity.connect() as db:

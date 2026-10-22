@@ -152,7 +152,7 @@ class ProjectManagerTests(unittest.TestCase):
                                         backup_directory=self.root / "stale-backup")
         self.assertFalse((self.storage._path(".project_management") / "catalog.json").exists())
 
-        with patch.object(self.storage, "_write_json", side_effect=OSError("injected catalog write failure")):
+        with patch.object(self.storage.files, "write_json", side_effect=OSError("injected catalog write failure")):
             with self.assertRaises(OSError):
                 self.manager.migrate_legacy(dry_run=False, expected_fingerprint=plan["fingerprint"],
                                             backup_directory=self.root / "failed-backup")

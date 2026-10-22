@@ -23,6 +23,8 @@
 | 图片状态写入、提交 | `workbench_state.py` | 任务锁、请求去重、冻结与恢复 |
 | 图片列表和详情 | `image_queries.py`、`image_status.py` | 查询投影、状态推导、计时口径；不启动任务 |
 | 脚本生成 | `script_service.py`、`script_models.py`、`script_templates.py` | 固定报价、版本不可覆盖、仅显式执行 |
+| 脚本→分镜协调 | `script_workflow.py` | 通过公开源版本/规划阶段端口协作；脚本事务结束后触发，重启消费已保存意图 |
+| 统一恢复诊断 | `task_recovery.py` 及三种媒体的 recovery 接口 | 只读状态/失败/证据/动作；不调用模型、补偿任务或结算 |
 | 脚本插件与启停 | `plugin_api.py`、`script_plugin.py` | 显式注册；通过 ScriptServicePort 复用任务、积分、产物、版本；停用保留历史和恢复 |
 | 脚本素材与模板 | `script_resources.py`、`script_engine.py`、`script_resource_web.py` | 空间隔离、结构解析、上传内容作为数据 |
 | 分镜规划 | `storyboard_service.py`、`storyboard_models.py`、`storyboard_planner.py` | 独立规划服务，通过已有脚本/视频服务衔接 |
@@ -31,7 +33,7 @@
 | 图片→脚本→视频联动 | `pipeline_service.py`、`video_pipeline.py` | HTTP 只解析输入；流程由服务编排，调用 VideoStore 的公开接口 |
 | 远程执行协议 | `remote_queue.py`、`script_remote.py`；`http_api/*_workers.py` | 队列实现不导入 FastAPI；断线只对账和回传，不自动重跑 |
 | 请求模型 | `contracts/` | 不导入业务实现或页面；保留现有字段与默认值 |
-| 通用异常、文件、媒体校验 | `domain_errors.py`、`atomic_files.py`、`media_validation.py` | 无业务、Web、账号依赖；文件工具调用者负责路径归属校验 |
+| 通用异常、文件、媒体校验 | `domain_errors.py`、`managed_files.py`、`atomic_files.py`、`media_validation.py` | 文件端口限制目录并验证路径；调用者负责先核验 Workspace 与资源归属 |
 | Codex 运行环境 | `codex_runtime.py` | 图片与文本共同使用可执行文件定位、子进程环境与终止规则 |
 | 管理检查、发布 | `admin_operations.py`、`admin_web.py`、`scripts/deploy_release.py` | 检查与发布包绑定同一源码；正式发布仍是独立操作 |
 
@@ -81,6 +83,10 @@ flowchart TD
 沿用原生 `defer` 脚本，无需增加构建器。模板必须先加载组件再加载页面入口；
 页面资源版本包含这四个文件，更新组件后刷新页面即可获取新版本。
 现有图片查看、对比、脚本页、视频页和管理页仍有自己的独立文件。
+
+视频 `IWVideo` 不导出可变 state。消费者通过 `snapshot` 读取副本，用 `captureContext/isCurrent` 核对
+账号、空间、项目和页面修订；`setReferences/addReferences` 另核对镜头草稿修订，`refreshProject`
+统一控制异步项目更新的先后。页面事件也只传副本，切换后晚到的上传、报价和刷新不能覆盖当前草稿。
 
 ## 验证命令
 

@@ -114,9 +114,10 @@
     content.addEventListener('change',event=>{if(!event.target.dataset.replanSelect && !event.target.dataset.draftTest)e.dirty=true;});
     $('videoShotForm').addEventListener('input',()=>{if(e.boundShot)e.formDirty=true;});
     $('videoShotForm').addEventListener('change',()=>{if(e.boundShot)e.formDirty=true;});
-    const current = token => token === e.epoch && e.project === host.state.project?.project_id;
+    e.context = host.captureContext();
+    const current = token => token === e.epoch && host.isCurrent(e.context) && e.project === e.context.id;
     const post = (url,body) => host.api(url,{method:'POST',body:JSON.stringify(body)});
-    const req = (action,body) => { const key = 'storyboard.request.'+host.state.account?.account_id+'.'+host.state.account?.workspace_id+'.'+e.project+'.'+e.record?.storyboard_id+'.'+action+'.'+JSON.stringify(body); return idFor(key); };
+    const req = (action,body) => { const key = 'storyboard.request.'+host.snapshot().account?.account_id+'.'+host.snapshot().account?.workspace_id+'.'+e.project+'.'+e.record?.storyboard_id+'.'+action+'.'+JSON.stringify(body); return idFor(key); };
     const clearPreview = () => { e.pendingQuote = null; e.preview.replaceChildren(); };
     async function loadRecord(version) {
       const id = listSelect.value; if (!id) { e.record = null; content.replaceChildren(node('p','当前项目还没有 AI 分镜。可在脚本历史中选择具体版本规划。')); return; }
@@ -126,7 +127,7 @@
       recoverTask().catch(err=>{if(current(token))message.textContent=err.message;});
     }
     async function reload(passive = false) {
-      if (!e.project || e.loading) return; e.loading=true; const token=e.epoch, pid=e.project;
+      if (!e.project || e.loading) return; e.loading=true; const token=e.epoch, pid=e.project, context=e.context;
       try {
         const result=await host.api('/api/storyboards?video_project_id='+encodeURIComponent(pid)); if (!current(token)) return;
         const records=result.storyboards || [], prev=listSelect.value;
@@ -144,11 +145,11 @@
           if(!newVersion || !wasLatest)return;
         }
         await loadRecord();
-      } finally {e.loading=false;}
+      } finally {if(e.project===pid && host.isCurrent(context))e.loading=false;}
     }
     async function edit(operation,extra={}) { const r=e.record; if (!r || r.version !== e.latest) throw new Error('历史版本只读，请切换最新版本'); const token=e.epoch; const body={expected_version:r.version,operation,reason:'手动编辑',...extra}; await post(`/api/storyboards/${r.storyboard_id}/edit`,{...body,request_id:req(operation,body)}); if (current(token)) await loadRecord(); }
     function selected() { return e.record?.shots?.find(s=>s.shot_id===e.selected); }
-    function fillVideo(s) { e.boundShot = s.shot_id; $('videoShotName').value=s.title || ''; $('videoShotPrompt').value=s.video_prompt || [s.visual_description,s.action,s.camera_framing,s.camera_movement,s.dialogue,s.voiceover].filter(Boolean).join('\n'); $('videoDuration').value=Number(s.generation_duration_ms || 5000)/1000; $('videoRatio').value={'16:9':'landscape','9:16':'portrait','1:1':'square'}[s.aspect_ratio] || 'landscape'; $('videoMode').value=s.start_frame_artifact_id ? (s.end_frame_artifact_id ? 'FL2V' : 'I2V') : s.reference_artifact_ids?.length ? 'R2V' : 'T2V'; const artifactIds = s.start_frame_artifact_id ? [s.start_frame_artifact_id,s.end_frame_artifact_id].filter(Boolean) : (s.reference_artifact_ids || []); host.state.referenceOrder = artifactIds.map(id => e.assets.find(a => a.artifact_id === id)?.video_asset_id).filter(Boolean); e.boundReferences = {mode:$('videoMode').value, ids:[...host.state.referenceOrder]}; for (const input of $('videoReferenceChoices').querySelectorAll('input')) input.checked = host.state.referenceOrder.includes(input.value); $('videoMode').dispatchEvent(new Event('change')); $('videoDuration').dispatchEvent(new Event('input')); e.formDirty=false; }
+    function fillVideo(s) { e.boundShot = s.shot_id; $('videoShotName').value=s.title || ''; $('videoShotPrompt').value=s.video_prompt || [s.visual_description,s.action,s.camera_framing,s.camera_movement,s.dialogue,s.voiceover].filter(Boolean).join('\n'); $('videoDuration').value=Number(s.generation_duration_ms || 5000)/1000; $('videoRatio').value={'16:9':'landscape','9:16':'portrait','1:1':'square'}[s.aspect_ratio] || 'landscape'; $('videoMode').value=s.start_frame_artifact_id ? (s.end_frame_artifact_id ? 'FL2V' : 'I2V') : s.reference_artifact_ids?.length ? 'R2V' : 'T2V'; const artifactIds = s.start_frame_artifact_id ? [s.start_frame_artifact_id,s.end_frame_artifact_id].filter(Boolean) : (s.reference_artifact_ids || []); host.setReferences(artifactIds.map(id => e.assets.find(a => a.artifact_id === id)?.video_asset_id).filter(Boolean), {context: host.captureContext(), mode: $('videoMode').value}); e.boundReferences = {mode:$('videoMode').value, ids:[...host.snapshot().referenceOrder]}; for (const input of $('videoReferenceChoices').querySelectorAll('input')) input.checked = host.snapshot().referenceOrder.includes(input.value); $('videoMode').dispatchEvent(new Event('change')); $('videoDuration').dispatchEvent(new Event('input')); e.formDirty=false; }
     function render() {
       const r=e.record; content.replaceChildren(); if (!r) return; const readonly=r.version !== e.latest; message.textContent=`v${r.version} · ${r.status} · ${r.shots?.length || 0} 镜头 · 叙事总时长 ${((r.shots || []).reduce((n,s)=>n+Number(s.narrative_duration_ms || 0),0)/1000).toFixed(2)} 秒${readonly ? ' · 历史版本只读' : ''}`;
       if (r.duration_conflict) content.append(node('p',`总时长冲突：${r.duration_conflict.reason} · 目标 ${r.duration_conflict.target_duration_ms/1000} 秒，合理时长 ${r.duration_conflict.reasonable_duration_ms/1000} 秒。${JSON.stringify(r.duration_conflict.suggestions || [])}`,'storyboard-conflict'));
@@ -156,7 +157,7 @@
       for (const [i,s] of (r.shots || []).entries()) { const row=node('div',undefined,'storyboard-shot'); row.draggable=!readonly; row.dataset.shotId=s.shot_id;
         const multiLabel=node('label',undefined,'storyboard-multi-select'); const multi=node('input'); multi.type='checkbox';multi.dataset.replanSelect='true';multi.setAttribute('aria-label',`局部规划镜头 ${i+1}`);multi.checked=e.selectedIds.has(s.shot_id);multi.disabled=readonly;multi.addEventListener('change',()=>{if(multi.checked)e.selectedIds.add(s.shot_id);else e.selectedIds.delete(s.shot_id);clearPreview();planQuote.textContent=`已勾选 ${e.selectedIds.size} 个镜头，请重新报价。`;});multiLabel.append(multi);row.append(multiLabel);
         const b=button(`${i+1}. ${s.title || '镜头'} · ${s.narrative_duration_ms/1000}s / 生成 ${s.generation_duration_ms/1000}s`,()=>{e.selected=s.shot_id; fillVideo(s); render();}); b.setAttribute('aria-pressed',String(e.selected===s.shot_id)); row.append(b); if (!readonly) {row.append(button('↑',()=>reorder(s.shot_id,-1)),button('↓',()=>reorder(s.shot_id,1)));} row.addEventListener('dragstart',event=>event.dataTransfer.setData('text/plain',s.shot_id)); row.addEventListener('dragover',event=> {if (!readonly) event.preventDefault();}); row.addEventListener('drop',event=> {event.preventDefault(); if(readonly)return; const ids=r.shots.map(s=>s.shot_id), from=ids.indexOf(event.dataTransfer.getData('text/plain')),to=ids.indexOf(s.shot_id); if(from<0 || from===to)return; ids.splice(to,0,ids.splice(from,1)[0]); edit('reorder',{shot_ids:ids}).catch(err=>message.textContent=err.message);}); if (!readonly && window.IWAssetActions) window.IWAssetActions.dropzone(row, async asset=>{
-          if(asset.media_type!=='image' || asset.project_id!==e.project || asset.workspace_id!==host.state.account.workspace_id || asset.subproject_id!==r.subproject_id) throw new Error('只能引用当前项目和工作空间的图片');
+          if(asset.media_type!=='image' || asset.project_id!==e.project || asset.workspace_id!==host.snapshot().account.workspace_id || asset.subproject_id!==r.subproject_id) throw new Error('只能引用当前项目和工作空间的图片');
           if(e.dirty && e.selected!==s.shot_id) throw new Error('请先保存当前分镜的编辑，再向其他镜头添加素材');
           if(e.selected!==s.shot_id) {e.selected=s.shot_id;fillVideo(s);render();} else e.boundShot=s.shot_id;
           window.IWStoryboard.attachAssets([e.assets.find(a=>a.artifact_id===asset.artifact_id) || asset],window.IWStoryboard.assetTarget());
@@ -180,7 +181,7 @@
     function replanBody() {if(!e.record || e.record.version!==e.latest)throw new Error('请先选择最新分镜版本');if(scope.value==='selected'&&!e.selectedIds.size)throw new Error('请勾选至少一个需要局部规划的镜头');return {...controls.body(),expected_version:e.record.version,shot_ids:scope.value==='selected'?e.record.shots.filter(s=>e.selectedIds.has(s.shot_id)).map(s=>s.shot_id):[],reason:reason.value.trim(),video_project_id:e.project};}
     planning.addEventListener('input',clearPreview);planning.addEventListener('change',clearPreview);
     planning.append(button('查看重新规划报价',async()=>{const body=replanBody(),token=e.epoch;const q=await post(`/api/storyboards/${e.record.storyboard_id}/replan/quote`,body);if(!current(token)||JSON.stringify(replanBody())!==JSON.stringify(body))return;planQuote.textContent=quoteText(q);const start=button('确认报价，生成候选预览',async()=>{if(!current(token)||JSON.stringify(replanBody())!==JSON.stringify(body))throw new Error('参数已改变，请重新报价');const key=taskKey();const t=await post(`/api/storyboards/${e.record.storyboard_id}/replan`,{...body,request_id:req('replan',body),quote_signature:q.quote_signature,confirmed:true});storage(key,t.task_id);if(!current(token))return;e.task=t;await pollTask(t.task_id,token);});start.disabled=!q.can_generate;e.preview.replaceChildren(start);}));
-    function taskKey(){return 'storyboard.preview.'+host.state.account?.account_id+'.'+host.state.account?.workspace_id+'.'+e.project+'.'+e.record?.storyboard_id;}
+    function taskKey(){return 'storyboard.preview.'+host.snapshot().account?.account_id+'.'+host.snapshot().account?.workspace_id+'.'+e.project+'.'+e.record?.storyboard_id;}
     async function recoverTask(){
       const key=taskKey(); let id=storage(key);
       if(!id) {
@@ -208,7 +209,7 @@
         const s = selected();
         const prompt = $('videoShotPrompt').value.trim(), title = $('videoShotName').value.trim(), duration = Math.round(Number($('videoDuration').value)*1000);
         const aspect_ratio={landscape:'16:9',portrait:'9:16',square:'1:1'}[$('videoRatio').value];
-        const mode=$('videoMode').value, refs=mode==='T2V'?[]:[...host.state.referenceOrder];
+        const mode=$('videoMode').value, refs=mode==='T2V'?[]:[...host.snapshot().referenceOrder];
         const refsChanged=mode!==e.boundReferences?.mode || (mode!=='T2V' && JSON.stringify(refs)!==JSON.stringify(e.boundReferences?.ids));
         const changes={title,video_prompt:prompt,generation_duration_ms:duration,aspect_ratio};
         if(refsChanged) {
@@ -232,9 +233,9 @@
         content.querySelector('[data-storyboard-draft]')?.click();
       } catch (err) { message.textContent = err.message; }
     }, true);
-    document.addEventListener('video-project-view',event=>{const pid=event.detail.project.project_id;if(pid===e.project){reload(true).catch(err=>message.textContent=err.message);return;}e.project=pid;e.epoch++;e.record=null;e.selected=null;e.boundShot=null;e.selectedIds.clear();e.dirty=false;e.formDirty=false;e.assets=[];e.loading=false;content.replaceChildren();preview.replaceChildren();listSelect.replaceChildren();versionSelect.replaceChildren();reload().catch(err=>message.textContent=err.message);});
+    document.addEventListener('video-project-view',event=>{const pid=event.detail.project.project_id;if(pid===e.project && host.isCurrent(e.context)){reload(true).catch(err=>message.textContent=err.message);return;}e.context=host.captureContext();e.project=pid;e.epoch++;e.record=null;e.selected=null;e.boundShot=null;e.selectedIds.clear();e.dirty=false;e.formDirty=false;e.assets=[];e.loading=false;content.replaceChildren();preview.replaceChildren();listSelect.replaceChildren();versionSelect.replaceChildren();reload().catch(err=>message.textContent=err.message);});
     document.addEventListener('video-project-cleared',()=>{e.project=null;e.epoch++;e.record=null;e.boundShot=null;content.replaceChildren();preview.replaceChildren();listSelect.replaceChildren();versionSelect.replaceChildren();message.textContent='选择项目后读取分镜。';});
-    if(host.state.project){e.project=host.state.project.project_id;reload().catch(err=>message.textContent=err.message);}
+    if(host.snapshot().project){e.project=host.snapshot().project.project_id;reload().catch(err=>message.textContent=err.message);}
   }
   document.addEventListener('video-ready',mountVideo);
 })();

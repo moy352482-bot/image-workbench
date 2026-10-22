@@ -130,7 +130,7 @@ class AssetStoryboardBrowserTests(unittest.TestCase):
     def open_stage(self, stage):
         fragment = "pipelineVideos" if stage == "video" else "pipelineScripts"
         self.page.goto(self.origin + f"/video?project={self.pid}#{fragment}", wait_until="networkidle")
-        self.page.wait_for_function("(id) => window.IWVideo?.state.project?.project_id === id", arg=self.pid)
+        self.page.wait_for_function("(id) => window.IWVideo?.snapshot().project?.project_id === id", arg=self.pid)
         self.page.locator(f'[data-pipeline-step="{stage}"]').click()
         self.page.locator(f'[data-pipeline-tab="{stage}"][data-mode="generate"]').click()
         if stage == "video":

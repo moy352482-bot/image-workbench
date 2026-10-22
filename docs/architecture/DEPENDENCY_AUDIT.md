@@ -1,5 +1,9 @@
 # 依赖审计与自动边界
 
+2026-10-22 修复补记：下文静态图外的双向脚本/分镜调用、私有存储方法调用和视频共享 state
+已经分别由 `ScriptStoryboardWorkflow`、限定目录的 `ManagedFiles`、视频快照/命令端口替换。
+原审计计数和风险分析保留为修改前证据；现状与验收见 [稳定性修复记录](STABILITY_FIXES.md)。
+
 2026-10-20 修改前检查得到 **79 个 Python 模块、397 个导入记录、0 个现有规则违规、0 个静态导入循环**。
 导入记录按导入符号及行计数，不等同于独立模块对数。证据为
 `work/architecture-governance-20261020/dependency-before.json`。

@@ -131,7 +131,7 @@ class AssetTrayBrowserTests(unittest.TestCase):
         self.menu(card, "用于视频生成")
         expect(self.page.locator("#pipelineVideos")).to_be_visible()
         expect(self.page.locator(f'#videoReferenceChoices input[value="{aid}"]')).to_be_checked()
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), [aid])
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), [aid])
         self.menu(card, "移出暂存区")
         expect(card).to_have_count(0)
         self.assertEqual(len(self.get(f"/api/video/projects/{self.pid}")["assets"]), 1)
@@ -165,19 +165,19 @@ class AssetTrayBrowserTests(unittest.TestCase):
         self.video()
         self.menu(self.tray(blue["asset_id"]), "设为尾帧")
         expect(self.page.locator("#videoNotice")).to_contain_text("请先选择首帧")
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), [])
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), [])
         self.menu(self.tray(red["asset_id"]), "设为首帧")
         expect(self.page.locator("#pipelineVideos")).to_be_visible()
         expect(self.page.locator("#videoMode")).to_have_value("I2V")
         self.menu(self.tray(blue["asset_id"]), "设为尾帧")
         chosen = [red["asset_id"], blue["asset_id"]]
-        self.page.wait_for_function("(ids) => JSON.stringify(window.IWVideo.state.referenceOrder)===JSON.stringify(ids)",
+        self.page.wait_for_function("(ids) => JSON.stringify(window.IWVideo.snapshot().referenceOrder)===JSON.stringify(ids)",
                                     arg=chosen)
         expect(self.page.locator("#videoMode")).to_have_value("FL2V")
         expect(self.page.locator(".video-reference-order").filter(has_text="尾帧")).to_have_count(1)
         self.menu(self.tray(green["asset_id"]), "设为首帧")
         expect(self.page.locator("#videoNotice")).to_contain_text("已有图片不会覆盖")
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), chosen)
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), chosen)
         expect(self.page.locator("#videoReferenceChoices input:checked")).to_have_count(2)
 
     def test_frame_modes_validate_counts_and_save_existing_i2v_contract(self):
@@ -277,7 +277,7 @@ class AssetTrayBrowserTests(unittest.TestCase):
         self.assertEqual(mapping["subproject_id"], task["subproject_id"])
         self.assertEqual(mapping["main_project_id"], task["main_project_id"])
         self.assertEqual(len(self.get("/api/video/projects")["projects"]), 1)
-        self.assertEqual(self.page.evaluate("() => window.IWVideo.state.referenceOrder"), [artifact.artifact_id])
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().referenceOrder"), [artifact.artifact_id])
 
     def test_video_tray_preview_extract_first_last_frames_and_hide_original_survives(self):
         shot = self.upload_video()

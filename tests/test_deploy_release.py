@@ -30,6 +30,26 @@ class DeployTests(unittest.TestCase):
         (self.root / "key").write_text("test key placeholder")
         self.config = {"host": "192.0.2.10", "user": "ubuntu", "port": 22, "private_key": str(self.root / "key")}
 
+    def test_remote_extractor_accepts_complete_runtime_bundle_and_rejects_extra_files(self):
+        script = (ROOT / "scripts/apply_release.sh").read_text(encoding="utf-8")
+        extraction = script.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+        destination = self.root / "extracted"
+        destination.mkdir()
+        release_id = "20261022T000000Z-12345678"
+        archive, manifest = deploy.package(ROOT, self.root, release_id)
+        with mock.patch("sys.argv", ["extract", str(archive), str(destination), release_id]):
+            exec(compile(extraction, "release-extractor", "exec"), {})
+        for name, digest in manifest["files"].items():
+            self.assertEqual(hashlib.sha256((destination / name).read_bytes()).hexdigest(), digest)
+        invalid = self.root / "invalid.tar.gz"
+        with tarfile.open(invalid, "w:gz") as bundle:
+            item = tarfile.TarInfo("skills/storyboard-planning/private.json")
+            item.size = 2
+            bundle.addfile(item, io.BytesIO(b"{}"))
+        with mock.patch("sys.argv", ["extract", str(invalid), str(destination), release_id]):
+            with self.assertRaisesRegex(ValueError, "Unexpected release member"):
+                exec(compile(extraction, "release-extractor", "exec"), {})
+
     def test_package_uses_allowlist_and_has_content_manifest(self):
         for relative in ("data/private.png", ".env", ".ssh/id_rsa", ".venv/token", "deploy/server.json",
                          "image_workbench/__pycache__/secret.pyc"):

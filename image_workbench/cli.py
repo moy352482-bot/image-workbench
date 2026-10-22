@@ -241,7 +241,7 @@ def main(argv=None) -> int:
             from .worker import LocalWorker, ensure_worker
             state = WorkbenchState(storage, backend=args.backend)
             for path in args.image:
-                storage._inspect_image(path)
+                storage.inspect_image(path)
             if args.command == "worker":
                 backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend()
                 LocalWorker(state, backend, timeout_seconds=args.timeout).serve(once=args.once)

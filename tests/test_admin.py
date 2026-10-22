@@ -36,7 +36,7 @@ class AdminTests(unittest.TestCase):
         (self.source / "tests/test_web.py").write_text("# synthetic tests\n")
         for name in ("requirements.txt", "requirements-web.txt"):
             (self.source / name).write_text("# fixture\n")
-        for name in ("deploy_release.py", "apply_release.sh"):
+        for name in ("deploy_release.py", "apply_release.sh", "verify.py"):
             shutil.copyfile(ROOT / "scripts" / name, self.source / "scripts" / name)
         key = self.root / "test-key"
         key.write_text("synthetic placeholder, never used")
@@ -71,7 +71,7 @@ class AdminTests(unittest.TestCase):
             return self.service.start(kind, "test-admin")
 
     def fake_check(self, args, **kwargs):
-        if "unittest" in args:
+        if Path(args[-1]).name == "verify.py":
             kwargs["stdout"].write(b"test_fixture ... ok\nRan 3 tests in 0.01s\n\nOK (skipped=1)\n")
         return SimpleNamespace(returncode=0)
 
@@ -153,7 +153,7 @@ class AdminTests(unittest.TestCase):
     def test_code_changes_during_checks_block_preparation(self):
         def changed(args, **kwargs):
             value = self.fake_check(args, **kwargs)
-            if "unittest" in args:
+            if Path(args[-1]).name == "verify.py":
                 (self.source / "image_workbench/__init__.py").write_text("# modified during test\n")
             return value
         op = self.pending("prepare")
@@ -163,20 +163,24 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(self.service.reports()[0]["status"], "stale")
         self.assertFalse(list((self.source / ".deploy").glob("*/admin-prepared.json")))
 
-    def test_missing_node_does_not_claim_all_checks_passed(self):
+    def test_failed_prerequisite_does_not_claim_all_checks_passed(self):
+        def failed(args, **kwargs):
+            self.assertEqual(Path(args[-1]), self.source / "scripts/verify.py")
+            kwargs["stdout"].write(b"Node.js is required for frontend verification; checks failed.\n")
+            return SimpleNamespace(returncode=1)
         op = self.pending("prepare")
-        with patch("image_workbench.admin_operations.subprocess.run", side_effect=self.fake_check), patch("image_workbench.admin_operations.shutil.which", return_value=None):
+        with patch("image_workbench.admin_operations.subprocess.run", side_effect=failed):
             self.service.run(op["id"])
         report = self.service.reports()[0]
         self.assertEqual(report["status"], "failed")
-        self.assertEqual(report["checks"][-1]["status"], "skipped")
+        self.assertEqual(report["checks"][-1]["status"], "failed")
         self.assertFalse(list((self.source / ".deploy").glob("*/admin-prepared.json")))
 
     def test_failed_cases_are_visible_without_raw_traceback_or_private_content(self):
         def failed(args, **kwargs):
-            if "unittest" in args:
+            if Path(args[-1]).name == "verify.py":
                 kwargs["stdout"].write(b"FAIL: test_boundary (test_suite.Example)\nprivate-secret-in-traceback\nRan 2 tests in 0.3s\nFAILED (failures=1)\n")
-            return SimpleNamespace(returncode=1 if "unittest" in args else 0)
+            return SimpleNamespace(returncode=1)
         op = self.pending()
         with patch("image_workbench.admin_operations.subprocess.run", side_effect=failed), patch("image_workbench.admin_operations.shutil.which", return_value="node"):
             self.service.run(op["id"])

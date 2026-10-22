@@ -6,7 +6,7 @@
 | 维护层 / 当前分组 | 主要实现 | 实际职责 / 公开协作面 |
 | --- | --- | --- |
 | Core / foundation | `models`, `config`, `locking`, `atomic_files`, `domain_errors`, `timing`, `performance`, `scheduling`, `capacity`, `registration`, `remote_access`, `codex_runtime`, `codex_observer`, `image_status`, `media_validation`, `video_models` | 基础记录、锁、校验和状态工具；其中 Codex 运行环境与视频能力是专门共享工具，不是纯领域实体 |
-| Core / storage | `storage.StorageManager` | 路径边界、文件类型校验、Task/Artifact 登记、索引和来源链；私有 JSON/path 方法仍被广泛依赖 |
+| Core / storage | `storage.StorageManager`、`managed_files.ManagedFiles` | Task/Artifact 登记、索引和来源链；公开文件端口维护限定目录、路径校验和原子 JSON 写；旧私有工具仅作兼容代理 |
 | Core / identity | `accounts.IdentityStore` | 身份、空间、SQLite 钱包与 reservation/outbox；积分不是各插件自行记账 |
 | Core + Application / projects | `project_manager`, `workspace_scope`, `account_migration` | catalog、迁移、逻辑归属和权限门面；忙碌判断仍依赖图片 TaskRunner |
 | Provider / image_backend | `image_backend`, `codex_backend` | ImageBackend Protocol；LocalFileBackend 离线复制；CodexImageBackend 一次调用和产物采集 |
@@ -16,7 +16,9 @@
 | Skill 宿主 / scripts | `script_templates`, `script_resources`, `script_engine` | 模板/风格/案例解析与版本快照、规则分析、Prompt 构建、结构报告 |
 | Plugin 契约 / plugin_api | `plugin_api` | 描述、Context、Protocol、显式注册及启停；不接触账号数据库和产物目录 |
 | Plugin / script_plugin | `script_plugin` | 把通用扩展接口映射到 ScriptServicePort；只允许导入插件契约和请求 schema |
-| Application + Workflow / storyboards | `storyboard_service`, `storyboard_models`, `storyboard_planner` | 脚本→分镜、人工审核、局部重规划、版本、视频镜头绑定；目前仍有对脚本服务的双向回调 |
+| Application / storyboards | `storyboard_service`, `storyboard_models`, `storyboard_planner` | 独立规划、人工审核、局部重规划、版本、视频镜头绑定；通过源版本读取端口取得脚本 |
+| Workflow / workflows | `script_workflow` | 两阶段报价计划、脚本完成后的分镜触发、源版本和失败阶段关联、启动时补齐持久意图 |
+| Read model / foundation | `task_recovery` | 图片、脚本和视频的统一诊断响应；保留原生状态，不执行恢复或结算 |
 | Application + Provider / video | `video_store`, `h3_worker` | 视频项目/镜头/自有存储、报价、队列、ComfyUI 提交/对账与媒体验证 |
 | Application + Provider / qwen | `qwen_lab`, `qwen_worker` | 管理员 Qwen 实验任务、图像/ComfyUI 执行；不把实验能力宣称为已验证生产路由 |
 | Workflow / pipeline | `pipeline_service` | 图片、脚本和视频的绑定与引用；通过 `PipelineVideoPort` 和注入服务协作 |
@@ -25,7 +27,7 @@
 | Presentation / http | `http_api/*`, `script_web`, `script_resource_web`, `storyboard_web`, `video_web`, `video_pipeline`, `qwen_web`, `admin_web` | 请求解析、鉴权上下文、错误、下载、后台调度；具体服务由装配注入 |
 | Presentation / accounts_http | `accounts_web` | 登录、会话、工作空间应用隔离；创建 scoped 图片应用 |
 | Composition / entrypoints | `composition`, `web`, `cli`, `__main__`, `__init__` | 装配与兼容导出；`web` 保留旧入口，不把业务重新塞进入口 |
-| Frontend | `web_static/*.js`, `web_templates/*.html` | 原生页面、工厂和全局桥接；跨页面交互仍有直接 state 共享 |
+| Frontend | `web_static/*.js`, `web_templates/*.html` | 原生页面、工厂和事件；视频消费者使用副本及受上下文约束的命令，不能直接共享可变 state |
 
 ## 新需求的适合归属
 

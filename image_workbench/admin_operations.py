@@ -48,7 +48,13 @@ def source_fingerprint(root):
         for path in candidates:
             if path.is_file() and "__pycache__" not in path.parts and not path.name.startswith(".") and path.suffix not in {".pyc", ".pyo"}:
                 paths.append(path)
-    paths.extend(path for path in (root / "requirements.txt", root / "requirements-web.txt") if path.is_file())
+    paths.extend(path for path in (root / name for name in (
+        "requirements.txt", "requirements-web.txt", "requirements-dev.txt", "ruff.toml",
+        ".github/workflows/verify.yml")) if path.is_file())
+    for directory in ("config", "skills"):
+        paths.extend(path for path in (root / directory).rglob("*")
+                     if path.is_file() and "__pycache__" not in path.parts)
+    paths.extend((root / "scripts").glob("*.ps1"))
     # Architecture rules, frozen HTTP contracts and JS behavior tests also
     # determine whether a report certifies this source revision.
     paths.extend(path for path in (root / "architecture.json",) if path.is_file())
@@ -78,27 +84,27 @@ class AdminOperations:
     def __init__(self, storage, *, source_root=None):
         self.storage = storage
         self.source_root = Path(source_root or SOURCE_ROOT).resolve()
-        self.root = storage._path(".workbench", "admin")
+        self.root = storage.files.path(".workbench", "admin")
         self.root.mkdir(parents=True, exist_ok=True)
         for name in ("operations", "reports", "previews", "logs"):
-            storage._path(".workbench", "admin", name).mkdir(exist_ok=True)
+            storage.files.path(".workbench", "admin", name).mkdir(exist_ok=True)
         self.loaded_at = _now()
 
     def path(self, category, identifier):
         _validate_id(identifier)
-        return self.storage._path(".workbench", "admin", category, identifier + ".json")
+        return self.storage.files.path(".workbench", "admin", category, identifier + ".json")
 
     def write(self, category, value):
-        self.storage._write_json(self.path(category, value["id"]), {"schema_version": 1, **value})
+        self.storage.files.write_json(self.path(category, value["id"]), {"schema_version": 1, **value})
 
     def read(self, category, identifier):
-        return self.storage._read_json(self.path(category, identifier))
+        return self.storage.files.read_json(self.path(category, identifier))
 
     def control(self):
-        return FileLock(self.storage._path(".workbench", "admin", "control.lock"), timeout=5)
+        return FileLock(self.storage.files.path(".workbench", "admin", "control.lock"), timeout=5)
 
     def records(self, category):
-        values = [self.storage._read_json(path) for path in self.storage._path(".workbench", "admin", category).glob("*.json")]
+        values = [self.storage.files.read_json(path) for path in self.storage.files.path(".workbench", "admin", category).glob("*.json")]
         return sorted(values, key=lambda value: value["created_at"], reverse=True)
 
     @staticmethod
@@ -119,7 +125,8 @@ class AdminOperations:
         return [{**value, "current_source": value["source_fingerprint"] == current} for value in self.records("reports")[:100]]
 
     def local_available(self):
-        return all((self.source_root / name).exists() for name in ("scripts/deploy_release.py", "scripts/apply_release.sh", "tests/test_web.py"))
+        return all((self.source_root / name).exists() for name in (
+            "scripts/deploy_release.py", "scripts/apply_release.sh", "scripts/verify.py", "tests/test_web.py"))
 
     def deploy_module(self):
         path = self.source_root / "scripts" / "deploy_release.py"
@@ -268,39 +275,25 @@ class AdminOperations:
             directory.mkdir(parents=True)
             archive, manifest = module.package(self.source_root, directory, release_id)
             (directory / "apply_release.sh").write_bytes((self.source_root / "scripts" / "apply_release.sh").read_bytes().replace(b"\r\n", b"\n"))
-        log_path = self.storage._path(".workbench", "admin", "logs", op["id"] + "-checks.log")
+        log_path = self.storage.files.path(".workbench", "admin", "logs", op["id"] + "-checks.log")
         with log_path.open("wb") as log:
-            result = subprocess.run([sys.executable, "-X", "utf8", "-m", "unittest", "discover", "-s", "tests", "-v"],
+            result = subprocess.run([sys.executable, "-X", "utf8", str(self.source_root / "scripts" / "verify.py")],
                                     cwd=self.source_root, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, timeout=1200, check=False)
         output = log_path.read_text(encoding="utf-8", errors="replace")
         report = parse_test_report(output, result.returncode)
         failed_cases = [f"{kind}: {name}" for kind, name in re.findall(r"^(FAIL|ERROR): ([A-Za-z0-9_.]+)", output, re.MULTILINE)][:100]
-        report.update(id=uuid4().hex, title="功能回归与网页脚本检查", created_at=_now(), source_fingerprint=baseline,
-                      checks=[{"name": "Python 功能回归", "status": report["status"], "summary": "；".join(failed_cases) or "用例结果见统计"}])
-        node = shutil.which("node")
-        scripts_ok = True
-        if node:
-            for path in sorted((self.source_root / "image_workbench" / "web_static").glob("*.js")):
-                check = subprocess.run([node, "--check", str(path)], cwd=self.source_root, stdin=subprocess.DEVNULL,
-                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, check=False)
-                scripts_ok = scripts_ok and check.returncode == 0
-                if check.returncode:
-                    report["checks"].append({"name": "脚本语法：" + path.name, "status": "failed"})
-            report["checks"].append({"name": "网页脚本语法", "status": "passed" if scripts_ok else "failed"})
-        else:
-            scripts_ok = False
-            report["checks"].append({"name": "网页脚本语法（缺少 Node.js）", "status": "skipped"})
+        report.update(id=uuid4().hex, title="统一质量、架构与功能回归检查", created_at=_now(), source_fingerprint=baseline,
+                      checks=[{"name": "Ruff、架构与功能/前端回归", "status": report["status"],
+                               "summary": "；".join(failed_cases) or ("用例结果见统计" if report["total"] else "前置检查未通过，回归尚未完成")}])
         unchanged = source_fingerprint(self.source_root) == baseline
         if not unchanged:
             report["status"] = "stale"
-        elif not scripts_ok:
-            report["status"] = "failed"
         report["summary"] = (f"{report['total']} 项测试：{report['passed']} 通过、{report['failed']} 失败、{report['skipped']} 跳过。"
                              + ("检查期间代码发生变化，请重新检查。" if not unchanged else ""))
         self.write("reports", report)
         op["report_id"] = report["id"]
         if report["status"] != "passed":
-            raise ConflictError("功能或脚本检查未通过，或代码已变化；未部署任何版本")
+            raise ConflictError("质量或回归检查未通过，或代码已变化；未部署任何版本")
         if prepare:
             if module.fingerprint(self.source_root) != manifest["files"]:
                 raise ConflictError("发布程序已变化，请重新准备")
@@ -351,7 +344,7 @@ class AdminOperations:
 
                 thread = threading.Thread(target=heartbeat, daemon=True)
                 thread.start()
-                log_path = self.storage._path(".workbench", "admin", "logs", operation_id + ".log")
+                log_path = self.storage.files.path(".workbench", "admin", "logs", operation_id + ".log")
                 with log_path.open("w", encoding="utf-8") as log, redirect_stdout(log), redirect_stderr(log):
                     if op["kind"] == "deploy":
                         self.execute_deploy(op)
