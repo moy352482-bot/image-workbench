@@ -14,6 +14,7 @@ from .scheduling import ACTIVE_STATUSES
 from .domain_errors import ConflictError
 from .image_status import FAILURE_MESSAGES
 from .image_references import task_input_artifacts
+from .image_prompting import execution_prompt
 
 ID = r"^[0-9a-f]{32}$"
 HASH = r"^[0-9a-f]{64}$"
@@ -55,8 +56,11 @@ class RemoteQueue:
         inputs = task_input_artifacts(self.storage, task.project_id, task.task_id)
         def asset(item):
             return {key: getattr(item, key) for key in ("artifact_id", "sha256", "size_bytes", "format")}
+        task_payload = asdict(task)
+        if job["action"] == "generate":
+            task_payload["prompt"] = execution_prompt(task, self.state.task_options(task.project_id, task.task_id), reference_count=len(inputs))
         return {"schema_version": 1, "job_id": job["job_id"], "claim_id": job["claim_id"],
-                "task": asdict(task), "backend": job["backend"], "action": job["action"],
+                "task": task_payload, "backend": job["backend"], "action": job["action"],
                 "inputs": [asset(item) for item in inputs],
                 "base": asset(self.storage.get_artifact(task.base_artifact_id)) if task.base_artifact_id else None,
                 "max_image_bytes": self.storage.config.max_image_bytes}

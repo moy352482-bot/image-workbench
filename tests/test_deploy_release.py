@@ -30,6 +30,24 @@ class DeployTests(unittest.TestCase):
         (self.root / "key").write_text("test key placeholder")
         self.config = {"host": "192.0.2.10", "user": "ubuntu", "port": 22, "private_key": str(self.root / "key")}
 
+    def test_image_skill_is_required_and_included_with_preview_assets(self):
+        (self.root / "image_workbench/image_prompting.py").write_text("# prompt compiler")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        skill = self.root / "skills/image-generation-default"
+        (skill / "references").mkdir(parents=True)
+        for name in ("SKILL.md", "styles.json", "references/sources.md"):
+            (skill / name).write_text("test fixture", encoding="utf-8")
+        previews = self.root / "image_workbench/web_static/image-styles"
+        previews.mkdir(parents=True)
+        (previews / "sample.png").write_bytes(b"preview fixture")
+        archive, manifest = deploy.package(self.root, self.root, "image-skill-test")
+        with tarfile.open(archive) as bundle:
+            self.assertIn("skills/image-generation-default/SKILL.md", bundle.getnames())
+            self.assertIn("skills/image-generation-default/styles.json", bundle.getnames())
+            self.assertIn("image_workbench/web_static/image-styles/sample.png", bundle.getnames())
+        self.assertEqual(deploy.fingerprint(self.root), manifest["files"])
+
     def test_package_uses_allowlist_and_has_content_manifest(self):
         for relative in ("data/private.png", ".env", ".ssh/id_rsa", ".venv/token", "deploy/server.json",
                          "image_workbench/__pycache__/secret.pyc"):

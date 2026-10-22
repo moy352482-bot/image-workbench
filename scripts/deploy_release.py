@@ -48,6 +48,9 @@ def runtime_files(root):
     if (root / "image_workbench" / "storyboard_planner.py").is_file():
         paths.append(root / "skills" / "storyboard-planning" / "SKILL.md")
         paths.append(root / "config" / "storyboard_pricing.json")
+    if (root / "image_workbench" / "image_prompting.py").is_file():
+        skill = root / "skills" / "image-generation-default"
+        paths.extend(skill / name for name in ("SKILL.md", "styles.json", "references/sources.md"))
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):

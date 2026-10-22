@@ -34,6 +34,27 @@
     query: $, api, appendText, formatDate, toast, closeImagePreviews, loadProjects,
     getAccount: () => state.account, onAccountChanged: account => { state.account = account; },
   });
+  let previousExample = null;
+  const imageStyles = window.WorkbenchStyles.create({
+    query: $, api, toast,
+    onExample(style, previousStyle) {
+      previousExample = { prompt: ui.prompt.value, ratio: ui.ratio.value, style: previousStyle };
+      ui.prompt.value = style.example_prompt;
+      ui.ratio.value = style.aspect_ratio;
+      ui.prompt.dispatchEvent(new Event('input'));
+      $('#undoStyleExample').hidden = false;
+    },
+  });
+  $('#undoStyleExample').addEventListener('click', () => {
+    if (!previousExample) return;
+    ui.prompt.value = previousExample.prompt;
+    ui.ratio.value = previousExample.ratio;
+    imageStyles.setValue(previousExample.style);
+    ui.prompt.dispatchEvent(new Event('input'));
+    previousExample = null;
+    $('#undoStyleExample').hidden = true;
+    toast('已恢复案例填入前的需求、比例和风格。');
+  });
 
   function requestId() {
     const bytes = new Uint8Array(16);
@@ -476,6 +497,12 @@
       appendText(section, 'div', 'prompt-preview', detail.prompt);
       ui.details.append(section);
     }
+    if (detail.image_prompt) {
+      const section = appendText(ui.details, 'details', 'prompt-skill-details', '');
+      const styleName = detail.image_prompt.style_name || '遵循原始需求';
+      appendText(section, 'summary', '', `生成提示词 · ${styleName} · 已自动整理`);
+      appendText(section, 'pre', '', detail.image_prompt.compiled_prompt);
+    }
     if (detail.description) {
       const section = makeSection('任务描述');
       appendText(section, 'div', 'prompt-preview', detail.description);
@@ -809,7 +836,7 @@
   function updateEditHelp() { ui.editHelp.hidden = getOperation() !== 'edit' || Boolean(state.baseArtifact); }
   function fingerprint() {
     const fileSignature = state.files.map(file => `${file.name}:${file.size}:${file.lastModified}`).join('|');
-    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature, state.referenceArtifacts.map(a => a.artifact_id).join(',')].join('\n');
+    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature, state.referenceArtifacts.map(a => a.artifact_id).join(','), imageStyles.value()].join('\n');
   }
   function persistentTaskRequestId() {
     const signature = fingerprint();
@@ -841,6 +868,7 @@
     form.set('operation', getOperation());
     form.set('prompt', prompt);
     form.set('aspect_ratio', ui.ratio.value);
+    if (imageStyles.value()) form.set('style_id', imageStyles.value());
     if (state.baseArtifact) form.set('base_artifact_id', state.baseArtifact.artifact_id);
     form.set('reference_artifact_ids', JSON.stringify(state.referenceArtifacts.map(a => a.artifact_id)));
     for (const file of state.files) form.append('files', file, file.name);
@@ -861,6 +889,8 @@
       ui.imageInput.value = '';
       renderFiles();
       ui.prompt.value = '';
+      previousExample = null;
+      $('#undoStyleExample').hidden = true;
       ui.prompt.dispatchEvent(new Event('input'));
       setMessage('任务已保存。开始执行需要你单独点击按钮。');
       toast('任务已保存为草稿。');
@@ -937,6 +967,7 @@
     try {
       await refreshWorkerStatus();
       await refreshAccount();
+      await imageStyles.load();
       for (const key of Object.keys(storageKeys)) storageKeys[key] += `.${state.account.account_id}.${state.account.workspace_id}`;
       const local = state.config.backend === 'local';
       ui.backendBadge.classList.add(local ? 'practice' : 'live');

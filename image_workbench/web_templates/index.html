@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Image Workbench — 图片生成与修改工作台</title>
   <link rel="stylesheet" href="/static/workbench.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/workbench-styles.css?v={{ asset_version }}">
   <link rel="stylesheet" href="/static/accounts.css?v={{ asset_version }}">
   <link rel="stylesheet" href="/static/vendor/photoswipe/photoswipe.css">
   <link rel="stylesheet" href="/static/image-viewer.css?v={{ asset_version }}">
@@ -63,6 +64,12 @@
               <form id="taskForm" novalidate>
                 <div class="field-label-row"><label class="field-label" for="promptInput">创作需求</label><span id="promptCount" class="field-hint">0 / 4000</span></div>
                 <textarea id="promptInput" name="prompt" maxlength="4000" placeholder="例如：一间被晨光照亮的极简咖啡馆，木质桌面上放着一杯拿铁，柔和胶片质感……" required></textarea>
+                <div class="image-style-field">
+                  <div class="field-label-row"><label class="field-label" for="imageStyleSelect">视觉风格 <span class="optional">可选</span></label><button id="browseImageStyles" class="text-button" type="button">浏览效果与案例 →</button></div>
+                  <select id="imageStyleSelect" name="style_id"><option value="">遵循原始需求</option></select>
+                  <p id="imageStyleSummary" class="image-style-summary">生成时自动整理画面要求，保留你指定的内容、文字和参考约束。</p>
+                  <button id="undoStyleExample" class="text-button" type="button" hidden>撤销刚才的案例填入</button>
+                </div>
                 <div class="form-row">
                   <fieldset class="operation-picker"><legend class="field-label">任务类型</legend><div class="segmented"><label><input type="radio" name="operation" value="generate" checked><span>生成图片</span></label><label><input type="radio" name="operation" value="edit"><span>修改图片</span></label></div></fieldset>
                   <div class="ratio-picker"><label class="field-label" for="ratioSelect">画面比例</label><select id="ratioSelect" name="aspect_ratio"><option value="auto">自动选择</option><option value="1:1">1:1 方形</option><option value="3:2">3:2 横向</option><option value="2:3">2:3 纵向</option></select></div>
@@ -103,6 +110,26 @@
   <dialog id="moveTaskDialog" class="modal-dialog"><form id="moveTaskForm"><div class="dialog-top"><div><span class="eyebrow">移动任务</span><h2>选择目标子项目</h2></div><button class="icon-button close-move-dialog" type="button" aria-label="关闭">×</button></div><p id="moveTaskSummary" class="dialog-summary"></p><label class="field-label" for="moveTargetSelect">目标子项目</label><select id="moveTargetSelect" required></select><div class="dialog-footer"><button class="secondary-button close-move-dialog" type="button">取消</button><button class="primary-button" type="submit">移动任务</button></div></form></dialog>
   <dialog id="imageDialog" class="image-dialog" aria-labelledby="lightboxTitle"><div class="image-dialog-top"><div><strong id="lightboxTitle">图片预览</strong><span id="lightboxMeta"></span></div><button id="closeImageDialog" class="icon-button" type="button" aria-label="关闭图片预览">×</button></div><p id="lightboxStatus" role="status" hidden></p><img id="lightboxImage" alt="生成图片大图预览"><a id="lightboxDownload" class="download-button" href="#" download>下载图片</a></dialog>
   <dialog id="accountDialog" class="modal-dialog"><div class="dialog-top"><h2 id="accountDialogTitle"></h2><button id="closeAccountDialog" class="icon-button" aria-label="关闭" type="button">×</button></div><div id="accountDialogContent"></div></dialog>
+  <dialog id="imageStylesDialog" class="image-styles-dialog" aria-labelledby="imageStylesTitle">
+    <div class="image-styles-header"><div><span class="eyebrow">风格灵感</span><h2 id="imageStylesTitle">找到画面的感觉</h2><p>先看效果，再把风格用到你的需求中。</p></div><button id="closeImageStyles" class="icon-button" type="button" aria-label="关闭风格案例">×</button></div>
+    <p id="imageStylesStatus" class="image-styles-status" role="status"></p>
+    <button id="retryImageStyles" class="secondary-button" type="button" hidden>重新加载风格</button>
+    <div class="image-styles-body">
+      <div id="imageStyleCards" class="image-style-cards" aria-label="可选视觉风格"></div>
+      <section id="imageStyleDetail" class="image-style-detail" aria-label="风格案例详情" hidden>
+        <button id="backToImageStyles" class="text-button" type="button">← 返回风格列表</button>
+        <a id="imageStylePreviewLink" class="image-style-preview-link" href="#" target="_blank" rel="noopener" aria-label="打开完整风格效果图"><img id="imageStylePreview" alt="风格效果预览"><span>查看完整效果图 ↗</span></a>
+        <div class="image-style-detail-heading"><h3 id="imageStyleName"></h3><span id="imageStyleCategory"></span></div>
+        <p id="imageStyleDescription"></p><p class="image-style-preview-note">原创生成示例 · 用于参考视觉方向</p>
+        <button id="applyImageStyle" class="primary-button" type="button">应用此风格</button>
+        <label class="field-label" for="imageStyleExample">案例提示词</label><textarea id="imageStyleExample" readonly rows="6"></textarea>
+        <p id="imageStyleRatio" class="image-style-preview-note"></p>
+        <div class="image-style-actions"><button id="useImageStyleExample" class="secondary-button" type="button">使用案例</button><button id="copyImageStyleExample" class="text-button" type="button">复制提示词</button></div>
+        <p class="image-style-preview-note">应用风格保留你的需求；使用案例会填入示例需求和比例，可撤销。</p>
+        <div id="imageStyleSources" class="image-style-sources"></div>
+      </section>
+    </div>
+  </dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script src="/static/image-viewer.js?v={{ asset_version }}" defer></script>
   <script src="/static/image-comparison.js?v={{ asset_version }}" defer></script>
@@ -111,6 +138,7 @@
   <script src="/static/workbench-api.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-preview.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-accounts.js?v={{ asset_version }}" defer></script>
+  <script src="/static/workbench-styles.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench.js?v={{ asset_version }}" defer></script>
 </body>
 </html>
