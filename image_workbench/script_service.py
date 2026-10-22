@@ -16,6 +16,7 @@ from .script_templates import ScriptTemplateLoader, build_prompt, validate_gener
 from .script_adapter import CodexTextAdapter, ScriptGenerationError
 from .script_resources import ScriptResourceStore, roles
 from .script_engine import resolve_resources, resource_summary, creative_snapshot, check_structure
+from .task_recovery import recovery_projection
 
 
 class ScriptService:
@@ -287,9 +288,10 @@ class ScriptService:
             self._write(job)
             return self._public(job)
 
-    def _candidate(self, job):
+    def _candidate(self, job, *, create=True):
         directory = self.storage.files.path("projects", job["project_id"], "tasks", job["task_id"], "logs", "script")
-        directory.mkdir(parents=True, exist_ok=True)
+        if create:
+            directory.mkdir(parents=True, exist_ok=True)
         return self.storage.files.check(directory / "candidate.txt")
 
     def _publish_candidate(self, job, text):
@@ -315,7 +317,7 @@ class ScriptService:
             self.storage.files.cleanup(temporary)
 
     def _candidate_bytes(self, job):
-        candidate = self._candidate(job)
+        candidate = self._candidate(job, create=False)
         receipt = self.storage.files.read_json(candidate.with_suffix(".complete.json"))
         if candidate.stat().st_size > self.storage.config.max_text_bytes:
             raise ValueError("候选正文超过大小限制")
@@ -445,7 +447,48 @@ class ScriptService:
 
     def _public(self, job):
         value = {k: v for k, v in job.items() if k not in {"generation_prompt", "request_fingerprint", "claim_id", "worker_id", "attempt_id", "creative_snapshot"}}
+        value["recovery"] = self._recovery(job)
         return value
+
+    def _recovery(self, job):
+        candidate = self._candidate(job, create=False)
+        work = self.storage.files.check(candidate.parent / "codex")
+        receipt = self.storage.files.check(work / "completed.json")
+        has_candidate, has_receipt = candidate.is_file(), receipt.is_file()
+        verified = False
+        if job["status"] in {"uncertain", "running", "archiving"}:
+            try:
+                if has_candidate:
+                    self._candidate_bytes(job)
+                    verified = True
+                elif has_receipt:
+                    # The concrete receipt reader is pure; never call an injected
+                    # generation adapter while answering a diagnostic query.
+                    self.storage.files.check(work / "response.txt")
+                    text = CodexTextAdapter().recover(prompt=job["generation_prompt"], model_id=job["model_id"],
+                                                     thinking_level=job["thinking_level"], work_dir=work)
+                    validate_generated_text(text)
+                    verified = True
+            except (OSError, ValueError, KeyError):
+                pass  # Incomplete/corrupt evidence must not advertise archive recovery.
+        actions = []
+        if job["status"] == "uncertain":
+            actions.append("restore_archive" if verified else "inspect_original")
+            if not verified:
+                actions.append("confirm_stopped")
+        elif job["status"] == "failed":
+            actions.append("retry")
+        return recovery_projection(
+            "script", job["task_id"], job["status"], job_id=job.get("job_id"), credit_status=job.get("credit_status"),
+            stage="archive" if verified else None, failure_message=job.get("error"),
+            evidence={"has_candidate": has_candidate, "candidate_verified": verified,
+                      "has_completion_receipt": has_receipt,
+                      "has_backend_reference": bool(job.get("attempt_id")), "has_output": job["status"] == "completed"},
+            actions=actions)
+
+    def recovery_view(self, account_id, workspace_id, task_id):
+        """Inspect persisted evidence without reconciliation, settlement or model calls."""
+        return self._recovery(self._authorized(account_id, workspace_id, task_id))
 
     def list_tasks(self, account_id, workspace_id, subproject_id=None):
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
@@ -489,8 +532,9 @@ class ScriptService:
                 pass
         text = self._read_artifact(job["output_artifact_id"])[0].decode("utf-8") if job["status"] == "completed" else ""
         versions = [{k: v for k, v in version.items() if k != "prompt"} for version in self._versions()["versions"].values() if version["document_id"] == job["document_id"]]
-        return {**self._public(job), "text": text, "versions": sorted(versions, key=lambda v: v["version"]),
-                "can_recover": job["status"] == "uncertain" and (self._candidate(job).is_file() or self.storage.files.check(self._candidate(job).parent / "codex" / "completed.json").is_file())}
+        value = self._public(job)
+        return {**value, "text": text, "versions": sorted(versions, key=lambda v: v["version"]),
+                "can_recover": any(action["code"] == "restore_archive" for action in value["recovery"]["actions"])}
 
     def download(self, account_id, workspace_id, task_id):
         job = self._authorized(account_id, workspace_id, task_id)

@@ -101,6 +101,10 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
             "Cache-Control": "no-store",
         })
 
+    @app.get("/api/scripts/tasks/{task_id}/recovery")
+    def recovery_view(task_id: str, request: Request):
+        return invoke("recovery_view", *owner(request), _validate_id(task_id))
+
     @app.post("/api/scripts/tasks/{task_id}/run")
     def resume(task_id: str, body: ScriptBody, request: Request, background_tasks: BackgroundTasks):
         account_id, workspace_id = owner(request)

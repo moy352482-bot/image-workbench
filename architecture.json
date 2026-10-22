@@ -36,7 +36,8 @@
         "scheduling",
         "media_validation",
         "video_models",
-        "managed_files"
+        "managed_files",
+        "task_recovery"
       ],
       "may_import": [
         "foundation"
