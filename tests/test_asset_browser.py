@@ -335,7 +335,8 @@ class AssetBrowserTests(unittest.TestCase):
         self.page.locator('[data-pipeline-tab="image"][data-mode="generate"]').click()
         pending = []
         self.page.route(f"**/api/video/projects/{self.pid}/assets", lambda route: pending.append(route))
-        self.event(colors=("red",))
+        with self.page.expect_request(f"**/api/video/projects/{self.pid}/assets"):
+            self.event(colors=("red",))
         expect(self.page.locator(".asset-input-progress")).to_be_visible()
         self.page.locator("#videoProjectList").get_by_role("button", name="浏览器项目 B", exact=True).click()
         self.page.wait_for_function("(id) => window.IWVideo.snapshot().project?.project_id === id", arg=other_pid)
@@ -355,7 +356,8 @@ class AssetBrowserTests(unittest.TestCase):
         self.assertNotEqual(original_sub, "第二子项目")
         pending = []
         self.page.route(f"**/api/subprojects/{self.link['subproject_id']}/assets", lambda route: pending.append(route))
-        self.event(colors=("red",))
+        with self.page.expect_request(f"**/api/subprojects/{self.link['subproject_id']}/assets"):
+            self.event(colors=("red",))
         expect(self.page.locator(".asset-input-progress")).to_be_visible()
         self.page.locator(".project-child").filter(has_text="第二子项目").click()
         expect(self.page.locator("#activeProjectName")).to_have_text("第二子项目")
