@@ -77,7 +77,16 @@ def analyze(root=ROOT):
             groups[name] = matches[0]
     edges = []
     for name, path in sorted(paths.items()):
-        for line, base, symbol in imports(path.read_text(encoding="utf-8-sig"), name, package_module=path.name == "__init__.py"):
+        source = path.read_text(encoding="utf-8-sig")
+        if name != package + ".storage":
+            for node in ast.walk(ast.parse(source)):
+                if not isinstance(node, ast.Attribute) or not node.attr.startswith("_"):
+                    continue
+                owner = node.value
+                if ((isinstance(owner, ast.Name) and owner.id == "storage") or
+                        (isinstance(owner, ast.Attribute) and owner.attr == "storage")):
+                    errors.append(f"{path.relative_to(root)}:{node.lineno}: private storage API {node.attr}; use a public service or ManagedFiles scope.")
+        for line, base, symbol in imports(source, name, package_module=path.name == "__init__.py"):
             source_group = groups.get(name)
             if base.split(".")[0] in {"fastapi", "starlette"} and source_group not in config["http_framework_groups"]:
                 errors.append(f"{path.relative_to(root)}:{line}: {source_group} imports HTTP framework {base}. Put the adapter in http_api.")
@@ -118,6 +127,15 @@ def analyze(root=ROOT):
                     errors.append(f"{relative}: imports sibling {sibling}; pass a callback instead.")
             if re.search(r"\bstate\.", text):
                 errors.append(f"{relative}: reaches into page state; pass values/callbacks instead.")
+        for symbol, spec in frontend.get("state_ports", {}).items():
+            owner = (package_root / spec["owner"]).read_text(encoding="utf-8")
+            if re.search(r"\b" + re.escape(symbol) + r"\s*=\s*(?:Object\.freeze\()?\{[^}]*\bstate\b", owner):
+                errors.append(f"{spec['owner']}: exports mutable page state; expose snapshots and scoped commands.")
+            for relative in spec["consumers"]:
+                text = (package_root / relative).read_text(encoding="utf-8")
+                if (re.search(r"\b(?:" + re.escape(symbol) + r"|host)\.state\b", text) or
+                        re.search(r"\{[^}]*\bstate\b[^}]*\}\s*=\s*window\." + re.escape(symbol), text)):
+                    errors.append(f"{relative}: reaches into {symbol} state; use its snapshot/command ports.")
     return {"modules": len(paths), "edges": sorted(edges, key=lambda e: (e["source"], e["target"], e["line"])),
             "groups": groups, "errors": errors}
 

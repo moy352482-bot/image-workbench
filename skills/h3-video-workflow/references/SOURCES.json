@@ -1,0 +1,21 @@
+{
+  "upstream": "https://github.com/MiniMax-AI/MiniMax-H3",
+  "commit": "d21241f0a4b3acbb34c97dae47fa417b7065e438",
+  "license_revision": "42ed227ee7df40d41602854ae760620d6eb651fe",
+  "retrieved_at": "2026-10-22T05:49:34.653020+00:00",
+  "official_skill": "https://github.com/MiniMax-AI/MiniMax-H3/blob/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/h3-prompt-writing/SKILL.md",
+  "files": {
+    "references/base-en.txt": {
+      "url": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/h3-prompt-writing/references/base-en.txt",
+      "sha256": "2cfebc096a6e08370f288d468d90b60f7f9bcb938f94bf090816e910e48e75fc"
+    },
+    "references/ref-en.txt": {
+      "url": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/h3-prompt-writing/references/ref-en.txt",
+      "sha256": "1e574f356716ad55612247ffb7bbccbcdb484ad96599d63c7dca1af186b1fab7"
+    },
+    "LICENSE": {
+      "url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/raw/42ed227ee7df40d41602854ae760620d6eb651fe/LICENSE",
+      "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+    }
+  }
+}

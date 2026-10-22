@@ -26,12 +26,12 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
                 raise ValueError()
         except (TypeError, ValueError):
             raise HTTPException(400, "参考素材列表无效，请重新选择图片")
-        temporary = storage._path(".workbench", "uploads", uuid4().hex)
+        temporary = storage.files.path(".workbench", "uploads", uuid4().hex)
         temporary.mkdir()
         sources, total = [], 0
         try:
             for upload in files:
-                path = storage._check_path(temporary / (uuid4().hex + ".upload"))
+                path = storage.files.check(temporary / (uuid4().hex + ".upload"))
                 sources.append(path)
                 size = 0
                 with path.open("xb") as stream:
@@ -50,5 +50,5 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
             return await run_in_threadpool(state.task_view, project_id, task.task_id)
         finally:
             for path in sources:
-                storage._cleanup(path)
-            storage._cleanup(temporary, directory=True)
+                storage.files.cleanup(path)
+            storage.files.cleanup(temporary, directory=True)

@@ -32,21 +32,21 @@ class WorkbenchState:
         self.execution_mode = execution_mode
         self.scheduling_policy = SchedulingPolicy.from_environment()
         self.projects = ProjectManager(storage)
-        self.identity = IdentityStore(storage) if storage._path(".identity", "accounts.sqlite3").exists() else None
-        self.root = storage._path(".workbench")
+        self.identity = IdentityStore(storage) if storage.files.path(".identity", "accounts.sqlite3").exists() else None
+        self.root = storage.files.path(".workbench")
         self.root.mkdir(exist_ok=True)
         for name in ("tasks", "jobs", "reviews", "uploads"):
-            storage._path(".workbench", name).mkdir(exist_ok=True)
+            storage.files.path(".workbench", name).mkdir(exist_ok=True)
 
     def control_lock(self):
-        return FileLock(self.storage._path(".workbench", "control.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".workbench", "control.lock"), timeout=30)
 
     def worker_lock(self):
-        return FileLock(self.storage._path(".workbench", "worker.lock"))
+        return FileLock(self.storage.files.path(".workbench", "worker.lock"))
 
     def worker_running(self, worker_id=None):
         if self.execution_mode == "remote":
-            root = self.storage._path(".workbench", "remote")
+            root = self.storage.files.path(".workbench", "remote")
             legacy = self._read_optional(root / "heartbeat.json")
             def fresh(info):
                 return bool(info and 0 <= time.time() - info["time"] <= 60)
@@ -56,7 +56,7 @@ class WorkbenchState:
                     return fresh(info)
                 return fresh(legacy) and legacy.get("worker_id") == worker_id
             workers = root / "workers"
-            if workers.is_dir() and any(fresh(self.storage._read_json(path)) for path in workers.glob("*.json")):
+            if workers.is_dir() and any(fresh(self.storage.files.read_json(path)) for path in workers.glob("*.json")):
                 return True
             # 旧版本只有单一心跳文件，升级后仍可读取。
             return fresh(legacy)
@@ -67,14 +67,14 @@ class WorkbenchState:
             return True
 
     def _task_file(self, category, project_id, task_id, *, create=False):
-        directory = self.storage._path(".workbench", category, _validate_id(project_id))
+        directory = self.storage.files.path(".workbench", category, _validate_id(project_id))
         if create:
             directory.mkdir(exist_ok=True)
-        return self.storage._check_path(directory / (_validate_id(task_id) + ".json"))
+        return self.storage.files.check(directory / (_validate_id(task_id) + ".json"))
 
     def _read_optional(self, path):
         try:
-            return self.storage._read_json(path)
+            return self.storage.files.read_json(path)
         except FileNotFoundError:
             return None
 
@@ -107,13 +107,13 @@ class WorkbenchState:
                 return  # 旧终态通知不能覆盖后续重试。
         else:
             job["updated_at"] = _now()
-        self.storage._write_json(self._task_file("jobs", job["project_id"], job["task_id"], create=True), job)
+        self.storage.files.write_json(self._task_file("jobs", job["project_id"], job["task_id"], create=True), job)
         if self.identity:
             written = dict(job)
             self.identity.record_job(job)
             if job != written:
                 # 保留先发布JSON再结算的故障恢复顺序，同时同步规范化的终态。
-                self.storage._write_json(self._task_file("jobs", job["project_id"], job["task_id"]), job)
+                self.storage.files.write_json(self._task_file("jobs", job["project_id"], job["task_id"]), job)
 
     def list_jobs(self):
         jobs = []
@@ -127,8 +127,8 @@ class WorkbenchState:
                     self.save_job(pending)
                 elif existing["status"] in {"completed", "failed"}:
                     self.identity.record_job(existing)
-        for directory in self.storage._path(".workbench", "jobs").iterdir():
-            self.storage._check_path(directory)
+        for directory in self.storage.files.path(".workbench", "jobs").iterdir():
+            self.storage.files.check(directory)
             if directory.is_dir():
                 _validate_id(directory.name)
                 for path in directory.glob("*.json"):
@@ -189,7 +189,7 @@ class WorkbenchState:
             raise ValueError("本次参考图片合计超过 40 MiB")
         if operation == "edit":
             library.require(sub.subproject_id, base_artifact_id)
-            self.storage._require_source(project_id, base_artifact_id)
+            self.storage.require_image_source(project_id, base_artifact_id)
         elif base_artifact_id:
             raise ValueError("生成模式不能指定编辑基底")
         hashes = []
@@ -197,7 +197,7 @@ class WorkbenchState:
             path = Path(path)
             if path.stat().st_size > self.storage.config.max_image_bytes:
                 raise ValueError("图片体积超过限制")
-            self.storage._inspect_image(path)
+            self.storage.inspect_image(path)
             hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
         parts = [project_id, sub.subproject_id, name, description, operation, prompt, aspect_ratio, base_artifact_id, hashes]
         if reference_artifact_ids:
@@ -221,7 +221,7 @@ class WorkbenchState:
                        "fingerprint": fingerprint, "aspect_ratio": aspect_ratio, "state": "preparing", "created_at": _now(),
                        "reference_artifact_ids": list(reference_artifact_ids), "image_prompt": image_prompt}
             path = self._task_file("tasks", project_id, request_id, create=True)
-            self.storage._write_json(path, options)
+            self.storage.files.write_json(path, options)
             try:
                 effective_prompt = prompt if aspect_ratio == "auto" else prompt + f"\n画面宽高比 {aspect_ratio}。"
                 self.projects.reserve_task(sub.subproject_id, request_id, name if name is not None else (prompt.strip().splitlines()[0][:120] or "未命名任务"), description)
@@ -229,12 +229,12 @@ class WorkbenchState:
                 for source in inputs:
                     self.storage.add_input_image(project_id, task.task_id, source)
                 options["state"] = "ready"
-                self.storage._write_json(path, options)
+                self.storage.files.write_json(path, options)
                 self.projects.finish_task(request_id)
                 return task
             except Exception:
                 options["state"] = "failed"
-                self.storage._write_json(path, options)
+                self.storage.files.write_json(path, options)
                 raise
 
     def submit(self, project_id, task_id, *, request_id, confirmed=False, retry_of=None, restore_execution_id=None):
@@ -308,7 +308,7 @@ class WorkbenchState:
     def review(self, artifact):
         if artifact.kind != "output":
             return {"review_status": "pending", "reviewed_at": None}
-        path = self.storage._path(".workbench", "reviews", artifact.artifact_id + ".json")
+        path = self.storage.files.path(".workbench", "reviews", artifact.artifact_id + ".json")
         value = self._read_optional(path)
         if value and (value.get("artifact_id") != artifact.artifact_id or value.get("sha256") != artifact.sha256):
             raise ValueError("审核记录与图片不匹配")
@@ -323,7 +323,7 @@ class WorkbenchState:
             if hashlib.sha256(path.read_bytes()).hexdigest() != artifact.sha256:
                 raise ValueError("图片文件内容已改变，不能通过审核")
             if self.review(artifact)["review_status"] != "approved":
-                self.storage._write_json(self.storage._path(".workbench", "reviews", artifact_id + ".json"), {
+                self.storage.files.write_json(self.storage.files.path(".workbench", "reviews", artifact_id + ".json"), {
                     "schema_version": 1, "artifact_id": artifact_id, "sha256": artifact.sha256, "reviewed_at": _now(),
                 })
             return self.artifact_dto(artifact)

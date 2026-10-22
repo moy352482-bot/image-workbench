@@ -134,6 +134,8 @@ def main(argv=None) -> int:
     try:
         if args.command == "h3-worker":
             from .h3_worker import ComfyH3Adapter, H3Worker, LocalVideoTransport, RemoteVideoTransport
+            from .h3_skill import H3SkillPlanner, load_h3_skill_config
+            from .script_adapter import CodexTextAdapter
             from .video_store import VideoStore
             config_path = args.config.expanduser().resolve()
             config = json.loads(config_path.read_text(encoding="utf-8-sig"))
@@ -153,9 +155,14 @@ def main(argv=None) -> int:
             adapter = ComfyH3Adapter(config["comfy_url"], configured_path("workflow_dir"),
                 models=config.get("models"), ffmpeg=config.get("ffmpeg", "ffmpeg"), ffprobe=config.get("ffprobe", "ffprobe"),
                 timeout=timeout, poll_seconds=poll_seconds, **options)
+            skill_config = load_h3_skill_config()
+            planner = H3SkillPlanner(CodexTextAdapter(timeout_seconds=skill_config["timeout_seconds"],
+                service_tier=skill_config["service_tier"]), config=skill_config)
             if args.check:
                 try:
                     report = adapter.check()
+                    report["workflow_skill"] = {**skill_config, "name": "h3-video-workflow",
+                                               "model_invocation_tested": False}
                     _print(report)
                     return 0 if report.get("available") else 1
                 finally:
@@ -164,7 +171,7 @@ def main(argv=None) -> int:
                 transport = RemoteVideoTransport(config["server"], os.environ.get("IMAGE_WORKBENCH_WORKER_TOKEN", ""))
             else:
                 transport = LocalVideoTransport(VideoStore(StorageManager(StorageConfig(data_root=args.data_root))))
-            worker = H3Worker(transport, configured_path("cache_root"), adapter)
+            worker = H3Worker(transport, configured_path("cache_root"), adapter, planner=planner)
             try:
                 worker.serve(once=args.once, poll_seconds=poll_seconds)
             finally:
@@ -234,7 +241,7 @@ def main(argv=None) -> int:
             from .worker import LocalWorker, ensure_worker
             state = WorkbenchState(storage, backend=args.backend)
             for path in args.image:
-                storage._inspect_image(path)
+                storage.inspect_image(path)
             if args.command == "worker":
                 backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend()
                 LocalWorker(state, backend, timeout_seconds=args.timeout).serve(once=args.once)

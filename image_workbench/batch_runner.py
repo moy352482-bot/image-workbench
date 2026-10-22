@@ -194,11 +194,11 @@ class BatchRunner:
 
     def _artifact_summary(self, artifact):
         # The caller already has the verified Artifact record; avoid a global ID lookup.
-        path = self.storage._artifact_file(artifact)
+        path = self.storage.artifact_file(artifact)
         data = path.read_bytes()
         if len(data) != artifact.size_bytes or hashlib.sha256(data).hexdigest() != artifact.sha256:
             raise ValueError(f"文件内容与登记记录不一致: {artifact.artifact_id}")
-        self.storage._inspect_image(path)
+        self.storage.inspect_image(path)
         return {**asdict(artifact), "path": str(path)}
 
     def run(self, manifest_path, backend, *, reports_root="reports", timeout_seconds=600, progress=None,

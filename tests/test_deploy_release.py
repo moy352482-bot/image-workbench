@@ -48,6 +48,26 @@ class DeployTests(unittest.TestCase):
             self.assertIn("image_workbench/web_static/image-styles/sample.png", bundle.getnames())
         self.assertEqual(deploy.fingerprint(self.root), manifest["files"])
 
+    def test_remote_extractor_accepts_complete_runtime_bundle_and_rejects_extra_files(self):
+        script = (ROOT / "scripts/apply_release.sh").read_text(encoding="utf-8")
+        extraction = script.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+        destination = self.root / "extracted"
+        destination.mkdir()
+        release_id = "20261022T000000Z-12345678"
+        archive, manifest = deploy.package(ROOT, self.root, release_id)
+        with mock.patch("sys.argv", ["extract", str(archive), str(destination), release_id]):
+            exec(compile(extraction, "release-extractor", "exec"), {})
+        for name, digest in manifest["files"].items():
+            self.assertEqual(hashlib.sha256((destination / name).read_bytes()).hexdigest(), digest)
+        invalid = self.root / "invalid.tar.gz"
+        with tarfile.open(invalid, "w:gz") as bundle:
+            item = tarfile.TarInfo("skills/storyboard-planning/private.json")
+            item.size = 2
+            bundle.addfile(item, io.BytesIO(b"{}"))
+        with mock.patch("sys.argv", ["extract", str(invalid), str(destination), release_id]):
+            with self.assertRaisesRegex(ValueError, "Unexpected release member"):
+                exec(compile(extraction, "release-extractor", "exec"), {})
+
     def test_package_uses_allowlist_and_has_content_manifest(self):
         for relative in ("data/private.png", ".env", ".ssh/id_rsa", ".venv/token", "deploy/server.json",
                          "image_workbench/__pycache__/secret.pyc"):
@@ -74,9 +94,15 @@ class DeployTests(unittest.TestCase):
                          "skills/video-script-generation/registry/templates.json", "skills/video-script-generation/examples/screenplays/sample.txt"):
             path = self.root / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("{}")
         (self.root / "config/private.json").write_text("must not upload")
+        for name in ("SKILL.md", "references/script-craft.md", "references/screenplay-craft.md", "references/SOURCES.json",
+                     "NOTICE.txt", "licenses/drama-skills.txt", "licenses/vimax.txt", "licenses/toonflow.txt"):
+            path = self.root / "skills/video-script-generation" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("creative skill fixture", encoding="utf-8")
         archive, manifest = deploy.package(self.root, self.root, "20261016T000000Z-12345678")
         self.assertIn("config/script_pricing.json", manifest["files"])
         self.assertIn("skills/video-script-generation/registry/templates.json", manifest["files"])
+        self.assertIn("skills/video-script-generation/references/screenplay-craft.md", manifest["files"])
         self.assertNotIn("config/private.json", manifest["files"])
         (self.root / "config/script_models.json").unlink()
         with self.assertRaises(ValueError):
@@ -95,11 +121,20 @@ class DeployTests(unittest.TestCase):
         pricing = self.root / "config/storyboard_pricing.json"
         pricing.parent.mkdir()
         pricing.write_text('{"models": {}}')
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        for name in ("references/shot-design.md", "references/continuity.md", "references/SOURCES.json",
+                     "NOTICE.txt", "licenses/drama-skills.txt", "licenses/vimax.txt", "licenses/toonflow.txt", "licenses/minimax-h3.txt"):
+            path = skill.parent / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("creative skill fixture", encoding="utf-8")
         archive, manifest = deploy.package(self.root, self.root, "20261020T000000Z-12345678")
         with tarfile.open(archive) as bundle:
             self.assertEqual(bundle.extractfile("skills/storyboard-planning/SKILL.md").read(),
                              skill.read_bytes())
         self.assertIn("skills/storyboard-planning/SKILL.md", manifest["files"])
+        self.assertIn("skills/storyboard-planning/references/continuity.md", manifest["files"])
+        self.assertIn("skills/storyboard-planning/licenses/minimax-h3.txt", manifest["files"])
         self.assertIn("config/storyboard_pricing.json", manifest["files"])
         self.assertNotIn("skills/storyboard-planning/private.json", manifest["files"])
 
@@ -115,6 +150,30 @@ class DeployTests(unittest.TestCase):
         args = deploy.ssh_arguments(self.config)
         self.assertIn("StrictHostKeyChecking=yes", args)
         self.assertIn("BatchMode=yes", args)
+
+    def test_h3_runtime_requires_and_packages_skill_and_luna_fast_config(self):
+        (self.root / "image_workbench/h3_skill.py").write_text("# H3 skill")
+        files = ["skills/h3-video-workflow/" + name for name in (
+            "SKILL.md", "references/base-en.txt", "references/ref-en.txt", "references/SOURCES.json", "LICENSE", "NOTICE")]
+        files.append("config/h3_workflow.json")
+        for relative in files:
+            with self.assertRaises(ValueError):
+                deploy.runtime_files(self.root)
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / relative).read_bytes())
+        archive, manifest = deploy.package(self.root, self.root, "20261022T000000Z-12345678")
+        with tarfile.open(archive) as bundle:
+            config = json.load(bundle.extractfile("config/h3_workflow.json"))
+            self.assertEqual(config["model_id"], "gpt-6-luna")
+            self.assertEqual(config["service_tier"], "fast")
+            for relative in files:
+                self.assertEqual(bundle.extractfile(relative).read(), (ROOT / relative).read_bytes())
+            sources = json.load(bundle.extractfile("skills/h3-video-workflow/references/SOURCES.json"))
+            for name, source in sources["files"].items():
+                self.assertEqual(hashlib.sha256(bundle.extractfile("skills/h3-video-workflow/" + name).read()).hexdigest(),
+                                 source["sha256"])
+        self.assertIn("skills/h3-video-workflow/SKILL.md", manifest["files"])
 
     def test_failed_checks_prevent_deployment(self):
         path = self.root / "server.json"

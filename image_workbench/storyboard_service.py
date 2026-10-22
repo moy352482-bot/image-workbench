@@ -7,12 +7,12 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from .accounts import CreditInsufficient
 from .locking import FileLock, LockBusyError
-from .script_models import CONFIG_ROOT, DemandRouter, signature
+from .script_models import CONFIG_ROOT, DemandRouter, ScriptModelRegistry, signature
 from .storage import _now, _validate_id
 from .storyboard_models import (EDIT_FIELDS, RATIOS, duration_capabilities, duration_conflict,
                                 generation_plan, ids, integer, normalize_plan, normalize_shot,
                                 shot_fingerprint, text)
-from .storyboard_planner import SKILL, StoryboardPlanner, build_prompt
+from .storyboard_planner import StoryboardPlanner, build_prompt, load_skill
 from .domain_errors import ConflictError
 from .workspace_scope import WorkspaceProjects
 
@@ -27,27 +27,27 @@ def stable(value):
 
 
 class StoryboardService:
-    def __init__(self, storage, identity, scripts, video_store, *, planner=None, pricing_path=None):
-        self.storage, self.identity, self.scripts, self.video = storage, identity, scripts, video_store
-        self.registry = scripts.registry
+    def __init__(self, storage, identity, script_source, video_store, *, registry=None, planner=None, pricing_path=None):
+        self.storage, self.identity, self.script_source, self.video = storage, identity, script_source, video_store
+        self.registry = registry or ScriptModelRegistry()
         self.planner = planner or StoryboardPlanner()
         self.pricing_path = Path(pricing_path or CONFIG_ROOT / "storyboard_pricing.json")
-        self.root = storage._path(".workbench", "storyboards")
-        self.tasks_root = storage._path(".workbench", "storyboard-tasks")
+        self.root = storage.files.path(".workbench", "storyboards")
+        self.tasks_root = storage.files.path(".workbench", "storyboard-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
         self.tasks_root.mkdir(parents=True, exist_ok=True)
 
     def _control(self):
-        return FileLock(self.storage._path(".workbench", "storyboard-control.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".workbench", "storyboard-control.lock"), timeout=30)
 
     def _task_path(self, tid):
-        return self.storage._check_path(self.tasks_root / (_validate_id(tid) + ".json"))
+        return self.storage.files.check(self.tasks_root / (_validate_id(tid) + ".json"))
 
     def _board_path(self, bid):
-        return self.storage._check_path(self.root / (_validate_id(bid) + ".json"))
+        return self.storage.files.check(self.root / (_validate_id(bid) + ".json"))
 
     def _task_lock(self, tid):
-        return FileLock(self.storage._check_path(self.tasks_root / (_validate_id(tid) + ".lock")))
+        return FileLock(self.storage.files.check(self.tasks_root / (_validate_id(tid) + ".lock")))
 
     def _pricing(self):
         value = json.loads(self.pricing_path.read_text(encoding="utf-8"))
@@ -93,7 +93,7 @@ class StoryboardService:
         return value
 
     def _source(self, aid, wid, body):
-        return self.scripts.storyboard_source(aid, wid, _validate_id(body.get("source_script_version")))
+        return self.script_source(aid, wid, _validate_id(body.get("source_script_version")))
 
     def _check_video_project(self, aid, wid, options, subproject_id):
         if options.get("video_project_id"):
@@ -101,7 +101,7 @@ class StoryboardService:
             if project.get("pipeline", {}).get("subproject_id") != subproject_id:
                 raise ValueError("视频项目与脚本子项目不一致，请先初始化项目关联")
 
-    def quote_options(self, aid, wid, raw, *, source=None, request=None):
+    def quote_options(self, aid, wid, raw, *, source=None, request=None, _skill=None):
         options = self.normalize_options(raw)
         cfg, pricing = self.config(aid, wid), self._pricing()
         if source:
@@ -150,10 +150,11 @@ class StoryboardService:
             elif choice["price"] == 0 and not pricing.get("free_test_enabled"):
                 blocked = "真实免费测试尚未启用"
         remaining = self.identity.wallet(aid)["remaining_credit"]
+        skill = _skill if _skill is not None else load_skill()
         shortfall = max(0, (choice["price"] or 0) - remaining) if remaining is not None else 0
         signature_body = {"options": options, "choice": choice, "source_version": source["version_id"] if source else None,
                           "source_hash": source["sha256"] if source else signature(request or {}),
-                          "skill_sha256": hashlib.sha256(SKILL.read_bytes()).hexdigest(), "pricing": pricing,
+                          "skill_sha256": skill["sha256"], "pricing": pricing,
                           "video_models": cfg["video_models"]}
         return {**choice, "reason": reason, "demand_spec": spec, "shortfall": shortfall, "remaining_credit": remaining,
                 "pricing_status": "priced" if choice["price"] is not None else "unpriced",
@@ -186,7 +187,7 @@ class StoryboardService:
         return pid
 
     def _task(self, aid, wid, tid):
-        value = self.storage._read_json(self._task_path(tid))
+        value = self.storage.files.read_json(self._task_path(tid))
         if value.get("kind") != "storyboard" or value.get("task_id") != tid:
             raise ValueError("分镜任务记录无效")
         if (value["account_id"], value["workspace_id"]) != (aid, wid):
@@ -196,10 +197,10 @@ class StoryboardService:
 
     def _write_task(self, job, *, settle=False):
         job["updated_at"] = _now()
-        self.storage._write_json(self._task_path(job["task_id"]), job)
+        self.storage.files.write_json(self._task_path(job["task_id"]), job)
         if settle and job.get("job_id"):
             self.identity.record_job(job)
-            self.storage._write_json(self._task_path(job["task_id"]), job)
+            self.storage.files.write_json(self._task_path(job["task_id"]), job)
 
     def _public_task(self, job):
         value = {k: deepcopy(v) for k, v in job.items() if k not in {"prompt", "source", "fingerprint", "quote", "candidate"}}
@@ -241,13 +242,14 @@ class StoryboardService:
                 return self._public_task(old)
             if body.get("confirmed") is not True:
                 raise ValueError("请确认分镜模型、思考强度和预计积分")
-            quote = self.quote_options(aid, wid, options, source=source)
+            skill = load_skill()
+            quote = self.quote_options(aid, wid, options, source=source, _skill=skill)
             if dependency:
                 # Preserve the exact earlier approved model; do not silently re-route after TXT creation.
                 approved = dependency["storyboard_quote"]
                 if options["mode"] == "codex":
                     options.update(selection_mode="manual", model_id=approved["model_id"], thinking_level=approved["thinking_level"])
-                    quote = self.quote_options(aid, wid, options, source=source)
+                    quote = self.quote_options(aid, wid, options, source=source, _skill=skill)
                 if quote["price"] != approved["price"] or quote["model_id"] != approved["model_id"] or quote["thinking_level"] != approved["thinking_level"]:
                     raise ConflictError("分镜价格或模型已变化，脚本已保留，请重新确认分镜报价")
             elif body.get("quote_signature") != quote["quote_signature"]:
@@ -277,14 +279,15 @@ class StoryboardService:
                    "created_at": _now(), "finished_at": None, "error": None, "replan": replan,
                    "job_id": uuid4().hex if options["mode"] == "codex" else None,
                    "credit_status": "not_applicable" if options["mode"] == "mock" else "credit_frozen"}
-            job["prompt"] = build_prompt(source, internal_options, capability, replan.get("selected_shots") if replan else None)
+            job["skill_reference"] = {k: v for k, v in skill.items() if k != "instructions"}
+            job["prompt"] = build_prompt(source, internal_options, capability, replan.get("selected_shots") if replan else None, skill=skill)
             if job["job_id"]:
                 job = self.identity.reserve(job, {"account_id": aid, "workspace_id": wid}, quote["price"])
             self._write_task(job)
         return self._public_task(job)
 
     def _work(self, job):
-        path = self.storage._path("projects", job["project_id"], "tasks", job["task_id"], "logs", "storyboard")
+        path = self.storage.files.path("projects", job["project_id"], "tasks", job["task_id"], "logs", "storyboard")
         path.mkdir(exist_ok=True)
         return path
 
@@ -295,8 +298,8 @@ class StoryboardService:
                 if job["status"] in {"completed", "failed", "cancelled"}:
                     return self.task(aid, wid, tid)
                 work = self._work(job)
-                candidate_path = self.storage._check_path(work / "candidate.json")
-                codex_receipt = self.storage._check_path(work / "codex" / "completed.json")
+                candidate_path = self.storage.files.check(work / "candidate.json")
+                codex_receipt = self.storage.files.check(work / "codex" / "completed.json")
                 recovering = job["status"] != "queued" and not candidate_path.exists() and codex_receipt.exists()
                 if job["status"] != "queued" and not candidate_path.exists() and not recovering:
                     job.update(status="uncertain", error="原执行结果待确认；不会重复调用模型")
@@ -305,7 +308,7 @@ class StoryboardService:
                 phase = "invoke"
                 try:
                     if candidate_path.exists():
-                        receipt = self.storage._read_json(candidate_path)
+                        receipt = self.storage.files.read_json(candidate_path)
                         if receipt.get("fingerprint") != job["fingerprint"] or receipt.get("sha256") != signature(receipt.get("plan")):
                             raise ValueError("分镜候选与任务凭据不一致，禁止归档")
                         raw = normalize_plan(receipt["plan"], job["options"], tid)
@@ -348,7 +351,7 @@ class StoryboardService:
                             if not compatibility["supported"]:
                                 raise ValueError("模型规划的素材时长不符合视频能力：" + compatibility["message"])
                         phase = "persist"
-                        self.storage._write_json(candidate_path, {"schema_version": 1, "plan": raw, "fingerprint": job["fingerprint"], "sha256": signature(raw)})
+                        self.storage.files.write_json(candidate_path, {"schema_version": 1, "plan": raw, "fingerprint": job["fingerprint"], "sha256": signature(raw)})
                     with self._control():
                         if job.get("replan"):
                             phase = "validate"
@@ -382,7 +385,7 @@ class StoryboardService:
             return self._public_task(job)
 
     def _board(self, aid, wid, bid):
-        value = self.storage._read_json(self._board_path(bid))
+        value = self.storage.files.read_json(self._board_path(bid))
         if value.get("storyboard_id") != bid or (value.get("account_id"), value.get("workspace_id")) != (aid, wid):
             raise FileNotFoundError("分镜不存在")
         WorkspaceProjects(self.storage, self.identity, aid, wid).get_subproject(value["subproject_id"])
@@ -405,7 +408,7 @@ class StoryboardService:
         envelope["current_version"] = record["version"]
         envelope["operations"][pending["request_id"]] = {"fingerprint": pending["fingerprint"], "version": record["version"]}
         envelope.pop("pending")
-        self.storage._write_json(self._board_path(envelope["storyboard_id"]), envelope)
+        self.storage.files.write_json(self._board_path(envelope["storyboard_id"]), envelope)
 
     def _save_version(self, envelope, record, rid, fingerprint):
         record = deepcopy(record)
@@ -415,7 +418,7 @@ class StoryboardService:
         record["parent_artifact_id"] = envelope["versions"][-1]["artifact_id"] if envelope["versions"] else None
         envelope["pending"] = {"record": record, "request_id": rid, "fingerprint": fingerprint,
                                "task_id": stable("version-task:" + envelope["storyboard_id"] + ":" + rid)}
-        self.storage._write_json(self._board_path(envelope["storyboard_id"]), envelope)
+        self.storage.files.write_json(self._board_path(envelope["storyboard_id"]), envelope)
         self._finish_version(envelope)
         return envelope["versions"][-1]
 
@@ -835,35 +838,22 @@ class StoryboardService:
                  s.get("shot_fingerprint") != shot_fingerprint(shots[s["storyboard_shot_id"]])}
                 for s in project["shots"] if s.get("storyboard_id") == envelope["storyboard_id"]]
 
-    def dependency_completed(self, script_job):
-        """Called only after immutable TXT/Version is committed. Errors never change script status."""
-        if script_job.get("status") != "completed" or not script_job.get("storyboard_options") or not script_job.get("storyboard_confirmed"):
-            return None
+    def record_dependency_failure(self, script_job, error):
+        """Persist a failed stage when admission fails before it can reserve credit."""
         aid, wid = script_job["account_id"], script_job["workspace_id"]
         rid = stable("dependency:" + script_job["task_id"])
         tid = stable("task:" + aid + ":" + rid)
-        if self._task_path(tid).exists():
-            task = self.task(aid, wid, tid)
-            if task["status"] == "queued":
-                return self.run(aid, wid, tid)
-            return task
-        try:
-            task = self.submit(aid, wid, {**script_job["storyboard_options"], "source_script_version": script_job["version_id"],
-                                         "request_id": rid, "confirmed": True}, dependency=script_job)
-            return self.run(aid, wid, task["task_id"])
-        except Exception as exc:
-            # Persist a separate failed stage even when pricing/ownership changed before reservation.
-            with self._control():
-                if not self._task_path(tid).exists():
-                    job = {"schema_version": 1, "kind": "storyboard", "task_id": tid, "request_id": rid,
-                           "account_id": aid, "workspace_id": wid, "project_id": script_job["project_id"],
-                           "subproject_id": script_job["subproject_id"], "storyboard_id": None,
-                           "source_script_artifact_id": script_job["output_artifact_id"], "source_script_version": script_job["version_id"],
-                           "depends_on": {"script_task_id": script_job["task_id"], "artifact_id": script_job["output_artifact_id"], "version_id": script_job["version_id"]},
-                           "status": "failed", "error": str(exc)[:2000], "created_at": _now(), "job_id": None,
-                           "price": 0, "credit_status": "not_applicable"}
-                    self._write_task(job)
-            return self.task(aid, wid, tid)
+        with self._control():
+            if not self._task_path(tid).exists():
+                job = {"schema_version": 1, "kind": "storyboard", "task_id": tid, "request_id": rid,
+                       "account_id": aid, "workspace_id": wid, "project_id": script_job["project_id"],
+                       "subproject_id": script_job["subproject_id"], "storyboard_id": None,
+                       "source_script_artifact_id": script_job["output_artifact_id"], "source_script_version": script_job["version_id"],
+                       "depends_on": {"script_task_id": script_job["task_id"], "artifact_id": script_job["output_artifact_id"], "version_id": script_job["version_id"]},
+                       "status": "failed", "error": str(error)[:2000], "created_at": _now(), "job_id": None,
+                       "price": 0, "credit_status": "not_applicable"}
+                self._write_task(job)
+        return self.task(aid, wid, tid)
 
     def dependency_task(self, aid, wid, script_job):
         tid = stable("task:" + aid + ":" + stable("dependency:" + script_job["task_id"]))
@@ -871,23 +861,20 @@ class StoryboardService:
 
     def pending_jobs(self):
         return [job for path in self.tasks_root.glob("*.json") if not path.name.startswith(".tmp-")
-                if (job := self.storage._read_json(path))["status"] in {"queued", "running", "uncertain"}]
+                if (job := self.storage.files.read_json(path))["status"] in {"queued", "running", "uncertain"}]
 
     def resume_pending(self):
         """Restart recovery: execute only queued/never-started work, or archive a durable candidate.
 
         Running work without a candidate is marked uncertain; no inference replay.
-        The script's durable stage intent closes the TXT→storyboard crash gap.
         """
         for pending in self.identity.pending_jobs():
             if pending.get("kind") == "storyboard" and not self._task_path(pending["task_id"]).exists():
                 self._write_task(pending)
-        for job in self.scripts.completed_storyboard_dependencies():
-            self.dependency_completed(job)
         for path in self.tasks_root.glob("*.json"):
             if path.name.startswith(".tmp-"):
                 continue
-            job = self.storage._read_json(path)
+            job = self.storage.files.read_json(path)
             if job["status"] in {"completed", "failed"}:
                 try:
                     self.task(job["account_id"], job["workspace_id"], job["task_id"])

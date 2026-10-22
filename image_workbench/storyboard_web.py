@@ -8,13 +8,13 @@ from .contracts.storyboards import (ID, Accept, Body, Edit, PlanRequest, Replan,
 from .storage import _validate_id
 
 
-def install_storyboards(app, service):
+def install_storyboards(app, service, *, resume_pending=None):
     previous_lifespan = app.router.lifespan_context
 
     @asynccontextmanager
     async def lifespan(application):
         async with previous_lifespan(application):
-            recovery = asyncio.create_task(asyncio.to_thread(service.resume_pending))
+            recovery = asyncio.create_task(asyncio.to_thread(resume_pending or service.resume_pending))
             try:
                 yield
             finally:

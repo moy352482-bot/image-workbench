@@ -29,17 +29,17 @@ from .contracts.image_queue import Claim, Start, Complete
 class RemoteQueue:
     def __init__(self, state):
         self.state, self.storage = state, state.storage
-        self.root = self.storage._path(".workbench", "remote")
+        self.root = self.storage.files.path(".workbench", "remote")
         self.root.mkdir(exist_ok=True)
-        self.workers = self.storage._check_path(self.root / "workers")
+        self.workers = self.storage.files.check(self.root / "workers")
         self.workers.mkdir(exist_ok=True)
 
     def heartbeat(self, worker_id):
         info = {
             "schema_version": 1, "worker_id": _validate_id(worker_id), "time": time.time(),
         }
-        self.storage._write_json(self.workers / (worker_id + ".json"), info)
-        self.storage._write_json(self.root / "heartbeat.json", info)
+        self.storage.files.write_json(self.workers / (worker_id + ".json"), info)
+        self.storage.files.write_json(self.root / "heartbeat.json", info)
 
     def _owned(self, job_id, worker_id, claim_id):
         for value in (job_id, worker_id, claim_id):
@@ -126,9 +126,9 @@ class RemoteQueue:
         digest = hashlib.sha256(data).hexdigest()
         with self.state.control_lock():
             job = self._owned(job_id, worker_id, claim_id)
-            directory = self.storage._check_path(self.root / job_id)
+            directory = self.storage.files.check(self.root / job_id)
             directory.mkdir(exist_ok=True)
-            path = self.storage._check_path(directory / f"{index:02d}.image")
+            path = self.storage.files.check(directory / f"{index:02d}.image")
             if path.exists():
                 if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                     raise ConflictError("同一产物位置已有不同内容")
@@ -137,9 +137,9 @@ class RemoteQueue:
                 raise ConflictError("作业结果已经固定")
             atomic_bytes(self.storage, path, data)
             try:
-                self.storage._inspect_image(path)
+                self.storage.inspect_image(path)
             except Exception:
-                self.storage._cleanup(path)
+                self.storage.files.cleanup(path)
                 raise
             return digest
 
@@ -147,10 +147,10 @@ class RemoteQueue:
         """只导入已经上传的产物；崩溃后使用固定图片 ID 继续登记，绝不启动模型。"""
         runner = self.state.runner
         pid, tid, eid = job["project_id"], job["task_id"], job["job_id"]
-        with FileLock(self.storage._path(".execution.lock"), timeout=30):
+        with FileLock(self.storage.files.path(".execution.lock"), timeout=30):
             directory = runner._directory(pid, tid, eid)
             directory.mkdir(parents=True, exist_ok=True)
-            products = self.storage._check_path(directory / "work" / "products")
+            products = self.storage.files.check(directory / "work" / "products")
             products.mkdir(parents=True, exist_ok=True)
             record_path = directory / "execution.json"
             record = runner.get_execution(pid, tid, eid) if record_path.exists() else None
@@ -158,11 +158,11 @@ class RemoteQueue:
                 return record
             candidates = []
             for index, digest in enumerate(hashes):
-                source = self.storage._check_path(self.root / eid / f"{index:02d}.image")
+                source = self.storage.files.check(self.root / eid / f"{index:02d}.image")
                 data = source.read_bytes()
                 if hashlib.sha256(data).hexdigest() != digest:
                     raise ValueError("上传图片与结果清单不一致")
-                target = self.storage._check_path(products / f"{index:02d}.image")
+                target = self.storage.files.check(products / f"{index:02d}.image")
                 candidates.append(CandidateRecord(target.relative_to(self.storage.data_root).as_posix(),
                     uuid5(UUID(eid), str(index)).hex, digest, len(data)))
             if record and record.candidates != candidates:
@@ -171,7 +171,7 @@ class RemoteQueue:
                                                 returncode=0, candidates=candidates)
             runner._save_checked(record)
             for index, candidate in enumerate(candidates):
-                source = self.storage._check_path(self.root / eid / f"{index:02d}.image")
+                source = self.storage.files.check(self.root / eid / f"{index:02d}.image")
                 atomic_bytes(self.storage, runner._candidate_path(record, candidate), source.read_bytes())
             runner._archive_guard(record)
             runner._save_checked(record)
@@ -198,7 +198,7 @@ class RemoteQueue:
                 if not result.hashes:
                     raise ValueError("成功结果不能为空")
                 for index, digest in enumerate(result.hashes):
-                    path = self.storage._check_path(self.root / job_id / f"{index:02d}.image")
+                    path = self.storage.files.check(self.root / job_id / f"{index:02d}.image")
                     if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                         raise ValueError("缺少对应产物")
             job["remote_result"] = payload

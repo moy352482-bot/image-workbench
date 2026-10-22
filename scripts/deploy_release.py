@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -36,8 +35,11 @@ def runtime_files(root):
     if (root / "image_workbench" / "script_service.py").is_file():
         paths.extend(root / "config" / name for name in ("script_models.json", "script_pricing.json", "script_routing.json"))
         skill = root / "skills" / "video-script-generation"
-        if not (skill / "registry" / "templates.json").is_file():
-            raise ValueError("脚本生成模板目录缺失")
+        required = ("registry/templates.json", "SKILL.md", "references/script-craft.md",
+                    "references/screenplay-craft.md", "references/SOURCES.json", "NOTICE.txt",
+                    "licenses/drama-skills.txt", "licenses/vimax.txt", "licenses/toonflow.txt")
+        if any(not (skill / name).is_file() for name in required):
+            raise ValueError("脚本生成模板或 Skill 资源缺失")
         for path in sorted(skill.rglob("*")):
             if path.is_symlink():
                 raise ValueError("脚本模板目录不允许符号链接")
@@ -46,11 +48,17 @@ def runtime_files(root):
                     raise ValueError("脚本模板目录含非发布文件")
                 paths.append(path)
     if (root / "image_workbench" / "storyboard_planner.py").is_file():
-        paths.append(root / "skills" / "storyboard-planning" / "SKILL.md")
+        paths.extend(root / "skills" / "storyboard-planning" / name for name in (
+            "SKILL.md", "references/shot-design.md", "references/continuity.md", "references/SOURCES.json",
+            "NOTICE.txt", "licenses/drama-skills.txt", "licenses/vimax.txt", "licenses/toonflow.txt", "licenses/minimax-h3.txt"))
         paths.append(root / "config" / "storyboard_pricing.json")
     if (root / "image_workbench" / "image_prompting.py").is_file():
         skill = root / "skills" / "image-generation-default"
         paths.extend(skill / name for name in ("SKILL.md", "styles.json", "references/sources.md"))
+    if (root / "image_workbench" / "h3_skill.py").is_file():
+        paths.extend(root / "skills" / "h3-video-workflow" / name for name in (
+            "SKILL.md", "references/base-en.txt", "references/ref-en.txt", "references/SOURCES.json", "LICENSE", "NOTICE"))
+        paths.append(root / "config" / "h3_workflow.json")
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):
@@ -106,16 +114,12 @@ def ssh_arguments(config, *, scp=False):
 
 
 def validate_local(root, log_path):
-    print("运行本地回归检查……", flush=True)
+    print("运行统一质量、架构与回归检查……", flush=True)
     with log_path.open("wb") as stream:
-        result = subprocess.run([sys.executable, "-X", "utf8", "-m", "unittest", "discover", "-s", "tests", "-v"],
+        result = subprocess.run([sys.executable, "-X", "utf8", str(root / "scripts" / "verify.py")],
                                 cwd=root, stdout=stream, stderr=subprocess.STDOUT, check=False)
     if result.returncode:
         raise RuntimeError(f"本地检查未通过，未上传任何文件。检查结果：{log_path}")
-    node = shutil.which("node")
-    if node:
-        for path in sorted((root / "image_workbench" / "web_static").glob("*.js")):
-            subprocess.run([node, "--check", str(path)], check=True, cwd=root)
 
 
 def deploy(config, directory, archive, release_id, *, script_bytes=None, expected_archive_sha=None):

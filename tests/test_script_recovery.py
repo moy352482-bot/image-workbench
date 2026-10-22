@@ -63,12 +63,12 @@ class ScriptRecoveryTests(unittest.TestCase):
         return work
 
     def fail_version_write(self):
-        write_json = self.storage._write_json
+        write_json = self.storage.files.write_json
         def write(path, value):
             if Path(path).name == "script-versions.json":
                 raise OSError("simulated version publication interruption")
             return write_json(path, value)
-        return patch.object(self.storage, "_write_json", side_effect=write)
+        return patch.object(self.storage.files, "write_json", side_effect=write)
 
     def test_partial_candidate_without_completion_receipt_cannot_charge(self):
         job = self.running()
@@ -167,7 +167,7 @@ class ScriptRecoveryTests(unittest.TestCase):
         # Even a newly matching completion receipt cannot replace the registered immutable artifact.
         changed = "第一场：与已登记版本不同的正文。\n".encode("utf-8")
         candidate.write_bytes(changed)
-        self.storage._write_json(candidate.with_suffix(".complete.json"), {
+        self.storage.files.write_json(candidate.with_suffix(".complete.json"), {
             "schema_version": 1, "task_id": job["task_id"], "request_fingerprint": current["request_fingerprint"],
             "size_bytes": len(changed), "sha256": hashlib.sha256(changed).hexdigest(),
         })
@@ -186,7 +186,7 @@ class ScriptRecoveryTests(unittest.TestCase):
                  "task_id": current["task_id"], "artifact_id": current["output_artifact_id"], "parent_version": None}
         path = self.storage._path(".workbench", "script-versions.json")
         for field in ("document_id", "task_id", "artifact_id", "parent_version"):
-            self.storage._write_json(path, {"schema_version": 1, "versions": {current["version_id"]: {**valid, field: uuid4().hex}}})
+            self.storage.files.write_json(path, {"schema_version": 1, "versions": {current["version_id"]: {**valid, field: uuid4().hex}}})
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "版本登记"):
                 self.recover(job)
             self.assert_frozen(job)
@@ -244,7 +244,7 @@ class ScriptRecoveryTests(unittest.TestCase):
         candidate = self.service._candidate(job)
         receipt = candidate.with_suffix(".complete.json")
         original_receipt, original_text = receipt.read_bytes(), candidate.read_bytes()
-        with patch.object(self.storage, "_write_json", side_effect=AssertionError("must preserve original receipt")):
+        with patch.object(self.storage.files, "write_json", side_effect=AssertionError("must preserve original receipt")):
             self.service._publish_candidate(job, service_fixtures.TEXT)
             with self.assertRaises(ConflictError):
                 self.service._publish_candidate(job, "不同的正文。")

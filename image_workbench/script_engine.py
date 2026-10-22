@@ -11,7 +11,8 @@ def resource_summary(template):
     return {
         "template": {**template["template_reference"], "template_id": template["template_id"],
                      "template_version": template.get("version", 1),
-                     "sha256": signature({k: v for k, v in template.items() if k not in {"example_references", "style_references", "conflicts"}})},
+                     "sha256": signature({k: v for k, v in template.items() if k not in {"example_references", "style_references", "conflicts", "generation_skill"}})},
+        "skill": {k: v for k, v in template.get("generation_skill", {}).items() if k != "instructions"},
         "styles": [{"style_id": s["style_id"], "style_version": s["version"], "sha256": signature(s)} for s in template.get("style_references", [])],
         "examples": [{k: v for k, v in e.items() if k not in {"text", "analysis"}}
                      | {"example_version": e.get("version", 1), "content_sha256": signature(e)}
@@ -51,6 +52,8 @@ def resolve_resources(loader, store, aid, wid, request):
             raise ValueError("参考案例已停用")
         example = store.get(aid, wid, "example", reference["example_id"], reference.get("version"))
         template["example_references"].append({**example, "reference_roles": reference["reference_roles"], "prompt_eligible": True})
+    if "generation_skill" not in template:
+        template["generation_skill"] = loader.load_skill(request["generation_type"])
     template["conflicts"] = find_conflicts(request, template)
     # Validate required fields and all references before any credit reservation.
     build_prompt(request, template)

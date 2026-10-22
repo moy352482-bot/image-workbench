@@ -12,10 +12,10 @@ def migration_plan(storage):
     projects = ProjectManager(storage)
     plan, catalog, inventory, original = projects._migration_materials()
     active = []
-    jobs = storage._path(".workbench", "jobs")
+    jobs = storage.files.path(".workbench", "jobs")
     if jobs.exists():
         for path in jobs.glob("*/*.json"):
-            job = storage._read_json(path)
+            job = storage.files.read_json(path)
             if job["status"] in {"queued", "running", "uncertain"}:
                 active.append(job["job_id"])
     return {"status": "dry_run", "owner": "moy", "unlimited_credit": True,
@@ -30,16 +30,16 @@ def migrate_accounts(storage, *, apply=False, expected_fingerprint=None, backup_
         return migration_plan(storage)[0]
     if not expected_fingerprint or backup_directory is None:
         raise ValueError("应用迁移需要 dry-run 指纹和数据根目录外的备份路径")
-    storage._path(".workbench").mkdir(exist_ok=True)
+    storage.files.path(".workbench").mkdir(exist_ok=True)
     # 迁移要求执行器已停止；与网页写入共用控制锁。
-    with FileLock(storage._path(".workbench", "worker.lock")), FileLock(storage._path(".workbench", "control.lock"), timeout=30):
+    with FileLock(storage.files.path(".workbench", "worker.lock")), FileLock(storage.files.path(".workbench", "control.lock"), timeout=30):
         plan, catalog, inventory, original = migration_plan(storage)
         if plan["fingerprint"] != expected_fingerprint:
             raise ValueError("数据自 dry-run 后已变化，请重新预览")
         if plan["active_jobs"]:
             raise ValueError("存在活动或待确认任务，请先处理后再迁移")
         destination = ProjectManager(storage)._backup(backup_directory, plan, inventory, original)
-        dbpath = storage._path(".identity", "accounts.sqlite3")
+        dbpath = storage.files.path(".identity", "accounts.sqlite3")
         existed = dbpath.exists()
         if existed:
             with closing(sqlite3.connect(dbpath)) as source, closing(sqlite3.connect(destination / "accounts.before.sqlite3")) as target:

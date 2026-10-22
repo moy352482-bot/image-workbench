@@ -18,6 +18,7 @@ from uuid import uuid4
 import httpx
 from PIL import Image
 
+from .domain_errors import ComfyRejected, ArtifactInvalid, TextGenerationError
 from .locking import FileLock, LockBusyError
 from .remote_access import validate_origin
 from .storage import _validate_id
@@ -40,7 +41,6 @@ DEFAULT_MODELS = {
 
 
 # Compatibility aliases for worker integrations; implementations are shared.
-from .domain_errors import ComfyRejected, ArtifactInvalid
 from .atomic_files import write_bytes as _write, write_json as _json_write, read_json as _json_read
 
 
@@ -453,8 +453,9 @@ class ComfyH3Adapter:
 
 
 class H3Worker:
-    def __init__(self, transport, cache_root, adapter, *, worker_id=None):
+    def __init__(self, transport, cache_root, adapter, *, worker_id=None, planner=None):
         self.transport, self.adapter = transport, adapter
+        self.planner = planner
         self.root = Path(cache_root).expanduser().resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.adapter.lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -530,6 +531,15 @@ class H3Worker:
                     raise ValueError("参考图媒体信息无效")
                 image.verify()
             names.append(self.adapter.upload_reference(manifest["job_id"], aid, data, extension))
+        if journal.get("skill_request"):
+            if "skill_plan" not in journal:
+                if self.planner is None:
+                    raise TextGenerationError("此任务需要 H3 Skill 执行器才能恢复", uncertain=True)
+                journal["skill_plan"] = self.planner.run(journal["skill_request"],
+                    self._path(manifest["job_id"], "skill"))
+                journal.pop("skill_error", None)
+                self._save(journal)
+            task = {**task, "prompt": journal["skill_plan"]["prompt"]}
         attempt_id = journal.get("attempt_id") or uuid4().hex
         prefix = f"image_workbench/{manifest['job_id']}/{attempt_id}/video"
         seed = int(attempt_id[:15], 16)
@@ -567,8 +577,17 @@ class H3Worker:
                 return "busy"
             try:
                 self._prepare(journal)
+            except TextGenerationError as exc:
+                if exc.uncertain:
+                    # No ComfyUI submission exists yet. Keep the server claim running:
+                    # a verified text receipt may still let this same job continue.
+                    journal["skill_error"] = str(exc)[:1000]
+                    self._save(journal)
+                    return "uncertain"
+                self._result(journal, "failed", "H3 Skill 文本调用失败，未开始视频生成；请检查执行器日志")
+                return self._deliver(journal)
             except ValueError:
-                self._result(journal, "failed", "参考图或工作流参数校验失败，未开始生成")
+                self._result(journal, "failed", "参考图、H3 Skill 或工作流参数校验失败，未开始生成")
                 return self._deliver(journal)
         if journal["phase"] == "prepared":
             self.adapter.health()
@@ -665,6 +684,8 @@ class H3Worker:
                     raise ValueError("服务端领取身份不一致")
                 phase = "uncertain" if manifest.get("attempt_id") else "ready"
                 journal = {"schema_version": 1, "phase": phase, "manifest": manifest}
+                if phase == "ready" and self.planner is not None and manifest["task"].get("resolution"):
+                    journal["skill_request"] = self.planner.request(manifest["task"])
                 if manifest.get("attempt_id"):
                     attempt = _validate_id(manifest["attempt_id"])
                     journal["attempt_id"] = attempt

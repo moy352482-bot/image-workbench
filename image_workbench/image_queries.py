@@ -3,6 +3,7 @@ from dataclasses import asdict
 from .accounts import CreditCostCalculator
 from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing
 from .image_references import task_input_artifacts
+from .task_recovery import recovery_projection
 
 
 class ImageQueries:
@@ -95,6 +96,19 @@ class ImageQueries:
             timings={key: getattr(latest, key) for key in ("prepare_seconds", "backend_seconds", "codex_seconds", "validate_seconds", "register_seconds", "total_seconds")} if latest else None,
             executions=[{key: getattr(record, key) for key in ("execution_id", "status", "created_at", "failure_type", "total_seconds")} for record in reversed(records)],
         )
+        actions = []
+        if result["can_restore"]:
+            actions.append("restore_archive")
+        if result["can_retry"]:
+            actions.append("retry")
+        if status == "uncertain":
+            actions.append("confirm_stopped")
+        result["recovery"] = recovery_projection(
+            "image", task_id, result["status"], job_id=job.get("job_id") if job else None,
+            credit_status=result.get("credit_status"), failure_code=failure, failure_message=result["error_summary"],
+            stage="archive" if failure == "register_failed" else None,
+            evidence={"execution_id": latest.execution_id if latest else None,
+                      "has_candidate": bool(latest and latest.candidates), "has_output": bool(outputs)}, actions=actions)
         return result
 
     def logical_task_view(self, task_id, *, detail=True, main_project_id=None):

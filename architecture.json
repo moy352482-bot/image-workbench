@@ -2,12 +2,21 @@
   "root_package": "image_workbench",
   "groups": {
     "plugin_api": {
-      "modules": ["plugin_api"],
-      "may_import": ["foundation"]
+      "modules": [
+        "plugin_api"
+      ],
+      "may_import": [
+        "foundation"
+      ]
     },
     "script_plugin": {
-      "modules": ["script_plugin"],
-      "may_import": ["plugin_api", "contracts"]
+      "modules": [
+        "script_plugin"
+      ],
+      "may_import": [
+        "plugin_api",
+        "contracts"
+      ]
     },
     "foundation": {
       "modules": [
@@ -26,7 +35,9 @@
         "image_status",
         "scheduling",
         "media_validation",
-        "video_models"
+        "video_models",
+        "managed_files",
+        "task_recovery"
       ],
       "may_import": [
         "foundation"
@@ -139,7 +150,8 @@
     "video": {
       "modules": [
         "video_store",
-        "h3_worker"
+        "h3_worker",
+        "h3_skill"
       ],
       "may_import": [
         "foundation",
@@ -159,6 +171,10 @@
         "storage",
         "qwen"
       ]
+    },
+    "workflows": {
+      "modules": ["script_workflow"],
+      "may_import": ["foundation", "scripts", "storyboards"]
     },
     "pipeline": {
       "modules": [
@@ -275,6 +291,12 @@
       "WorkbenchPreview": "web_static/workbench-preview.js",
       "WorkbenchAccounts": "web_static/workbench-accounts.js",
       "WorkbenchStyles": "web_static/workbench-styles.js"
+    },
+    "state_ports": {
+      "IWVideo": {
+        "owner": "web_static/video.js",
+        "consumers": ["web_static/pipeline.js", "web_static/storyboard.js"]
+      }
     }
   }
 }

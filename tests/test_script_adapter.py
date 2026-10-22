@@ -159,6 +159,16 @@ class ScriptAdapterTests(unittest.TestCase):
         self.assertEqual(len(self.processes), 1)
         self.assertTrue((self.work / "stdout.jsonl").read_bytes())
 
+    def test_default_tier_preserves_old_receipts_and_fast_requires_matching_receipt(self):
+        options = {"prompt": "文本", "model_id": "gpt-6-luna", "thinking_level": "low", "work_dir": self.work}
+        with self.popen():
+            text = self.adapter.generate(**options)
+        self.assertEqual(self.adapter.recover(**options), text)
+        self.assertFalse(any(part.startswith("service_tier=") for part in self.processes[0].argv))
+        fast = CodexTextAdapter(self.executable, service_tier="fast")
+        with self.assertRaises(ScriptGenerationError):
+            fast.recover(**options)
+
     def test_nonzero_exit_is_failed_and_never_retried(self):
         with self.popen(returncode=1), self.assertRaises(ScriptGenerationError) as caught:
             self.generate()

@@ -170,3 +170,26 @@ ExecutionRecord 新增 failure_type、timing_events 以及 prepare/backend/codex
 任务继续按原规则执行、恢复和结算。停用不等于撤销已有授权，也不改变恢复为“重新生成”。
 详见 [插件试点合同](architecture/PLUGIN_PILOT.md) 与 `tests/test_plugins.py`。
 
+## H3 内置 Skill 调用（2026-10-22）
+
+`h3-worker` 默认装配 `h3-video-workflow`，新任务在本机参数／参考图校验后、ComfyUI 提交前，使用 `gpt-6-luna` 和 Codex `service_tier="fast"` 整理单镜提示词。思考强度为独立配置。模型不负责 GPU 提交、路径、积分和归档；文本输出只能改变提示词，其余已确认字段必须保持一致。
+
+本地 journal 新增可选 `skill_request`、`skill_plan`、`skill_error`；不改变服务端作业、HTTP 或积分协议。`skill_request` 保存完整 Skill 输入和模型配置；调用前持久化 `skill/invocation.json`，完成后沿用文本适配器的内容哈希凭据，并要求 `requested_service_tier=fast`。该字段证明请求配置，不证明服务端实际分配的处理档位。
+
+官方指南接入后，新 `skill_request` 另外保存 `prompt_format=minimax-h3-official-v1`、官方模式 `prompt_mode` 和所用指南 `guide_sha256`，完整指南正文已经包含在冻结的 `prompt` 中。仅带此格式版本的请求要求生成正文具有顺序正确且非空的官方三段／六段字段。更新本地 Skill 或指南不改写已有请求；没有此标记的旧文本凭据仍按原约定恢复，不补跑 Luna 或用新格式追溯拒绝旧结果。发布包必须同时携带两份指南、来源记录、许可与 NOTICE。
+
+已完成文本的重启恢复只校验原凭据，不再次调用模型。完成状态不明时仍处于 ComfyUI 提交前的 `ready`，执行器返回 `uncertain`，服务端保留已领取的运行状态和积分冻结；原凭据恢复后可继续同一任务。明确失败或输出不符合约束则按原失败流程结算，不提交视频。缺少 `skill_request` 的旧 journal 不插入调用，已提交图只对账与回收。覆盖见 `tests/test_h3_skill.py`、`tests/test_h3_worker.py`、`tests/test_script_adapter.py`。
+
+## 脚本到分镜的独立协调与只读诊断（2026-10-22）
+
+`ScriptStoryboardWorkflow` 负责两阶段选项/报价计划、完成后的规划触发和启动补偿。ScriptService
+接收数据计划并沿原事务保存 storyboard_options/quote/confirmed，不持有或调用分镜服务。
+StoryboardService 接收脚本源版本读取函数；任务事务、模型执行、候选归档仍归各服务所有。
+本地 run/recover 和远程 complete 先完成脚本事务并释放锁，再由协调器触发下游。
+重启扫描已完成脚本的持久意图，使用原稳定阶段 ID；只有未执行的 queued 阶段可运行。
+分镜失败保持为独立失败阶段，脚本 TXT、版本和已经完成的结算不回退；重传回执不重复生成或扣款。
+
+统一 recovery 查询仅投影状态和证据。脚本只有候选正文与哈希完成凭据一致，或原 Codex 成功回执
+与正文一致时才列出恢复归档动作；部分文件或受损回执不会被当作成功证据。
+图片、脚本、视频原有 uncertain/重试/人工确认规则保持，不由查询触发自动恢复或推理。
+

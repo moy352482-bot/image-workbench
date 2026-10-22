@@ -48,3 +48,20 @@ ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size
 - `POST /api/video/projects/{project_id}/shots/{shot_id}/clip` 以 `source_shot_id`、`artifact_id` 绑定同项目已完成视频；不能覆盖正在执行或已有成片的镜头。
 - `POST /api/scripts/tasks` 的 `quote_signature` 可省略。服务端仍从当前 Registry 计算真实价格并执行额度、模型可用性和幂等校验；若传入签名，继续校验签名有效性。旧客户端行为兼容，客户端提交的未知价格字段仍被拒绝。
 
+## 统一恢复诊断（2026-10-22，增量接口）
+
+- 图片：`GET /api/tasks/{task_id}/recovery`，亦可使用 `/api/projects/{project_id}/tasks/{task_id}/recovery`。
+- 脚本：`GET /api/scripts/tasks/{task_id}/recovery`。
+- 视频：`GET /api/video/projects/{pid}/shots/{sid}/recovery`。
+
+三种接口返回 `schema_version:1`、`kind`、`task_id`、`job_id`、`status`、`original_status`、`stage`、
+`failure:{code,message}|null`、`credit_status`、`evidence`、`actions` 和 `automatic_retry:false`。
+统一状态包括 draft/queued/running/completed/failed/uncertain/cancelled/blocked；底层状态保存在 original_status。
+证据只包含执行 ID 及候选、已验证候选、完成凭据、后端关联和产物的存在标记，不返回路径、凭据或原始日志。
+
+动作包含 `code`、`actor`（user/operator/worker）、`may_invoke_model`、`requires_confirmation`。
+`restore_archive` 使用已有候选或经校验的完成回执；`retry` 是明确的新提交，仍须遵守原报价/请求 ID 合同。
+uncertain 不提供重新生成动作；视频的原执行对账/最终回传由原 Worker 完成，不能把动作提示当作用户 API。
+查询先核验 Workspace，随后只读已有记录；不补齐 outbox、不结算、不启动模型。旧详情接口的兼容行为保留；
+图片详情、脚本任务和视频 current_job 额外包含相同的 recovery 投影。
+

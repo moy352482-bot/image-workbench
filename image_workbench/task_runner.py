@@ -76,7 +76,7 @@ class TaskRunner:
         parts = ["projects", _validate_id(project_id), "tasks", _validate_id(task_id), "logs", "runs"]
         if execution_id is not None:
             parts.append(_validate_id(execution_id))
-        return self.storage._path(*parts)
+        return self.storage.files.path(*parts)
 
     def get_execution_directory(self, project_id: str, task_id: str, execution_id: str) -> Path:
         self.get_execution(project_id, task_id, execution_id)
@@ -87,7 +87,7 @@ class TaskRunner:
 
     def _save(self, record: ExecutionRecord) -> None:
         record.updated_at = _now()
-        self.storage._write_json(self._record_directory(record) / "execution.json", {
+        self.storage.files.write_json(self._record_directory(record) / "execution.json", {
             "schema_version": 1, **asdict(record),
         })
 
@@ -110,7 +110,7 @@ class TaskRunner:
         products = self._record_directory(record) / "work" / "products"
         if not path.is_relative_to(products) or path == products:
             raise ValueError("候选图片不属于本次执行的 products 目录")
-        self.storage._check_path(path)
+        self.storage.files.check(path)
         if path.relative_to(self.storage.data_root).as_posix() != relative:
             raise ValueError("候选相对路径不规范")
         return path
@@ -122,7 +122,7 @@ class TaskRunner:
         if execution_id is None:
             records = self.list_executions(project_id, task_id)
             return records[-1] if records else None
-        payload = self.storage._read_json(self._directory(project_id, task_id, execution_id) / "execution.json")
+        payload = self.storage.files.read_json(self._directory(project_id, task_id, execution_id) / "execution.json")
         try:
             values = {key: value for key, value in payload.items() if key != "schema_version"}
             entries = values.pop("candidates")
@@ -190,7 +190,7 @@ class TaskRunner:
         directory = self._directory(project_id, task_id)
         if not directory.exists():
             return []
-        records = [self.get_execution(project_id, task_id, eid) for eid in self.storage._child_ids(directory)]
+        records = [self.get_execution(project_id, task_id, eid) for eid in self.storage.files.child_ids(directory)]
         return sorted(records, key=lambda record: (record.created_at, record.execution_id))
 
     def _finish(self, record: ExecutionRecord, status: str, error: str | None = None, failure_type: str | None = None) -> ExecutionRecord:
@@ -203,7 +203,7 @@ class TaskRunner:
         }.get(status))
         if error:
             try:
-                log = self.storage._check_path(self._record_directory(record) / "stderr.log")
+                log = self.storage.files.check(self._record_directory(record) / "stderr.log")
                 with log.open("a", encoding="utf-8") as stream:
                     stream.write(f"\n[TaskRunner: {status}] {record.error}\n")
             except (OSError, ValueError):
@@ -218,7 +218,7 @@ class TaskRunner:
         # Web Worker 使用稳定作业 ID；重发同一作业只读取已存在执行，不再次调用模型。
         if self.storage.get_task(project_id, task_id).operation not in {"generate", "edit"}:
             raise ValueError("文本任务请使用脚本生成服务")
-        with FileLock(self.storage._path(".execution.lock")):
+        with FileLock(self.storage.files.path(".execution.lock")):
             if idempotency_key is not None:
                 _validate_id(idempotency_key)
                 if self._directory(project_id, task_id, idempotency_key).exists():
@@ -227,7 +227,7 @@ class TaskRunner:
                 previous = self.get_execution(project_id, task_id)
                 if (previous.execution_id if previous else None) != expected_previous_execution_id:
                     raise ValueError("任务已出现新的执行记录；请刷新状态，不能重放旧执行请求")
-            if self.storage._path(".identity", "accounts.sqlite3").exists():
+            if self.storage.files.path(".identity", "accounts.sqlite3").exists():
                 from .accounts import IdentityStore
                 IdentityStore(self.storage).require_reservation(idempotency_key, project_id, task_id)
             return self._run_locked(project_id, task_id, backend, timeout_seconds=timeout_seconds,
@@ -266,13 +266,13 @@ class TaskRunner:
         phase = "prepare"
         try:
             with measure(record.timing_events, "prepare"):
-                work = self.storage._check_path(directory / "work")
+                work = self.storage.files.check(directory / "work")
                 work.mkdir()
-                references = self.storage._check_path(work / "references")
+                references = self.storage.files.check(work / "references")
                 references.mkdir()
-                self.storage._check_path(work / "products").mkdir()
-                stdout = self.storage._check_path(directory / "stdout.log")
-                stderr = self.storage._check_path(directory / "stderr.log")
+                self.storage.files.check(work / "products").mkdir()
+                stdout = self.storage.files.check(directory / "stdout.log")
+                stderr = self.storage.files.check(directory / "stderr.log")
                 stdout.touch(exist_ok=False)
                 stderr.touch(exist_ok=False)
                 inputs = task_input_artifacts(self.storage, project_id, task_id)
@@ -280,23 +280,23 @@ class TaskRunner:
                 reference_paths = []
                 for item in inputs:
                     source = self.storage.get_artifact_path(item.artifact_id)
-                    destination = self.storage._check_path(references / (item.artifact_id + source.suffix))
-                    copied_size, copied_hash = self.storage._copy_source(source, destination)
+                    destination = self.storage.files.check(references / (item.artifact_id + source.suffix))
+                    copied_size, copied_hash = self.storage.copy_image_source(source, destination)
                     if (copied_size, copied_hash) != (item.size_bytes, item.sha256):
                         raise ValueError("参考图片内容与登记记录不一致")
-                    self.storage._inspect_image(destination)
+                    self.storage.inspect_image(destination)
                     reference_paths.append(destination)
                 edit_image = None
                 if task.base_artifact_id is not None:
                     base = self.storage.get_artifact(task.base_artifact_id)
                     source = self.storage.get_artifact_path(task.base_artifact_id)
-                    edit_image = self.storage._check_path(references / ("base-" + task.base_artifact_id + source.suffix))
-                    copied_size, copied_hash = self.storage._copy_source(source, edit_image)
+                    edit_image = self.storage.files.check(references / ("base-" + task.base_artifact_id + source.suffix))
+                    copied_size, copied_hash = self.storage.copy_image_source(source, edit_image)
                     if (copied_size, copied_hash) != (base.size_bytes, base.sha256):
                         raise ValueError("编辑基底图片内容与登记记录不一致")
-                    self.storage._inspect_image(edit_image)
+                    self.storage.inspect_image(edit_image)
                 try:
-                    options = self.storage._read_json(self.storage._path(".workbench", "tasks", project_id, task_id + ".json"))
+                    options = self.storage.files.read_json(self.storage.files.path(".workbench", "tasks", project_id, task_id + ".json"))
                 except FileNotFoundError:
                     options = None
                 execution_task = replace(task, prompt=execution_prompt(task, options, reference_count=len(inputs)))
@@ -305,7 +305,7 @@ class TaskRunner:
                     stdout, stderr, timeout_seconds, self.storage.config.max_image_bytes,
                     performance,
                 )
-                self.storage._write_json(work / "request.json", {
+                self.storage.files.write_json(work / "request.json", {
                     "schema_version": 1, "execution_id": execution_id, "task": asdict(execution_task),
                     "reference_images": [path.relative_to(self.storage.data_root).as_posix() for path in reference_paths],
                     "edit_image": edit_image.relative_to(self.storage.data_root).as_posix() if edit_image else None,
@@ -403,7 +403,7 @@ class TaskRunner:
                         continue
                     path = self._candidate_path(record, candidate)
                     size, digest = self._hash_file(path)
-                    self.storage._inspect_image(path)
+                    self.storage.inspect_image(path)
                     if candidate.sha256 is not None and (size, digest) != (candidate.size_bytes, candidate.sha256):
                         raise ValueError("候选产物与上次归档校验结果不同，拒绝重复登记")
                     candidate.sha256, candidate.size_bytes = digest, size
@@ -436,7 +436,7 @@ class TaskRunner:
                                 "register_failed" if phase == "register" else "unexpected_exception")
 
     def retry_archive(self, project_id: str, task_id: str, execution_id: str) -> ExecutionRecord:
-        with FileLock(self.storage._path(".execution.lock")):
+        with FileLock(self.storage.files.path(".execution.lock")):
             return self._retry_archive_locked(project_id, task_id, execution_id)
 
     def _retry_archive_locked(self, project_id, task_id, execution_id):

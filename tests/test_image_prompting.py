@@ -141,7 +141,7 @@ class ImagePromptHttpTests(unittest.TestCase):
         options_path = self.state._task_file("tasks", self.pid, task_id)
         options = self.state.task_options(self.pid, task_id)
         options.pop("image_prompt")
-        self.storage._write_json(options_path, options)
+        self.storage.files.write_json(options_path, options)
         self.state.submit(self.pid, task_id, request_id=uuid4().hex, confirmed=True)
         backend = RecordingBackend([self.fixture])
         LocalWorker(self.state, backend).serve(once=True)
