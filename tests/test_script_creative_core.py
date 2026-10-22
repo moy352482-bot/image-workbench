@@ -120,6 +120,10 @@ class ScriptCreativeCoreTests(unittest.TestCase):
             self.service.quote(self.aid, self.wid, self.body(template_id=personal["template_id"]))
         quote = self.service.quote(self.aid, self.wid, self.body(template_id=personal["template_id"], variables={"location": "书房"}))
         self.assertEqual(quote["price"], 40)
+        request = self.body(template_id=personal["template_id"], variables={"location": "书房"})
+        template = resolve_resources(self.service.templates, store, self.aid, self.wid, request)
+        self.assertIn("# 剧情剧本专项方法", build_prompt(request, template))
+        self.assertEqual(template["generation_skill"]["generation_type"], "screenplay")
         self.assertEqual(self.adapter.calls, [])
 
 

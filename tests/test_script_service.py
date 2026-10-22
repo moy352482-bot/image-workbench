@@ -14,6 +14,7 @@ from image_workbench.accounts import CreditInsufficient, IdentityStore
 from image_workbench.script_adapter import ScriptGenerationError
 from image_workbench.script_models import CONFIG_ROOT, ScriptModelRegistry
 from image_workbench.script_service import ScriptService
+from image_workbench.script_templates import SKILL_ROOT, ScriptTemplateLoader
 from image_workbench.workspace_scope import WorkspaceProjects
 from image_workbench.workbench_state import ConflictError
 
@@ -90,6 +91,39 @@ class ScriptServiceTests(unittest.TestCase):
         result = self.service.run(self.aid, self.wid, task["task_id"])
         self.assertEqual(result["status"], "completed", result)
         return result
+
+    def test_skill_reference_update_requotes_but_queued_job_keeps_exact_prompt(self):
+        skill_root = self.root / "skill"
+        shutil.copytree(SKILL_ROOT, skill_root)
+        self.service.templates = ScriptTemplateLoader(skill_root)
+        body, before = self.quoted(self.body(template_id="none"))
+        queued = self.service.submit(self.aid, self.wid, body)
+        saved = self.service._load(queued["task_id"])
+        self.assertIn("# 剧情剧本专项方法", saved["generation_prompt"])
+        self.assertEqual(saved["resource_references"]["skill"]["files"][1]["path"], "references/screenplay-craft.md")
+        ref = skill_root / "references/screenplay-craft.md"
+        ref.write_text("更新后的剧情创作规则", encoding="utf-8")
+        self.assertNotEqual(before["quote_signature"], self.service.quote(self.aid, self.wid, body)["quote_signature"])
+        with self.assertRaises(ConflictError):
+            self.service.submit(self.aid, self.wid, {**body, "request_id": uuid4().hex})
+        self.assertEqual(self.service.submit(self.aid, self.wid, body)["task_id"], queued["task_id"])
+        finished = self.service.run(self.aid, self.wid, queued["task_id"])
+        self.assertEqual(finished["status"], "completed", finished)
+        self.assertEqual(len(self.adapter.calls), 1)
+        self.assertEqual(self.adapter.calls[0]["prompt"], saved["generation_prompt"])
+        self.assertNotIn("更新后的剧情创作规则", self.adapter.calls[0]["prompt"])
+
+    def test_missing_skill_reference_fails_before_reserving_or_invoking(self):
+        skill_root = self.root / "skill"
+        shutil.copytree(SKILL_ROOT, skill_root)
+        self.service.templates = ScriptTemplateLoader(skill_root)
+        body, _ = self.quoted()
+        (skill_root / "references/screenplay-craft.md").unlink()
+        wallet = self.identity.wallet(self.aid)
+        with self.assertRaisesRegex(ValueError, "参考文件不可读取"):
+            self.service.submit(self.aid, self.wid, body)
+        self.assertEqual(self.identity.wallet(self.aid), wallet)
+        self.assertFalse(self.adapter.calls)
 
     def ledger(self, job):
         return [row for row in self.identity.ledger(self.aid) if row["job_id"] == job["job_id"]]

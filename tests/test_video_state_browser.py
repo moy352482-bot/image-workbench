@@ -51,9 +51,9 @@ class VideoStateBrowserTests(unittest.TestCase):
             const name = view.project.name, workspace = view.account.workspace_id;
             view.project.name = 'corrupt'; view.project.assets.length = 0;
             view.account.workspace_id = 'foreign'; view.referenceOrder.push('fake');
-            host.setReferences(ids, {context: host.captureContext(), mode:'I2V'});
+            host.setReferences(ids, {context: host.captureContext(), mode:'FL2V'});
             const wrongScope = {...host.captureContext(), workspace:'foreign'};
-            const rejected = host.setReferences([...ids].reverse(), {context:wrongScope,mode:'I2V'});
+            const rejected = host.setReferences([...ids].reverse(), {context:wrongScope,mode:'FL2V'});
             document.addEventListener('video-project-view', event => {event.detail.project.name='mutated event';}, {once:true});
             await host.refreshProject();
             return {rawState: Object.hasOwn(host,'state'), view:host.snapshot(), name, workspace, rejected};

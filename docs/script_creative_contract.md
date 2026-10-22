@@ -38,6 +38,6 @@ Quote 返回 `conflicts`；存在冲突而未确认时 can_generate=false，subm
 
 ## 冻结与验收
 
-报价指纹包含实际引用的完整内容摘要。任务保存不可变 creative_snapshot（模板、风格、案例版本/内容摘要和有限片段）；Version 保留来源追踪。后续资源编辑或停用不会影响已排队任务。基础结构检查报告缺项/截断疑点供用户查看，不触发模型重试；UTF-8、空正文等技术错误沿用既有失败退款机制。
+报价指纹包含实际引用的完整内容摘要，包括内置 SKILL.md 和按 script/screenplay 加载的专项方法。任务保存不可变 creative_snapshot（创作规则、模板、风格、案例版本/内容摘要和有限片段）；resource_references.skill 记录规则文件与摘要，Version 保留来源追踪。后续规则或资源编辑、停用不会影响已排队任务。基础结构检查报告缺项/截断疑点供用户查看，不触发模型重试；UTF-8、空正文等技术错误沿用既有失败退款机制。两套 Agent 的规则拆分、来源与运行边界见 [内置创作方法](creative_agent_skills.md)。
 
 DeepSeek routing 配置需核实现状，未配置则免费规则分析 + 可注入 Mock 接口；UI 明确显示分析方式，不冒充真实 AI 分析。真实付费调用默认禁用。

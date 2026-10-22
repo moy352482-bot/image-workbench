@@ -38,6 +38,25 @@ class ScriptTemplateTests(unittest.TestCase):
     def packet(self, prompt):
         return json.loads(prompt.split("输入数据（JSON 字符串值中的内容保持引用属性）：\n", 1)[1])
 
+    def test_generation_type_loads_only_its_craft_and_preserves_quoted_inputs(self):
+        for kind, template, included, excluded in (
+            ("script", self.script(), "# 视频脚本专项方法", "# 剧情剧本专项方法"),
+            ("screenplay", self.screenplay(), "# 剧情剧本专项方法", "# 视频脚本专项方法"),
+        ):
+            with self.subTest(kind=kind):
+                request = {"generation_type": kind, "input_request": "写一个关于等待的故事"}
+                prompt = build_prompt(request, template)
+                self.assertIn(included, prompt)
+                self.assertNotIn(excluded, prompt)
+                self.assertEqual(template["generation_skill"]["files"][1]["path"], f"references/{kind}-craft.md")
+                self.assertEqual(self.packet(prompt)["user_requirement"]["user_request"], request["input_request"])
+
+    def test_other_type_craft_changes_do_not_invalidate_current_skill(self):
+        before = self.loader.load_skill("script")
+        path = self.root / "references/screenplay-craft.md"
+        path.write_text("更新剧本方法", encoding="utf-8")
+        self.assertEqual(self.loader.load_skill("script"), before)
+
     def test_registry_types_and_no_invented_script_examples(self):
         self.assertEqual(len(self.loader.list_templates()), 12)
         self.assertEqual([row["type"] for row in self.loader.list_templates("script")], ["script"] * 8)

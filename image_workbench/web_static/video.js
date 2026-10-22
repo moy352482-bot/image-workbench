@@ -5,7 +5,7 @@
   const requestedWorkspace = new URL(location.href).searchParams.get('workspace_id');
   const state = { account: null, config: null, csrf: '', project: null, projectRequest: uuid(), shotRequest: uuid(), referenceOrder: [], runRequests: new Map(), projectSignature: '', loading: false, draftRevision: 0, shotRevision: 0, projectReadSequence: 0 };
   const labels = { draft: '待生成', queued: '已排队', running: '生成中', generating: '生成中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
-  const modes = { T2V: '文生视频', I2V: '首帧 / 首尾帧', R2V: '参考素材' };
+  const modes = { T2V: '文生视频', I2V: '首帧生视频', FL2V: '首尾帧生视频', R2V: '参考素材' };
   const resolutions = ['720p', '1080p'];
   const ratioNames = { landscape: '横向', portrait: '竖向', square: '方形' };
   const active = new Set(['queued', 'running', 'generating', 'uncertain']);
@@ -30,7 +30,7 @@
     if (!isCurrent(context, context.id, true)) return false;
     const order = [...new Set(ids)];
     if (!state.project || order.some(id => !state.project.assets.some(asset => asset.asset_id === id))) throw new Error('参考图片不属于当前项目，请刷新后重新选择');
-    if (!Object.hasOwn(modes, mode) || order.length > (mode === 'I2V' ? 2 : 9)) throw new Error('参考图片数量不符合当前模式');
+    if (!Object.hasOwn(modes, mode) || order.length > (mode === 'I2V' ? 1 : mode === 'FL2V' ? 2 : 9)) throw new Error('参考图片数量不符合当前模式');
     state.referenceOrder = order; $('videoMode').value = mode; shotChanged(); renderAssets(state.project);
     return true;
   }
@@ -43,10 +43,10 @@
       if (index === 1 && !order[0]) throw new Error('请先选择首帧，再设置尾帧；图片已保存到项目素材库');
       if (order.includes(ids[0]) && order[index] !== ids[0]) throw new Error('同一张图片已用于另一帧，请选择其他素材');
       if (order.length > 2) throw new Error('当前已选多张参考图，请先减少选择再设置首尾帧');
-      order[index] = ids[0]; mode = 'I2V';
+      order[index] = ids[0]; mode = order.length === 2 || mode === 'FL2V' ? 'FL2V' : 'I2V';
     } else {
       for (const id of ids) if (!order.includes(id)) order.push(id);
-      const max = mode === 'I2V' ? 2 : 9;
+      const max = mode === 'I2V' ? 1 : mode === 'FL2V' ? 2 : 9;
       if (order.length > max) throw new Error(`当前模式最多选择 ${max} 张图片；图片已保存，请减少选择后重试`);
       if (mode === 'T2V') mode = 'R2V';
     }
@@ -179,7 +179,7 @@
   }
   function updateMode() {
     const mode = $('videoMode').value;
-    $('videoReferenceHelp').textContent = mode === 'T2V' ? '文生视频仅使用本镜头的文字描述。' : mode === 'I2V' ? '先勾选首帧，再勾选可选的末帧。取消后重新勾选可调整顺序。' : '选择 1–9 张参考图；按勾选顺序对应 Picture 1、Picture 2…取消后重新勾选可调整顺序。';
+    $('videoReferenceHelp').textContent = mode === 'T2V' ? '文生视频仅使用本镜头的文字描述。' : mode === 'I2V' ? '选择 1 张图片作为首帧，视频从该画面开始。' : mode === 'FL2V' ? '选择 2 张图片：先勾选首帧，再勾选尾帧。取消后重新勾选可调整顺序。' : '选择 1–9 张参考图；按勾选顺序对应 Picture 1、Picture 2…取消后重新勾选可调整顺序。';
     for (const input of $('videoReferenceChoices').querySelectorAll('input')) input.disabled = mode === 'T2V';
     referenceLabels();
   }
@@ -187,7 +187,7 @@
     const mode = $('videoMode').value;
     for (const label of $('videoReferenceChoices').querySelectorAll('label')) {
       const index = state.referenceOrder.indexOf(label.querySelector('input').value);
-      label.querySelector('.video-reference-order').textContent = mode === 'T2V' || index < 0 ? '' : mode === 'I2V' && index < 2 ? ['首帧', '末帧'][index] : `Picture ${index + 1}`;
+      label.querySelector('.video-reference-order').textContent = mode === 'T2V' || index < 0 ? '' : mode === 'I2V' ? (index === 0 ? '首帧' : '多余参考图') : mode === 'FL2V' ? (['首帧', '尾帧'][index] || '多余参考图') : `Picture ${index + 1}`;
     }
   }
   function renderShots(project) {
@@ -208,7 +208,8 @@
       const expected = requiresRebuild ? null : shot.estimated_credit ?? (rate ? shot.duration * rate : null);
       const cost = job?.credit_cost ?? expected;
       const size = Number.isInteger(shot.width) && Number.isInteger(shot.height) ? ` · ${shot.width} × ${shot.height}` : '';
-      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${modes[shot.mode] || shot.mode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
+      const displayMode = shot.mode === 'I2V' && shot.reference_ids?.length === 2 ? 'FL2V' : shot.mode;
+      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${modes[displayMode] || displayMode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
       copy.append(heading, el('p', 'video-shot-meta', meta), el('p', 'video-shot-prompt', shot.prompt));
       if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild || blockedReason ? '' : '可检查素材后重新提交。'}`));
       const actions = el('div', 'video-shot-actions');
@@ -330,8 +331,10 @@
       const context = captureContext();
       const mode = $('videoMode').value;
       const refs = mode === 'T2V' ? [] : [...state.referenceOrder];
-      if ((mode === 'I2V' && (refs.length < 1 || refs.length > 2)) || (mode === 'R2V' && (refs.length < 1 || refs.length > 9))) throw new Error(mode === 'I2V' ? '首尾帧模式需要选择 1–2 张参考图' : '参考素材模式需要选择 1–9 张参考图');
-      await api(`/api/video/projects/${id}/shots`, { method: 'POST', body: JSON.stringify({ request_id: state.shotRequest, name: $('videoShotName').value.trim(), prompt: $('videoShotPrompt').value.trim(), mode, duration: Number($('videoDuration').value), resolution: $('videoResolution').value, aspect_ratio: $('videoRatio').value, reference_ids: refs }) });
+      if (mode === 'I2V' && refs.length !== 1) throw new Error('首帧模式需要选择 1 张参考图');
+      if (mode === 'FL2V' && refs.length !== 2) throw new Error('首尾帧模式需要选择 2 张参考图，依次为首帧和尾帧');
+      if (mode === 'R2V' && (refs.length < 1 || refs.length > 9)) throw new Error('参考素材模式需要选择 1–9 张参考图');
+      await api(`/api/video/projects/${id}/shots`, { method: 'POST', body: JSON.stringify({ request_id: state.shotRequest, name: $('videoShotName').value.trim(), prompt: $('videoShotPrompt').value.trim(), mode: mode === 'FL2V' ? 'I2V' : mode, duration: Number($('videoDuration').value), resolution: $('videoResolution').value, aspect_ratio: $('videoRatio').value, reference_ids: refs }) });
       if (!isCurrent(context)) return;
       if (isCurrent(context, id, true)) { shotChanged(); $('videoShotName').value = ''; $('videoShotPrompt').value = ''; }
       await refresh(context); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');

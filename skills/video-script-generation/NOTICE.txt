@@ -1,0 +1,5 @@
+Creative methods are locally adapted for the Image Workbench text-only agent.
+Original notices and terms are retained in licenses/. Pinned source files, revisions and SHA-256 hashes are in references/SOURCES.json.
+
+MIT sources: zenstory-ai/drama-skills, HKUDS/ViMax, HBAI-Ltd/Toonflow-app.
+No upstream executables, agent orchestration, service credentials or automatic tool calls are included.

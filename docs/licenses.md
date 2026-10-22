@@ -9,6 +9,11 @@
 | PhotoSwipe | PhotoSwipe 5.4.4 | [LICENSE](../image_workbench/web_static/vendor/photoswipe/LICENSE)、[SOURCE.json](../image_workbench/web_static/vendor/photoswipe/SOURCE.json) |
 | img-comparison-slider | 8.0.7，包含已记录的 ResizeObserver 生命周期修正 | [LICENSE](../image_workbench/web_static/vendor/img-comparison-slider/LICENSE)、[SOURCE.json](../image_workbench/web_static/vendor/img-comparison-slider/SOURCE.json) |
 | MiniMax H3 API 工作流 | 从 Comfy Org 官方 T2V、I2V、R2V 模板转换 | [MIT LICENSE](../workflows/minimax_h3/LICENSE)、[provenance.json](../workflows/minimax_h3/provenance.json) |
+| 脚本／剧本创作方法 | drama-skills、ViMax、Toonflow 的选定创作知识，固定版本与改编范围见来源清单 | [NOTICE](../skills/video-script-generation/NOTICE.txt)、[来源](../skills/video-script-generation/references/SOURCES.json)、[licenses](../skills/video-script-generation/licenses/) |
+| 分镜创作方法 | drama-skills、ViMax、Toonflow 与 MiniMax H3 的选定知识 | [NOTICE](../skills/storyboard-planning/NOTICE.txt)、[来源](../skills/storyboard-planning/references/SOURCES.json)、[licenses](../skills/storyboard-planning/licenses/) |
+| H3 视频创作规则 | MiniMax H3 官方规则与项目适配层 | [H3 Community License](../skills/h3-video-workflow/LICENSE)、[NOTICE](../skills/h3-video-workflow/NOTICE)、[来源](../skills/h3-video-workflow/references/SOURCES.json) |
+
+上述 MiniMax H3 创作规则及分镜资料中的对应改编部分保留 H3 Community License，不适用应用原创代码的 MIT 授权。图片风格预览为项目原创示例，资料来源与处理方式见 [图片 Skill 来源说明](../skills/image-generation-default/references/sources.md)。
 
 工作流来源记录只包含官方来源地址、原始模板 SHA-256 和转换器标识。API JSON 是模板定义，不包含模板引用的示例图片、模型权重或本机 ComfyUI 数据。运行时由受控适配器替换提示词、参考资产与输出位置。
 

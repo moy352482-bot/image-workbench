@@ -21,6 +21,7 @@
 | 图片任务接口、上传 | `http_api/tasks.py`、`http_api/uploads.py` | 保存不执行；上传临时文件必须清理；明确提交才冻结积分 |
 | 图片下载、审核 | `http_api/artifacts.py` | 校验所属空间、文件大小与哈希 |
 | 图片状态写入、提交 | `workbench_state.py` | 任务锁、请求去重、冻结与恢复 |
+| 图片默认 Skill 与风格 | `image_prompting.py`、`skills/image-generation-default/` | 只整理提示词与风格；通过现有任务执行，保留原始需求与快照，不调用额外模型或改动积分 |
 | 图片列表和详情 | `image_queries.py`、`image_status.py` | 查询投影、状态推导、计时口径；不启动任务 |
 | 脚本生成 | `script_service.py`、`script_models.py`、`script_templates.py` | 固定报价、版本不可覆盖、仅显式执行 |
 | 脚本→分镜协调 | `script_workflow.py` | 通过公开源版本/规划阶段端口协作；脚本事务结束后触发，重启消费已保存意图 |

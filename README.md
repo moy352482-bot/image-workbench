@@ -2,7 +2,7 @@
 
 用于电商素材、角色资产和分镜制作的自托管图片与视频工作台。浏览器管理项目、参考资产、任务和结果；执行器在你自己的电脑上运行。支持个人账号、独立工作空间、内部积分、任务恢复和管理员维护页面。
 
-本仓库提供应用代码、脚本生成模板和 ComfyUI 工作流模板。3 份剧本/分镜参考 TXT 经用户确认随本次源码公开；不包含模型权重、登录凭据、业务数据、示例人物图片素材或生成结果。参考正文的许可范围见 [许可证说明](docs/licenses.md)。
+本仓库提供应用代码、图片与文本创作 Skill、脚本生成模板和 ComfyUI 工作流模板，并包含 8 张原创图片风格预览。3 份剧本/分镜参考 TXT 经用户确认随源码公开；不包含模型权重、登录凭据、用户业务数据或业务生成结果。参考正文与第三方创作资料的许可范围见 [许可证说明](docs/licenses.md)。
 
 当前同步包含模块解耦、脚本模板与案例、分镜规划、视频工作台导航、共享素材交互及 Qwen 测试功能。实际发布版本和逐文件校验方法见 [发布记录](docs/verified-release.md)。
 
@@ -20,6 +20,19 @@
 - 分离部署：云端接收任务和保存结果，本机执行器主动领取任务，ComfyUI 无需直接暴露到公网。
 
 图片和脚本后端使用本机已安装并登录的 Codex CLI；脚本模型目录与定价配置分开维护。H3 后端使用本机 ComfyUI、相应节点与模型。各执行器需要分别配置；安装本应用不会安装模型，也不会获得上游服务额度。
+
+## 内置创作 Skill
+
+2026-10-22 更新包含以下规则、参考资料与来源许可，并保留当天的存储、恢复、阶段协调、前端异步状态及发布检查修复。
+
+| Skill | 网站中的作用 | 说明 |
+| --- | --- | --- |
+| [image-generation-default](skills/image-generation-default/SKILL.md) | 图片任务默认整理需求，可选 8 种视觉风格，支持案例预览、应用与撤销 | [图片默认 Skill 与风格案例](docs/image_generation_skill.md) |
+| [video-script-generation](skills/video-script-generation/SKILL.md) | 按脚本或剧本类型载入对应创作方法，保留用户要求与已提交版本 | [文本创作方法](docs/creative_agent_skills.md) |
+| [storyboard-planning](skills/storyboard-planning/SKILL.md) | 将脚本转为镜头设计与连续性约束，沿用既有分镜结构与参考绑定 | [分镜接口](docs/storyboard-api.md) |
+| [h3-video-workflow](skills/h3-video-workflow/SKILL.md) | 编译 H3 视频工作流规则与规划回执，保留已提交任务的恢复依据 | [H3 创作流程](docs/h3_pipeline.md) |
+
+Skill 随应用代码分发；账号、工作空间、积分、提交幂等与产物归档仍由 Python 服务负责。规则来源、改编说明与第三方许可证保存在对应 Skill 目录。
 
 ## 安装与本机启动
 

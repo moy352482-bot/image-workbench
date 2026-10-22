@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "integration": "Locally authored selective adaptations; upstream code is not executed.",
+  "sources": [
+    {
+      "source": "drama-skills",
+      "repo": "zenstory-ai/drama-skills",
+      "commit": "fdb7b7c58017e3eae64eca382c2a85ede368dab0",
+      "path": "skills/short-drama-storyboard/SKILL.md",
+      "url": "https://raw.githubusercontent.com/zenstory-ai/drama-skills/fdb7b7c58017e3eae64eca382c2a85ede368dab0/skills/short-drama-storyboard/SKILL.md",
+      "bytes": 20719,
+      "sha256": "fec0a090c48b8939cdd5302937446faf2ffbbca26bf596e69e2b32dd8153067e",
+      "license_file": "../licenses/drama-skills.txt"
+    },
+    {
+      "source": "drama-skills",
+      "repo": "zenstory-ai/drama-skills",
+      "commit": "fdb7b7c58017e3eae64eca382c2a85ede368dab0",
+      "path": "skills/short-drama-storyboard/references/blocking-playbooks.md",
+      "url": "https://raw.githubusercontent.com/zenstory-ai/drama-skills/fdb7b7c58017e3eae64eca382c2a85ede368dab0/skills/short-drama-storyboard/references/blocking-playbooks.md",
+      "bytes": 15513,
+      "sha256": "bcc86f714b2e52ea7fc03e0283b1d43b28aceedeffe84f0eba2b39db519bd1a4",
+      "license_file": "../licenses/drama-skills.txt"
+    },
+    {
+      "source": "vimax",
+      "repo": "HKUDS/ViMax",
+      "commit": "fd4b72e7731be6e5f88486206d25ea59849b0285",
+      "path": "agents/storyboard_artist.py",
+      "url": "https://raw.githubusercontent.com/HKUDS/ViMax/fd4b72e7731be6e5f88486206d25ea59849b0285/agents/storyboard_artist.py",
+      "bytes": 18817,
+      "sha256": "92c84362770d9123d80c5595cbf526c8d34288f69385a96e9e40c5450e83488e",
+      "license_file": "../licenses/vimax.txt"
+    },
+    {
+      "source": "minimax-h3",
+      "repo": "MiniMax-AI/MiniMax-H3",
+      "commit": "d21241f0a4b3acbb34c97dae47fa417b7065e438",
+      "path": "skills/3d-animation-short-generator/references/shot-table-spec.md",
+      "url": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/3d-animation-short-generator/references/shot-table-spec.md",
+      "bytes": 7803,
+      "sha256": "d4770ff3f7c6d1d82770e8a93b91cecad269a0da7a5fd97d5c27862a3e4c805c",
+      "license_file": "../licenses/minimax-h3.txt"
+    },
+    {
+      "source": "minimax-h3",
+      "repo": "MiniMax-AI/MiniMax-H3",
+      "commit": "d21241f0a4b3acbb34c97dae47fa417b7065e438",
+      "path": "skills/3d-animation-short-generator/references/storyboard-guidelines.md",
+      "url": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-H3/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/3d-animation-short-generator/references/storyboard-guidelines.md",
+      "bytes": 14959,
+      "sha256": "a1a5aaed9681dd2f66c5ff1f92ea433bf8a04c8a145cd806623e29e8cabfe1f6",
+      "license_file": "../licenses/minimax-h3.txt"
+    },
+    {
+      "source": "toonflow",
+      "repo": "HBAI-Ltd/Toonflow-app",
+      "commit": "30139c931e80476caa718b31684b86383c6e83ce",
+      "path": "packages/skills/v118workflow/references/knowledge/shotCraft.md",
+      "url": "https://raw.githubusercontent.com/HBAI-Ltd/Toonflow-app/30139c931e80476caa718b31684b86383c6e83ce/packages/skills/v118workflow/references/knowledge/shotCraft.md",
+      "bytes": 16117,
+      "sha256": "3567ca1ecb0e53522d7514ddb6240a488d28eb0794d7a2ee986aeebe6ec2bf3d",
+      "license_file": "../licenses/toonflow.txt"
+    },
+    {
+      "source": "toonflow",
+      "repo": "HBAI-Ltd/Toonflow-app",
+      "commit": "30139c931e80476caa718b31684b86383c6e83ce",
+      "path": "packages/skills/v118workflow/references/directorPlan.md",
+      "url": "https://raw.githubusercontent.com/HBAI-Ltd/Toonflow-app/30139c931e80476caa718b31684b86383c6e83ce/packages/skills/v118workflow/references/directorPlan.md",
+      "bytes": 4022,
+      "sha256": "a6fe68c1bb53d58f69cb3b5a398a414430b559c6a246ef53109f44ee0480e369",
+      "license_file": "../licenses/toonflow.txt"
+    }
+  ],
+  "minimax_license_source": {
+    "revision": "42ed227ee7df40d41602854ae760620d6eb651fe",
+    "url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/raw/42ed227ee7df40d41602854ae760620d6eb651fe/LICENSE",
+    "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+  }
+}

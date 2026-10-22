@@ -12,7 +12,7 @@ from .storage import _now, _validate_id
 from .storyboard_models import (EDIT_FIELDS, RATIOS, duration_capabilities, duration_conflict,
                                 generation_plan, ids, integer, normalize_plan, normalize_shot,
                                 shot_fingerprint, text)
-from .storyboard_planner import SKILL, StoryboardPlanner, build_prompt
+from .storyboard_planner import StoryboardPlanner, build_prompt, load_skill
 from .domain_errors import ConflictError
 from .workspace_scope import WorkspaceProjects
 
@@ -101,7 +101,7 @@ class StoryboardService:
             if project.get("pipeline", {}).get("subproject_id") != subproject_id:
                 raise ValueError("视频项目与脚本子项目不一致，请先初始化项目关联")
 
-    def quote_options(self, aid, wid, raw, *, source=None, request=None):
+    def quote_options(self, aid, wid, raw, *, source=None, request=None, _skill=None):
         options = self.normalize_options(raw)
         cfg, pricing = self.config(aid, wid), self._pricing()
         if source:
@@ -150,10 +150,11 @@ class StoryboardService:
             elif choice["price"] == 0 and not pricing.get("free_test_enabled"):
                 blocked = "真实免费测试尚未启用"
         remaining = self.identity.wallet(aid)["remaining_credit"]
+        skill = _skill if _skill is not None else load_skill()
         shortfall = max(0, (choice["price"] or 0) - remaining) if remaining is not None else 0
         signature_body = {"options": options, "choice": choice, "source_version": source["version_id"] if source else None,
                           "source_hash": source["sha256"] if source else signature(request or {}),
-                          "skill_sha256": hashlib.sha256(SKILL.read_bytes()).hexdigest(), "pricing": pricing,
+                          "skill_sha256": skill["sha256"], "pricing": pricing,
                           "video_models": cfg["video_models"]}
         return {**choice, "reason": reason, "demand_spec": spec, "shortfall": shortfall, "remaining_credit": remaining,
                 "pricing_status": "priced" if choice["price"] is not None else "unpriced",
@@ -241,13 +242,14 @@ class StoryboardService:
                 return self._public_task(old)
             if body.get("confirmed") is not True:
                 raise ValueError("请确认分镜模型、思考强度和预计积分")
-            quote = self.quote_options(aid, wid, options, source=source)
+            skill = load_skill()
+            quote = self.quote_options(aid, wid, options, source=source, _skill=skill)
             if dependency:
                 # Preserve the exact earlier approved model; do not silently re-route after TXT creation.
                 approved = dependency["storyboard_quote"]
                 if options["mode"] == "codex":
                     options.update(selection_mode="manual", model_id=approved["model_id"], thinking_level=approved["thinking_level"])
-                    quote = self.quote_options(aid, wid, options, source=source)
+                    quote = self.quote_options(aid, wid, options, source=source, _skill=skill)
                 if quote["price"] != approved["price"] or quote["model_id"] != approved["model_id"] or quote["thinking_level"] != approved["thinking_level"]:
                     raise ConflictError("分镜价格或模型已变化，脚本已保留，请重新确认分镜报价")
             elif body.get("quote_signature") != quote["quote_signature"]:
@@ -277,7 +279,8 @@ class StoryboardService:
                    "created_at": _now(), "finished_at": None, "error": None, "replan": replan,
                    "job_id": uuid4().hex if options["mode"] == "codex" else None,
                    "credit_status": "not_applicable" if options["mode"] == "mock" else "credit_frozen"}
-            job["prompt"] = build_prompt(source, internal_options, capability, replan.get("selected_shots") if replan else None)
+            job["skill_reference"] = {k: v for k, v in skill.items() if k != "instructions"}
+            job["prompt"] = build_prompt(source, internal_options, capability, replan.get("selected_shots") if replan else None, skill=skill)
             if job["job_id"]:
                 job = self.identity.reserve(job, {"account_id": aid, "workspace_id": wid}, quote["price"])
             self._write_task(job)

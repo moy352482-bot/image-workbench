@@ -81,6 +81,7 @@ class ImageQueries:
             return result
         valid_options = not options or (options["state"] == "ready" and not options.get("asset_library"))
         result.update(
+            image_prompt=(options or {}).get("image_prompt"),
             inputs=[self.artifact_dto(item, catalog=catalog) for item in inputs], outputs=[self.artifact_dto(item, catalog=catalog) for item in outputs],
             base_image=self.artifact_dto(self.state.storage.get_artifact(task.base_artifact_id), catalog=catalog) if task.base_artifact_id else None,
             aspect_ratio=options["aspect_ratio"] if options else "auto",

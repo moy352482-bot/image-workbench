@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "integration": "Locally authored selective adaptations; upstream code is not executed.",
+  "sources": [
+    {
+      "source": "drama-skills",
+      "repo": "zenstory-ai/drama-skills",
+      "commit": "fdb7b7c58017e3eae64eca382c2a85ede368dab0",
+      "path": "skills/short-drama-write/SKILL.md",
+      "url": "https://raw.githubusercontent.com/zenstory-ai/drama-skills/fdb7b7c58017e3eae64eca382c2a85ede368dab0/skills/short-drama-write/SKILL.md",
+      "bytes": 11094,
+      "sha256": "87085fd7791d3c53b20523139616e3f9032227385c30eb2aa48f367cb006e790",
+      "license_file": "../licenses/drama-skills.txt"
+    },
+    {
+      "source": "vimax",
+      "repo": "HKUDS/ViMax",
+      "commit": "fd4b72e7731be6e5f88486206d25ea59849b0285",
+      "path": "agents/script_planner.py",
+      "url": "https://raw.githubusercontent.com/HKUDS/ViMax/fd4b72e7731be6e5f88486206d25ea59849b0285/agents/script_planner.py",
+      "bytes": 26177,
+      "sha256": "083f7e38f6348f4b4c512547db77f546462108bf746f1c7504f04faf15cf07d0",
+      "license_file": "../licenses/vimax.txt"
+    },
+    {
+      "source": "toonflow",
+      "repo": "HBAI-Ltd/Toonflow-app",
+      "commit": "30139c931e80476caa718b31684b86383c6e83ce",
+      "path": "packages/skills/v118workflow/references/knowledge/scriptCraft.md",
+      "url": "https://raw.githubusercontent.com/HBAI-Ltd/Toonflow-app/30139c931e80476caa718b31684b86383c6e83ce/packages/skills/v118workflow/references/knowledge/scriptCraft.md",
+      "bytes": 18273,
+      "sha256": "e538088f8a1213f7f9b62127a1ff92bbb5d4adace93e251b8be512fe9236b103",
+      "license_file": "../licenses/toonflow.txt"
+    }
+  ]
+}
