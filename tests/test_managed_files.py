@@ -60,7 +60,7 @@ class ManagedFilesTests(unittest.TestCase):
 
     def test_scope_rechecks_parent_reparse_points_after_creation(self):
         original = Path.lstat
-        anchor = self.root
+        anchor = self.files.anchor
 
         def reparse(path, *args, **kwargs):
             info = original(path, *args, **kwargs)
@@ -84,9 +84,12 @@ class ManagedFilesTests(unittest.TestCase):
         if short == self.root.resolve():
             self.skipTest("8.3 aliases are unavailable on this filesystem")
         files = ManagedFiles(short).scope("workspace-a")
+        self.assertEqual(files.root, self.root.resolve() / "workspace-a")
         path = files.path("record.json")
         files.write_json(path, {"schema_version": 1, "value": "same directory"})
         self.assertEqual(self.files.read_json(self.files.path("record.json"))["value"], "same directory")
+        storage = StorageManager(StorageConfig(data_root=short))
+        self.assertEqual(storage._read_json(path)["value"], "same directory")
         with self.assertRaises(ValueError):
             files.read_json(short / "workspace-b" / "record.json")
 
