@@ -288,6 +288,12 @@
       "WorkbenchApi": "web_static/workbench-api.js",
       "WorkbenchPreview": "web_static/workbench-preview.js",
       "WorkbenchAccounts": "web_static/workbench-accounts.js"
+    },
+    "state_ports": {
+      "IWVideo": {
+        "owner": "web_static/video.js",
+        "consumers": ["web_static/pipeline.js", "web_static/storyboard.js"]
+      }
     }
   }
 }

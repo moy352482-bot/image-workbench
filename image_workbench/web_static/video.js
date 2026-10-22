@@ -3,12 +3,55 @@
   const $ = id => document.getElementById(id);
   const uuid = () => crypto.randomUUID().replaceAll('-', '');
   const requestedWorkspace = new URL(location.href).searchParams.get('workspace_id');
-  const state = { account: null, config: null, csrf: '', project: null, projectRequest: uuid(), shotRequest: uuid(), referenceOrder: [], runRequests: new Map(), projectSignature: '', loading: false };
+  const state = { account: null, config: null, csrf: '', project: null, projectRequest: uuid(), shotRequest: uuid(), referenceOrder: [], runRequests: new Map(), projectSignature: '', loading: false, draftRevision: 0, shotRevision: 0, projectReadSequence: 0 };
   const labels = { draft: '待生成', queued: '已排队', running: '生成中', generating: '生成中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
   const modes = { T2V: '文生视频', I2V: '首帧 / 首尾帧', R2V: '参考素材' };
   const resolutions = ['720p', '1080p'];
   const ratioNames = { landscape: '横向', portrait: '竖向', square: '方形' };
   const active = new Set(['queued', 'running', 'generating', 'uncertain']);
+
+  // Consumers receive detached values and scoped commands. No module can mutate
+  // the controller's state through a view or a project-change event.
+  function snapshot() {
+    return Object.freeze(structuredClone({account: state.account, config: state.config, project: state.project,
+      referenceOrder: state.referenceOrder, draftRevision: state.draftRevision, shotRevision: state.shotRevision}));
+  }
+  function captureContext() {
+    return Object.freeze({id: state.project?.project_id ?? null, account: state.account?.account_id,
+      workspace: state.account?.workspace_id, revision: state.draftRevision, shotRevision: state.shotRevision});
+  }
+  function isCurrent(context, id = context.id, checkDraft = false) {
+    return !state.selectingProject && !state.switchingWorkspace && context.account === state.account?.account_id
+      && context.workspace === state.account?.workspace_id && context.revision === state.draftRevision
+      && id === (state.project?.project_id ?? null) && (!checkDraft || context.shotRevision === state.shotRevision);
+  }
+  function shotChanged() { state.shotRevision++; state.shotRequest = uuid(); }
+  function setReferences(ids, {context = captureContext(), mode = $('videoMode').value} = {}) {
+    if (!isCurrent(context, context.id, true)) return false;
+    const order = [...new Set(ids)];
+    if (!state.project || order.some(id => !state.project.assets.some(asset => asset.asset_id === id))) throw new Error('参考图片不属于当前项目，请刷新后重新选择');
+    if (!Object.hasOwn(modes, mode) || order.length > (mode === 'I2V' ? 2 : 9)) throw new Error('参考图片数量不符合当前模式');
+    state.referenceOrder = order; $('videoMode').value = mode; shotChanged(); renderAssets(state.project);
+    return true;
+  }
+  function addReferences(ids, purpose, context) {
+    if (!isCurrent(context, context.id, true)) return false;
+    const order = [...state.referenceOrder]; let mode = $('videoMode').value;
+    if (purpose === 'first' || purpose === 'last') {
+      const index = purpose === 'first' ? 0 : 1;
+      if (ids.length !== 1 || (order[index] && order[index] !== ids[0])) throw new Error('首尾帧一次只能指定一张；已有图片不会覆盖，请先取消对应选择');
+      if (index === 1 && !order[0]) throw new Error('请先选择首帧，再设置尾帧；图片已保存到项目素材库');
+      if (order.includes(ids[0]) && order[index] !== ids[0]) throw new Error('同一张图片已用于另一帧，请选择其他素材');
+      if (order.length > 2) throw new Error('当前已选多张参考图，请先减少选择再设置首尾帧');
+      order[index] = ids[0]; mode = 'I2V';
+    } else {
+      for (const id of ids) if (!order.includes(id)) order.push(id);
+      const max = mode === 'I2V' ? 2 : 9;
+      if (order.length > max) throw new Error(`当前模式最多选择 ${max} 张图片；图片已保存，请减少选择后重试`);
+      if (mode === 'T2V') mode = 'R2V';
+    }
+    return setReferences(order, {context, mode});
+  }
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -93,7 +136,9 @@
     resolutionView();
   }
   async function loadProjects() {
+    const context = captureContext();
     const result = await api('/api/video/projects');
+    if (!isCurrent(context)) return result.projects;
     $('videoProjectList').replaceChildren();
     for (const project of result.projects) {
       const button = el('button', 'video-project-button', project.name);
@@ -122,6 +167,7 @@
       input.addEventListener('change', () => {
         state.referenceOrder = state.referenceOrder.filter(id => id !== asset.asset_id);
         if (input.checked) state.referenceOrder.push(asset.asset_id);
+        shotChanged();
         referenceLabels();
       });
       const thumb = image.cloneNode(); thumb.alt = '';
@@ -174,13 +220,15 @@
           const button = el('button', 'primary-button', canGenerate ? `${status === 'failed' ? '重新生成' : '生成视频'} · ${expected} 积分` : `等待设置 ${resolution} 价格`);
           button.type = 'button'; button.disabled = !canGenerate;
           button.addEventListener('click', () => busy(button, async () => {
+            const context = captureContext(); if (context.id !== project.project_id || !isCurrent(context)) return;
             const key = `${shot.shot_id}:${job?.job_id || 'first'}`;
             if (!state.runRequests.has(key)) state.runRequests.set(key, uuid());
             const body = { request_id: state.runRequests.get(key), confirm_generation: true, expected_credit: expected };
             if (status === 'failed') body.retry_of = job.job_id;
             await api(`/api/video/projects/${project.project_id}/shots/${shot.shot_id}/run`, { method: 'POST', body: JSON.stringify(body) });
+            if (!isCurrent(context)) return;
             notice(`镜头已排队，已冻结 ${expected} 积分。${state.config.worker_online ? '' : '执行器上线后会继续处理。'}`);
-            await refresh();
+            await refresh(context);
           }));
           actions.append(button);
         }
@@ -203,60 +251,71 @@
     }
     if (!project.shots.length) $('videoShots').append(el('div', 'video-empty', '还没有分镜。填写上方镜头内容并保存，再单独点击生成。'));
   }
-  function projectView(project, force = false, preserveDraft = false) {
-    state.project = project;
+  function projectView(project, force = false, preserveDraft = false, notify = true) {
+    state.project = structuredClone(project);
     $('videoProjectDetail').hidden = false; $('videoCreatePanel').hidden = true;
     $('videoProjectIntro').hidden = false;
     $('videoActiveName').textContent = project.name; $('videoProjectCrumb').textContent = project.name;
     $('videoActiveScript').textContent = project.script || '未填写脚本说明';
     const signature = JSON.stringify([project.assets, project.shots, state.config.rates, enabledResolutions()]);
     if (force || signature !== state.projectSignature) { renderAssets(project); renderShots(project); state.projectSignature = signature; }
-    document.dispatchEvent(new CustomEvent('video-project-view', { detail: { project, force, preserveDraft } }));
+    if (notify) document.dispatchEvent(new CustomEvent('video-project-view', { detail: { project: structuredClone(project), force, preserveDraft, context: captureContext() } }));
   }
   async function selectProject(id, preserveDraft = false) {
-    if (!preserveDraft) state.draftRevision = (state.draftRevision || 0) + 1;
-    state.selectingProject = id;
-    const project = await api(`/api/video/projects/${id}`);
-    if (state.selectingProject !== id) return;
-    if (!preserveDraft) $('videoShotForm').reset(); state.shotRequest = uuid(); state.referenceOrder = [];
-    $('videoReferenceChoices').replaceChildren();
-    projectView(project, true, preserveDraft); resolutionView(); await loadProjects();
-    const url = new URL(location.href); url.searchParams.set('project', id); history.replaceState(null, '', url);
+    if (!preserveDraft) state.draftRevision++;
+    const selection = {id, workspace: state.account?.workspace_id, revision: state.draftRevision};
+    state.selectingProject = selection; state.projectReadSequence++;
+    try {
+      const project = await api(`/api/video/projects/${id}`);
+      if (state.selectingProject !== selection || state.switchingWorkspace || selection.workspace !== state.account?.workspace_id) return;
+      state.selectingProject = null;
+      if (!preserveDraft) { $('videoShotForm').reset(); shotChanged(); }
+      state.referenceOrder = []; $('videoReferenceChoices').replaceChildren();
+      projectView(project, true, preserveDraft); resolutionView();
+      const url = new URL(location.href); url.searchParams.set('project', id); history.replaceState(null, '', url);
+      await loadProjects();
+    } finally { if (state.selectingProject === selection) state.selectingProject = null; }
   }
   async function ensureProject() {
-    if (state.project) return state.project;
+    if (state.selectingProject || state.switchingWorkspace) throw new Error('项目正在切换，请稍候再试');
+    if (state.project) return structuredClone(state.project);
     if (!state.account) throw new Error('工作台正在加载，请稍候再试');
-    if (state.projectCreating) return state.projectCreating;
-    const revision = state.draftRevision;
+    if (state.projectCreating && isCurrent(state.projectCreating.context)) return state.projectCreating.promise;
+    const context = captureContext();
     state.projectDraft ||= { request_id: state.projectRequest, name: $('videoProjectName').value.trim() || `新作品 ${new Date().toLocaleString('zh-CN', { hour12: false })}`, script: '' };
     const pending = (async () => {
       const project = await api('/api/video/projects', { method: 'POST', body: JSON.stringify(state.projectDraft) });
-      if (state.draftRevision !== revision) throw new Error('已切换项目，请在当前项目重新操作');
+      if (!isCurrent(context)) throw new Error('已切换项目，请在当前项目重新操作');
       await selectProject(project.project_id, true);
-      if (state.draftRevision !== revision || state.project?.project_id !== project.project_id) throw new Error('已切换项目，请在当前项目重新操作');
+      if (!isCurrent(context, project.project_id)) throw new Error('已切换项目，请在当前项目重新操作');
       state.projectRequest = uuid(); state.projectDraft = null;
       return project;
     })();
-    state.projectCreating = pending;
-    try { return await pending; } finally { if (state.projectCreating === pending) state.projectCreating = null; }
+    const creating = {context, promise: pending}; state.projectCreating = creating;
+    try { return await pending; } finally { if (state.projectCreating === creating) state.projectCreating = null; }
   }
-  async function refresh() {
-    if (state.loading) return;
-    state.loading = true;
+  async function refreshProject(context = captureContext(), {notify = true} = {}) {
+    if (!context.id || !isCurrent(context)) return null;
+    const sequence = ++state.projectReadSequence;
+    const project = await api(`/api/video/projects/${context.id}`, {headers: {'X-Workspace-ID': context.workspace}});
+    if (!isCurrent(context) || sequence !== state.projectReadSequence) return null;
+    projectView(project, false, false, notify);
+    return structuredClone(project);
+  }
+  async function refresh(context = captureContext()) {
+    if (!isCurrent(context) || (state.loading && isCurrent(state.loading))) return;
+    state.loading = context;
     try {
-      state.config = await api('/api/video/config'); configView();
-      await refreshAccount();
-      if (state.project) {
-        const id = state.project.project_id;
-        const project = await api(`/api/video/projects/${id}`);
-        if (state.project?.project_id === id) projectView(project);
-      }
-    } finally { state.loading = false; }
+      const [config, account] = await Promise.all([api('/api/video/config'), api('/api/auth/me')]);
+      if (!isCurrent(context)) return;
+      state.config = config; state.account = account; configView(); balance();
+      await refreshProject(context);
+    } finally { if (state.loading === context) state.loading = false; }
   }
 
   $('newVideoProject').addEventListener('click', () => {
     state.draftRevision = (state.draftRevision || 0) + 1; state.selectingProject = null; state.project = null; state.projectSignature = '';
-    state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; state.shotRequest = uuid();
+    state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; shotChanged();
     $('videoShotForm').reset(); $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
     renderAssets({ assets: [] }); renderShots({ shots: [] });
     document.dispatchEvent(new CustomEvent('video-project-cleared')); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
@@ -268,30 +327,38 @@
     event.preventDefault();
     busy(event.submitter, async () => {
       const id = (await ensureProject()).project_id;
+      const context = captureContext();
       const mode = $('videoMode').value;
       const refs = mode === 'T2V' ? [] : [...state.referenceOrder];
       if ((mode === 'I2V' && (refs.length < 1 || refs.length > 2)) || (mode === 'R2V' && (refs.length < 1 || refs.length > 9))) throw new Error(mode === 'I2V' ? '首尾帧模式需要选择 1–2 张参考图' : '参考素材模式需要选择 1–9 张参考图');
       await api(`/api/video/projects/${id}/shots`, { method: 'POST', body: JSON.stringify({ request_id: state.shotRequest, name: $('videoShotName').value.trim(), prompt: $('videoShotPrompt').value.trim(), mode, duration: Number($('videoDuration').value), resolution: $('videoResolution').value, aspect_ratio: $('videoRatio').value, reference_ids: refs }) });
-      state.shotRequest = uuid(); $('videoShotName').value = ''; $('videoShotPrompt').value = '';
-      if (state.project?.project_id === id) await refresh(); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');
+      if (!isCurrent(context)) return;
+      if (isCurrent(context, id, true)) { shotChanged(); $('videoShotName').value = ''; $('videoShotPrompt').value = ''; }
+      await refresh(context); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');
     });
   });
   $('videoMode').addEventListener('change', updateMode);
+  $('videoShotForm').addEventListener('input', shotChanged);
+  $('videoShotForm').addEventListener('change', shotChanged);
   $('videoResolution').addEventListener('change', resolutionView);
   $('videoDuration').addEventListener('input', quote);
   $('videoRefresh').addEventListener('click', event => busy(event.currentTarget, async () => { await refresh(); await loadProjects(); notice('状态已刷新'); }));
-  $('videoWorkspace').addEventListener('change', async event => { try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { event.target.value = state.account.workspace_id; notice(error.message, true); } });
+  $('videoWorkspace').addEventListener('change', async event => { state.draftRevision++; state.switchingWorkspace = true; try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { state.switchingWorkspace = false; event.target.value = state.account.workspace_id; notice(error.message, true); } });
   $('videoLogout').addEventListener('click', event => busy(event.currentTarget, async () => { await api('/api/auth/logout', { method: 'POST' }); location.assign('/login'); }));
 
-  window.IWVideo = { state, api, refresh, notice, busy, mediaURL, el, uuid, ensureProject, renderAssets, updateMode, selectProject };
+  window.IWVideo = Object.freeze({ snapshot, captureContext, isCurrent, setReferences, addReferences, refreshProject,
+    api, refresh, notice, busy, mediaURL, el, uuid, ensureProject, selectProject });
   (async () => {
+    const initialRevision = state.draftRevision;
     state.csrf = (await api('/api/config')).csrf_token;
     await refreshAccount();
     for (const workspace of state.account.workspaces) { const option = el('option', '', workspace.name); option.value = workspace.workspace_id; option.selected = workspace.workspace_id === state.account.workspace_id; $('videoWorkspace').append(option); }
     state.config = await api('/api/video/config'); configView();
     const projects = await loadProjects(); const requested = new URL(location.href).searchParams.get('project');
-    if (requested && projects.some(project => project.project_id === requested)) await selectProject(requested);
-    else if (projects.length) await selectProject(projects[0].project_id);
+    if (initialRevision === state.draftRevision && !state.project && !state.selectingProject && !state.switchingWorkspace) {
+      if (requested && projects.some(project => project.project_id === requested)) await selectProject(requested);
+      else if (projects.length) await selectProject(projects[0].project_id);
+    }
     document.dispatchEvent(new CustomEvent('video-ready'));
     setInterval(() => { if (!document.hidden && state.account) refresh().catch(error => notice(error.message, true)); }, 8000);
   })().catch(error => notice(error.message, true));

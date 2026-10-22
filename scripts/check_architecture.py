@@ -127,6 +127,15 @@ def analyze(root=ROOT):
                     errors.append(f"{relative}: imports sibling {sibling}; pass a callback instead.")
             if re.search(r"\bstate\.", text):
                 errors.append(f"{relative}: reaches into page state; pass values/callbacks instead.")
+        for symbol, spec in frontend.get("state_ports", {}).items():
+            owner = (package_root / spec["owner"]).read_text(encoding="utf-8")
+            if re.search(r"\b" + re.escape(symbol) + r"\s*=\s*(?:Object\.freeze\()?\{[^}]*\bstate\b", owner):
+                errors.append(f"{spec['owner']}: exports mutable page state; expose snapshots and scoped commands.")
+            for relative in spec["consumers"]:
+                text = (package_root / relative).read_text(encoding="utf-8")
+                if (re.search(r"\b(?:" + re.escape(symbol) + r"|host)\.state\b", text) or
+                        re.search(r"\{[^}]*\bstate\b[^}]*\}\s*=\s*window\." + re.escape(symbol), text)):
+                    errors.append(f"{relative}: reaches into {symbol} state; use its snapshot/command ports.")
     return {"modules": len(paths), "edges": sorted(edges, key=lambda e: (e["source"], e["target"], e["line"])),
             "groups": groups, "errors": errors}
 
