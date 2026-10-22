@@ -26,7 +26,6 @@ class ScriptService:
         self.resources = ScriptResourceStore(storage, identity)
         self.adapter = adapter or CodexTextAdapter()
         self.router = DemandRouter(self.registry)
-        self.storyboards = None
         self.root = storage.files.path(".workbench", "script-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +102,7 @@ class ScriptService:
             raise ValueError("修改版本不能改变脚本或剧本类型")
         return version
 
-    def _normalize(self, body):
+    def _normalize(self, body, *, storyboard_options=None):
         keys = ("subproject_id", "generation_type", "template_id", "input_request", "selection_mode", "model_id", "thinking_level",
                 "duration", "aspect_ratio", "target_audience", "tone", "characters", "product_ip", "constraints", "parent_version_id", "change_reason",
                 "template_version", "style_ids", "example_refs", "variables", "conflicts_confirmed")
@@ -155,9 +154,9 @@ class ScriptService:
         if req.get("parent_version_id") and not str(req.get("change_reason", "")).strip():
             raise ValueError("生成修改版本时请填写修改原因")
         if body.get("storyboard_options") is not None:
-            if self.storyboards is None:
-                raise ValueError("独立分镜服务尚未装配")
-            req["storyboard_options"] = self.storyboards.normalize_options(body["storyboard_options"])
+            if storyboard_options is None:
+                raise ValueError("两阶段请求必须通过脚本分镜协调器提交")
+            req["storyboard_options"] = storyboard_options
         return req
 
     def config(self, account_id, workspace_id):
@@ -168,16 +167,17 @@ class ScriptService:
                 "generation_types": [{"id": "script", "name": "脚本"}, {"id": "screenplay", "name": "剧本"}],
                 "credits": self.identity.wallet(account_id)}
 
-    def validate_input(self, account_id, workspace_id, body):
+    def validate_input(self, account_id, workspace_id, body, *, storyboard_options=None):
         """Validate a generation request and ownership without reserving or executing."""
-        req = self._normalize(body)
+        req = self._normalize(body, storyboard_options=storyboard_options)
         projects = WorkspaceProjects(self.storage, self.identity, account_id, workspace_id)
         projects.get_subproject(req["subproject_id"])
         self._parent(account_id, workspace_id, req.get("parent_version_id"), req["subproject_id"], req["generation_type"])
         return req
 
-    def quote(self, account_id, workspace_id, body, *, _prepared=None):
-        req = self.validate_input(account_id, workspace_id, body)
+    def quote(self, account_id, workspace_id, body, *, _prepared=None, storyboard_plan=None):
+        req = self.validate_input(account_id, workspace_id, body,
+                                  storyboard_options=storyboard_plan["options"] if storyboard_plan else None)
         template = _prepared if _prepared is not None else resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
         choice, reason, spec = self.router.route(req, template, allow_external=False)
         warnings = []
@@ -193,7 +193,8 @@ class ScriptService:
                   "pricing_status": "priced"}
         quoted["quote_signature"] = signature({"request": req, "choice": choice, "references": refs})
         if req.get("storyboard_options"):
-            planning = self.storyboards.quote_options(account_id, workspace_id, req["storyboard_options"], request=req)
+            # The coordinator supplies data, never a service or execution callback.
+            planning = storyboard_plan["quote"]
             combined = choice["price"] + (planning["price"] or 0)
             quoted["storyboard_quote"] = planning
             quoted["total_estimated_credit"] = combined if planning["price"] is not None else None
@@ -207,32 +208,45 @@ class ScriptService:
             row = db.execute("SELECT transaction_id FROM credit_transactions WHERE job_id=? AND type=? ORDER BY created_at LIMIT 1", (job_id, kind)).fetchone()
         return row[0] if row else None
 
-    def submit(self, account_id, workspace_id, body, *, admission=None):
-        req = self._normalize(body)
+    def _replay_submission(self, account_id, workspace_id, rid, tid, fingerprint):
+        with self.identity.connect() as db:
+            prior = db.execute("SELECT task_id,payload FROM reservations WHERE account_id=? AND request_id=?", (account_id, rid)).fetchone()
+        if prior and (prior["task_id"] != tid or json.loads(prior["payload"]).get("kind") != "script"):
+            raise ConflictError("该请求标识已用于另一项任务")
+        pending = next((j for j in self.identity.pending_jobs() if j.get("task_id") == tid and j.get("kind") == "script"), None)
+        if not self._path(tid).exists() and pending:
+            self.storage.files.write_json(self._path(tid), pending)
+        if not self._path(tid).exists():
+            return None
+        old = self._authorized(account_id, workspace_id, tid)
+        if old["request_fingerprint"] != fingerprint:
+            raise ConflictError("该请求标识已用于不同内容，请重新提交")
+        if old.get("job_id") and not old.get("credit_transaction_id"):
+            old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
+            self._write(old)
+        return self._public(self._reconcile(old))
+
+    def replay_submission(self, account_id, workspace_id, body, *, storyboard_options=None):
+        """Recover an accepted request before a coordinator checks current prices/admission."""
+        req = self._normalize(body, storyboard_options=storyboard_options)
+        rid = _validate_id(body.get("request_id"))
+        tid = uuid5(NAMESPACE_URL, "script:" + account_id + ":" + rid).hex
+        with self._control():
+            return self._replay_submission(account_id, workspace_id, rid, tid, signature(req))
+
+    def submit(self, account_id, workspace_id, body, *, admission=None, storyboard_plan=None):
+        req = self._normalize(body, storyboard_options=storyboard_plan["options"] if storyboard_plan else None)
         rid = _validate_id(body.get("request_id"))
         tid = uuid5(NAMESPACE_URL, "script:" + account_id + ":" + rid).hex
         fingerprint = signature(req)
         with self._control():
-            with self.identity.connect() as db:
-                prior = db.execute("SELECT task_id,payload FROM reservations WHERE account_id=? AND request_id=?", (account_id, rid)).fetchone()
-            if prior and (prior["task_id"] != tid or json.loads(prior["payload"]).get("kind") != "script"):
-                raise ConflictError("该请求标识已用于另一项任务")
-            # Restore reserved outbox before deciding whether this is a new request.
-            pending = next((j for j in self.identity.pending_jobs() if j.get("task_id") == tid and j.get("kind") == "script"), None)
-            if not self._path(tid).exists() and pending:
-                self.storage.files.write_json(self._path(tid), pending)
-            if self._path(tid).exists():
-                old = self._authorized(account_id, workspace_id, tid)
-                if old["request_fingerprint"] != fingerprint:
-                    raise ConflictError("该请求标识已用于不同内容，请重新提交")
-                if old.get("job_id") and not old.get("credit_transaction_id"):
-                    old["credit_transaction_id"] = self._transaction_id(old["job_id"], "freeze")
-                    self._write(old)
-                return self._public(self._reconcile(old))
+            old = self._replay_submission(account_id, workspace_id, rid, tid, fingerprint)
+            if old is not None:
+                return old
             if admission is not None:
                 admission()
             template = resolve_resources(self.templates, self.resources, account_id, workspace_id, req)
-            quote = self.quote(account_id, workspace_id, req, _prepared=template)
+            quote = self.quote(account_id, workspace_id, req, _prepared=template, storyboard_plan=storyboard_plan)
             if quote["shortfall"]:
                 raise CreditInsufficient(quote.get("total_estimated_credit") or quote["price"], quote["remaining_credit"])
             if body.get("quote_signature") is not None and body["quote_signature"] != quote["quote_signature"]:
@@ -346,14 +360,6 @@ class ScriptService:
                                         "version_id": version["version_id"]}
             job.update(output_version=version["version"], status="completed", completed_at=_now(), finished_at=_now(), error=None)
             self._write(job, settle=bool(job.get("job_id")))
-        # The script has already been committed and settled. Its downstream stage
-        # cannot turn a valid TXT into a failed script, including remote completion.
-        if self.storyboards and job.get("storyboard_options") and job.get("source") != "manual_edit":
-            try:
-                self.storyboards.dependency_completed(job)
-            except Exception:
-                # The durable options remain available for stage recovery.
-                pass
 
     def run(self, account_id, workspace_id, task_id):
         try:
@@ -439,10 +445,6 @@ class ScriptService:
 
     def _public(self, job):
         value = {k: v for k, v in job.items() if k not in {"generation_prompt", "request_fingerprint", "claim_id", "worker_id", "attempt_id", "creative_snapshot"}}
-        if self.storyboards and job.get("storyboard_options"):
-            stage = self.storyboards.dependency_task(job["account_id"], job["workspace_id"], job)
-            value["storyboard_task"] = stage
-            value["storyboard_task_id"] = stage["task_id"] if stage else None
         return value
 
     def list_tasks(self, account_id, workspace_id, subproject_id=None):

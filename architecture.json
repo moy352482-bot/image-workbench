@@ -169,6 +169,10 @@
         "qwen"
       ]
     },
+    "workflows": {
+      "modules": ["script_workflow"],
+      "may_import": ["foundation", "scripts", "storyboards"]
+    },
     "pipeline": {
       "modules": [
         "pipeline_service"

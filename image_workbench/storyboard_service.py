@@ -7,7 +7,7 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from .accounts import CreditInsufficient
 from .locking import FileLock, LockBusyError
-from .script_models import CONFIG_ROOT, DemandRouter, signature
+from .script_models import CONFIG_ROOT, DemandRouter, ScriptModelRegistry, signature
 from .storage import _now, _validate_id
 from .storyboard_models import (EDIT_FIELDS, RATIOS, duration_capabilities, duration_conflict,
                                 generation_plan, ids, integer, normalize_plan, normalize_shot,
@@ -27,9 +27,9 @@ def stable(value):
 
 
 class StoryboardService:
-    def __init__(self, storage, identity, scripts, video_store, *, planner=None, pricing_path=None):
-        self.storage, self.identity, self.scripts, self.video = storage, identity, scripts, video_store
-        self.registry = scripts.registry
+    def __init__(self, storage, identity, script_source, video_store, *, registry=None, planner=None, pricing_path=None):
+        self.storage, self.identity, self.script_source, self.video = storage, identity, script_source, video_store
+        self.registry = registry or ScriptModelRegistry()
         self.planner = planner or StoryboardPlanner()
         self.pricing_path = Path(pricing_path or CONFIG_ROOT / "storyboard_pricing.json")
         self.root = storage.files.path(".workbench", "storyboards")
@@ -93,7 +93,7 @@ class StoryboardService:
         return value
 
     def _source(self, aid, wid, body):
-        return self.scripts.storyboard_source(aid, wid, _validate_id(body.get("source_script_version")))
+        return self.script_source(aid, wid, _validate_id(body.get("source_script_version")))
 
     def _check_video_project(self, aid, wid, options, subproject_id):
         if options.get("video_project_id"):
@@ -835,35 +835,22 @@ class StoryboardService:
                  s.get("shot_fingerprint") != shot_fingerprint(shots[s["storyboard_shot_id"]])}
                 for s in project["shots"] if s.get("storyboard_id") == envelope["storyboard_id"]]
 
-    def dependency_completed(self, script_job):
-        """Called only after immutable TXT/Version is committed. Errors never change script status."""
-        if script_job.get("status") != "completed" or not script_job.get("storyboard_options") or not script_job.get("storyboard_confirmed"):
-            return None
+    def record_dependency_failure(self, script_job, error):
+        """Persist a failed stage when admission fails before it can reserve credit."""
         aid, wid = script_job["account_id"], script_job["workspace_id"]
         rid = stable("dependency:" + script_job["task_id"])
         tid = stable("task:" + aid + ":" + rid)
-        if self._task_path(tid).exists():
-            task = self.task(aid, wid, tid)
-            if task["status"] == "queued":
-                return self.run(aid, wid, tid)
-            return task
-        try:
-            task = self.submit(aid, wid, {**script_job["storyboard_options"], "source_script_version": script_job["version_id"],
-                                         "request_id": rid, "confirmed": True}, dependency=script_job)
-            return self.run(aid, wid, task["task_id"])
-        except Exception as exc:
-            # Persist a separate failed stage even when pricing/ownership changed before reservation.
-            with self._control():
-                if not self._task_path(tid).exists():
-                    job = {"schema_version": 1, "kind": "storyboard", "task_id": tid, "request_id": rid,
-                           "account_id": aid, "workspace_id": wid, "project_id": script_job["project_id"],
-                           "subproject_id": script_job["subproject_id"], "storyboard_id": None,
-                           "source_script_artifact_id": script_job["output_artifact_id"], "source_script_version": script_job["version_id"],
-                           "depends_on": {"script_task_id": script_job["task_id"], "artifact_id": script_job["output_artifact_id"], "version_id": script_job["version_id"]},
-                           "status": "failed", "error": str(exc)[:2000], "created_at": _now(), "job_id": None,
-                           "price": 0, "credit_status": "not_applicable"}
-                    self._write_task(job)
-            return self.task(aid, wid, tid)
+        with self._control():
+            if not self._task_path(tid).exists():
+                job = {"schema_version": 1, "kind": "storyboard", "task_id": tid, "request_id": rid,
+                       "account_id": aid, "workspace_id": wid, "project_id": script_job["project_id"],
+                       "subproject_id": script_job["subproject_id"], "storyboard_id": None,
+                       "source_script_artifact_id": script_job["output_artifact_id"], "source_script_version": script_job["version_id"],
+                       "depends_on": {"script_task_id": script_job["task_id"], "artifact_id": script_job["output_artifact_id"], "version_id": script_job["version_id"]},
+                       "status": "failed", "error": str(error)[:2000], "created_at": _now(), "job_id": None,
+                       "price": 0, "credit_status": "not_applicable"}
+                self._write_task(job)
+        return self.task(aid, wid, tid)
 
     def dependency_task(self, aid, wid, script_job):
         tid = stable("task:" + aid + ":" + stable("dependency:" + script_job["task_id"]))
@@ -877,13 +864,10 @@ class StoryboardService:
         """Restart recovery: execute only queued/never-started work, or archive a durable candidate.
 
         Running work without a candidate is marked uncertain; no inference replay.
-        The script's durable stage intent closes the TXT→storyboard crash gap.
         """
         for pending in self.identity.pending_jobs():
             if pending.get("kind") == "storyboard" and not self._task_path(pending["task_id"]).exists():
                 self._write_task(pending)
-        for job in self.scripts.completed_storyboard_dependencies():
-            self.dependency_completed(job)
         for path in self.tasks_root.glob("*.json"):
             if path.name.startswith(".tmp-"):
                 continue
