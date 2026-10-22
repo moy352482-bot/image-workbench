@@ -33,9 +33,9 @@ class RequestMetadataCacheTests(unittest.TestCase):
 
     def update_task_file(self, prompt):
         path = self.storage._task_dir(self.project.project_id, self.task.task_id) / "task.json"
-        value = self.storage._read_json(path)
+        value = self.storage.files.read_json(path)
         value["prompt"] = prompt
-        self.storage._write_json(path, value)
+        self.storage.files.write_json(path, value)
 
     def account_fixture(self):
         storage = StorageManager(StorageConfig(data_root=self.root / "http-data"))
@@ -54,7 +54,7 @@ class RequestMetadataCacheTests(unittest.TestCase):
         return app, storage, store, manager, aid, wid, peer, pwid, main, task
 
     def test_reuses_only_successful_immutable_records_and_clears_at_exit(self):
-        with patch.object(self.storage, "_read_json", wraps=self.storage._read_json) as read:
+        with patch.object(self.storage.files, "read_json", wraps=self.storage.files.read_json) as read:
             with metadata_read_snapshot():
                 first = self.get_task()
                 read_count = read.call_count

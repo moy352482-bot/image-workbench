@@ -53,7 +53,7 @@ class AssetLibrary:
             raise ValueError("一次可添加 1–9 张图片")
         if sum(len(data) for _, data in files) > MAX_UPLOAD_BYTES:
             raise ValueError("本次图片合计超过 40 MiB，请分批上传")
-        temporary = self.storage._path(".workbench", "uploads", uuid4().hex)
+        temporary = self.storage.files.path(".workbench", "uploads", uuid4().hex)
         temporary.mkdir()
         paths, prepared = [], []
         try:
@@ -61,11 +61,11 @@ class AssetLibrary:
                 if not isinstance(data, bytes) or not 0 < len(data) <= self.storage.config.max_image_bytes:
                     raise ValueError("图片为空或超过单张大小上限，请压缩后重试")
                 filename = PureWindowsPath(str(filename)).name[:255] or "clipboard.png"
-                path = self.storage._check_path(temporary / (uuid4().hex + ".upload"))
+                path = self.storage.files.check(temporary / (uuid4().hex + ".upload"))
                 paths.append(path)
                 path.write_bytes(data)
                 # Checks actual format, full decoding, dimensions and cumulative pixels.
-                self.storage._inspect_image(path)
+                self.storage.inspect_image(path)
                 prepared.append((path, filename, hashlib.sha256(data).hexdigest()))
             with self.state.control_lock():
                 # Recheck the selected scope after decoding and before writing.
@@ -92,12 +92,12 @@ class AssetLibrary:
                             options = {**(self.state.task_options(pid, task_id) or {}), "schema_version": 1, "project_id": pid, "task_id": task_id,
                                        "asset_library": True, "state": "ready", "aspect_ratio": "auto",
                                        "created_at": task.created_at}
-                            self.storage._write_json(self.state._task_file("tasks", pid, task_id, create=True), options)
+                            self.storage.files.write_json(self.state._task_file("tasks", pid, task_id, create=True), options)
                             self.state.projects.finish_task(task_id)
                         # StorageManager owns the only durable image copy.
                         artifact = self.storage.add_input_image(pid, task.task_id, path, role="library")
                         options.setdefault("asset_names", {})[artifact.artifact_id] = filename
-                        self.storage._write_json(self.state._task_file("tasks", pid, task_id), options)
+                        self.storage.files.write_json(self.state._task_file("tasks", pid, task_id), options)
                         existing[digest] = artifact
                     view = self.view(artifact)
                     view["filename"] = filename
@@ -106,5 +106,5 @@ class AssetLibrary:
                 return result
         finally:
             for path in paths:
-                self.storage._cleanup(path)
-            self.storage._cleanup(temporary, directory=True)
+                self.storage.files.cleanup(path)
+            self.storage.files.cleanup(temporary, directory=True)

@@ -21,7 +21,7 @@ SUITES = {
     "video": ["test_video", "test_h3_worker", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser"],
     "qwen": ["test_qwen"],
     "admin": ["test_admin", "test_deploy_release", "test_backup_workbench", "test_verification"],
-    "storage": ["test_storage", "test_script_storage", "test_project_manager", "test_request_metadata_cache", "test_atomic_replace"],
+    "storage": ["test_storage", "test_script_storage", "test_project_manager", "test_request_metadata_cache", "test_atomic_replace", "test_managed_files"],
 }
 
 

@@ -84,27 +84,27 @@ class AdminOperations:
     def __init__(self, storage, *, source_root=None):
         self.storage = storage
         self.source_root = Path(source_root or SOURCE_ROOT).resolve()
-        self.root = storage._path(".workbench", "admin")
+        self.root = storage.files.path(".workbench", "admin")
         self.root.mkdir(parents=True, exist_ok=True)
         for name in ("operations", "reports", "previews", "logs"):
-            storage._path(".workbench", "admin", name).mkdir(exist_ok=True)
+            storage.files.path(".workbench", "admin", name).mkdir(exist_ok=True)
         self.loaded_at = _now()
 
     def path(self, category, identifier):
         _validate_id(identifier)
-        return self.storage._path(".workbench", "admin", category, identifier + ".json")
+        return self.storage.files.path(".workbench", "admin", category, identifier + ".json")
 
     def write(self, category, value):
-        self.storage._write_json(self.path(category, value["id"]), {"schema_version": 1, **value})
+        self.storage.files.write_json(self.path(category, value["id"]), {"schema_version": 1, **value})
 
     def read(self, category, identifier):
-        return self.storage._read_json(self.path(category, identifier))
+        return self.storage.files.read_json(self.path(category, identifier))
 
     def control(self):
-        return FileLock(self.storage._path(".workbench", "admin", "control.lock"), timeout=5)
+        return FileLock(self.storage.files.path(".workbench", "admin", "control.lock"), timeout=5)
 
     def records(self, category):
-        values = [self.storage._read_json(path) for path in self.storage._path(".workbench", "admin", category).glob("*.json")]
+        values = [self.storage.files.read_json(path) for path in self.storage.files.path(".workbench", "admin", category).glob("*.json")]
         return sorted(values, key=lambda value: value["created_at"], reverse=True)
 
     @staticmethod
@@ -275,7 +275,7 @@ class AdminOperations:
             directory.mkdir(parents=True)
             archive, manifest = module.package(self.source_root, directory, release_id)
             (directory / "apply_release.sh").write_bytes((self.source_root / "scripts" / "apply_release.sh").read_bytes().replace(b"\r\n", b"\n"))
-        log_path = self.storage._path(".workbench", "admin", "logs", op["id"] + "-checks.log")
+        log_path = self.storage.files.path(".workbench", "admin", "logs", op["id"] + "-checks.log")
         with log_path.open("wb") as log:
             result = subprocess.run([sys.executable, "-X", "utf8", str(self.source_root / "scripts" / "verify.py")],
                                     cwd=self.source_root, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, timeout=1200, check=False)
@@ -344,7 +344,7 @@ class AdminOperations:
 
                 thread = threading.Thread(target=heartbeat, daemon=True)
                 thread.start()
-                log_path = self.storage._path(".workbench", "admin", "logs", operation_id + ".log")
+                log_path = self.storage.files.path(".workbench", "admin", "logs", operation_id + ".log")
                 with log_path.open("w", encoding="utf-8") as log, redirect_stdout(log), redirect_stderr(log):
                     if op["kind"] == "deploy":
                         self.execute_deploy(op)

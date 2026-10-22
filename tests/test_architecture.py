@@ -21,7 +21,7 @@ class ArchitectureTests(unittest.TestCase):
                 "storage": "",
                 "video_store": "",
                 "script_web": "",
-                "script_service": "from . import video_store\n",
+                "script_service": "from . import video_store\nself.storage._write_json(path, value)\n",
                 "script_plugin": "from . import storage\nfrom fastapi import Request\n",
             }
             for name, source in sources.items():
@@ -31,6 +31,7 @@ class ArchitectureTests(unittest.TestCase):
             self.assertIn("scripts -> video is forbidden", errors)
             self.assertIn("script_plugin -> storage is forbidden", errors)
             self.assertIn("imports HTTP framework", errors)
+            self.assertIn("private storage API _write_json", errors)
 
     def test_repository_dependency_contracts(self):
         result = analyze()

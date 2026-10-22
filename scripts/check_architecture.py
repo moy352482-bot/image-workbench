@@ -77,7 +77,16 @@ def analyze(root=ROOT):
             groups[name] = matches[0]
     edges = []
     for name, path in sorted(paths.items()):
-        for line, base, symbol in imports(path.read_text(encoding="utf-8-sig"), name, package_module=path.name == "__init__.py"):
+        source = path.read_text(encoding="utf-8-sig")
+        if name != package + ".storage":
+            for node in ast.walk(ast.parse(source)):
+                if not isinstance(node, ast.Attribute) or not node.attr.startswith("_"):
+                    continue
+                owner = node.value
+                if ((isinstance(owner, ast.Name) and owner.id == "storage") or
+                        (isinstance(owner, ast.Attribute) and owner.attr == "storage")):
+                    errors.append(f"{path.relative_to(root)}:{node.lineno}: private storage API {node.attr}; use a public service or ManagedFiles scope.")
+        for line, base, symbol in imports(source, name, package_module=path.name == "__init__.py"):
             source_group = groups.get(name)
             if base.split(".")[0] in {"fastapi", "starlette"} and source_group not in config["http_framework_groups"]:
                 errors.append(f"{path.relative_to(root)}:{line}: {source_group} imports HTTP framework {base}. Put the adapter in http_api.")

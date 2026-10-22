@@ -2,12 +2,21 @@
   "root_package": "image_workbench",
   "groups": {
     "plugin_api": {
-      "modules": ["plugin_api"],
-      "may_import": ["foundation"]
+      "modules": [
+        "plugin_api"
+      ],
+      "may_import": [
+        "foundation"
+      ]
     },
     "script_plugin": {
-      "modules": ["script_plugin"],
-      "may_import": ["plugin_api", "contracts"]
+      "modules": [
+        "script_plugin"
+      ],
+      "may_import": [
+        "plugin_api",
+        "contracts"
+      ]
     },
     "foundation": {
       "modules": [
@@ -26,7 +35,8 @@
         "image_status",
         "scheduling",
         "media_validation",
-        "video_models"
+        "video_models",
+        "managed_files"
       ],
       "may_import": [
         "foundation"

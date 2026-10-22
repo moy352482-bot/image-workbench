@@ -298,12 +298,12 @@ class ScriptServiceTests(unittest.TestCase):
 
     def test_version_write_failure_reuses_registered_artifact_on_recovery(self):
         task = self.submit()
-        write_json = self.storage._write_json
+        write_json = self.storage.files.write_json
         def fail_version(path, value):
             if Path(path).name == "script-versions.json":
                 raise OSError("测试版本登记失败")
             return write_json(path, value)
-        with patch.object(self.storage, "_write_json", side_effect=fail_version):
+        with patch.object(self.storage.files, "write_json", side_effect=fail_version):
             result = self.service.run(self.aid, self.wid, task["task_id"])
         self.assertEqual(result["status"], "uncertain")
         artifact = self.storage.get_artifact(result["output_artifact_id"])

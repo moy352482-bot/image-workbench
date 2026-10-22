@@ -260,16 +260,19 @@ class ScriptResourceStore:
         self.storage, self.identity = storage, identity
         self.analyzer = analyzer or RuleExampleAnalyzer()
 
-    def _scope(self, aid, wid):
+    def _files(self, aid, wid):
         self.identity.require_workspace(aid, wid)
-        root = self.storage._path(".workbench", "script-resources", _validate_id(aid), _validate_id(wid))
-        root.mkdir(parents=True, exist_ok=True)
-        return root
+        files = self.storage.files.scope(".workbench", "script-resources", _validate_id(aid), _validate_id(wid))
+        files.root.mkdir(parents=True, exist_ok=True)
+        return files
+
+    def _scope(self, aid, wid):
+        return self._files(aid, wid).root
 
     def _folder(self, aid, wid, kind, identifier):
         if not isinstance(identifier, str) or not RESOURCE_ID.fullmatch(identifier) or not identifier.startswith(kind + "_"):
             raise FileNotFoundError("资源不存在")
-        return self.storage._check_path(self._scope(aid, wid) / identifier)
+        return self._files(aid, wid).path(identifier)
 
     def _lock(self, aid, wid):
         return FileLock(self._scope(aid, wid) / "resources.lock", timeout=30)
@@ -278,8 +281,9 @@ class ScriptResourceStore:
         folder = self._folder(aid, wid, kind, identifier)
         if version is not None and (type(version) is not int or version < 1):
             raise ValueError("资源版本必须为正整数")
-        head = self.storage._read_json(folder / "latest.json")
-        record = self.storage._read_json(folder / f"v{version or head['version']}.json")
+        files = self._files(aid, wid)
+        head = files.read_json(folder / "latest.json")
+        record = files.read_json(folder / f"v{version or head['version']}.json")
         if record.get("owner_account_id") != aid or record.get("workspace_id") != wid:
             raise FileNotFoundError("资源不存在")
         return record
@@ -287,11 +291,12 @@ class ScriptResourceStore:
     def _write(self, aid, wid, kind, identifier, value):
         folder = self._folder(aid, wid, kind, identifier)
         folder.mkdir(exist_ok=True)
-        path = self.storage._check_path(folder / f"v{value['version']}.json")
+        files = self._files(aid, wid)
+        path = files.check(folder / f"v{value['version']}.json")
         if path.exists():
             raise ConflictError("不能覆盖已有资源版本")
-        self.storage._write_json(path, value)
-        self.storage._write_json(folder / "latest.json", {"schema_version": 1, "version": value["version"]})
+        files.write_json(path, value)
+        files.write_json(folder / "latest.json", {"schema_version": 1, "version": value["version"]})
         return copy.deepcopy(value)
 
     def list(self, aid, wid, kind, *, include_disabled=False, subproject_id=None):
@@ -316,7 +321,7 @@ class ScriptResourceStore:
         with self._lock(aid, wid):
             folder = self._folder(aid, wid, "example", identifier)
             folder.mkdir()
-            with self.storage._check_path(folder / ("original" + suffix)).open("xb") as output:
+            with self._files(aid, wid).check(folder / ("original" + suffix)).open("xb") as output:
                 output.write(raw)
             value = {"schema_version": 1, "example_id": identifier, "version": 1, "workspace_id": wid,
                      "owner_account_id": aid, "main_project_id": sub.main_project_id, "subproject_id": sid,
@@ -330,7 +335,7 @@ class ScriptResourceStore:
         suffix = PurePosixPath(row["filename"]).suffix.lower()
         if suffix not in {".txt", ".docx", ".pdf"}:
             raise ValueError("文件类型不匹配")
-        raw = self.storage._check_path(self._folder(aid, wid, "example", identifier) / ("original" + suffix)).read_bytes()
+        raw = self._files(aid, wid).check(self._folder(aid, wid, "example", identifier) / ("original" + suffix)).read_bytes()
         if hashlib.sha256(raw).hexdigest() != row["sha256"]:
             raise ValueError("原文件校验失败")
         return raw, row["filename"]
@@ -398,9 +403,10 @@ class ScriptResourceStore:
                   "owner_account_id": aid, "workspace_id": wid, "created_at": _now(),
                   "source_guard_text": text[:12000],
                   "template_id": "personal_" + uuid4().hex}
-        directory = self.storage._check_path(self._scope(aid, wid) / "drafts")
+        files = self._files(aid, wid)
+        directory = files.path("drafts")
         directory.mkdir(exist_ok=True)
-        self.storage._write_json(directory / (identifier + ".json"), record)
+        files.write_json(directory / (identifier + ".json"), record)
         return {"draft_id": identifier, "template": content, "source_preview": text[:4000],
                 "provider": analyzer.provider, "notice": "免费规则提取预览，未调用 AI 模型；请修改结构后确认保存。" if analyzer.provider == "python_rules"
                 else "分析结果需人工审核，确认前不会创建正式模板。"}
@@ -422,7 +428,8 @@ class ScriptResourceStore:
             raise ValueError("请预览并确认模板后保存")
         draft_id = _validate_id(body.get("draft_id"))
         with self._lock(aid, wid):
-            draft = self.storage._read_json(self._scope(aid, wid) / "drafts" / (draft_id + ".json"))
+            files = self._files(aid, wid)
+            draft = files.read_json(files.path("drafts", draft_id + ".json"))
             if draft["owner_account_id"] != aid or draft["workspace_id"] != wid:
                 raise FileNotFoundError("草稿不存在")
             content = checked(TemplateContent, body.get("template"))

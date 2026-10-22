@@ -29,7 +29,7 @@ def install_scripts(app, get_service, storage, *, remote_mode=False, get_plugin=
 
     def log_error(exc):
         try:
-            path = storage._path(".workbench", "web-errors.log")
+            path = storage.files.path(".workbench", "web-errors.log")
             with path.open("a", encoding="utf-8") as stream:
                 stream.write(f"\n{_now()}\n{''.join(traceback.format_exception(exc))}\n")
         except OSError:

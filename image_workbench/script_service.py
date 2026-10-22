@@ -27,30 +27,30 @@ class ScriptService:
         self.adapter = adapter or CodexTextAdapter()
         self.router = DemandRouter(self.registry)
         self.storyboards = None
-        self.root = storage._path(".workbench", "script-tasks")
+        self.root = storage.files.path(".workbench", "script-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _control(self):
-        return FileLock(self.storage._path(".workbench", "control.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".workbench", "control.lock"), timeout=30)
 
     def _path(self, tid):
-        return self.storage._check_path(self.root / (_validate_id(tid) + ".json"))
+        return self.storage.files.check(self.root / (_validate_id(tid) + ".json"))
 
     def _lock(self, tid):
-        return FileLock(self.storage._check_path(self.root / (_validate_id(tid) + ".lock")))
+        return FileLock(self.storage.files.check(self.root / (_validate_id(tid) + ".lock")))
 
     def _load(self, tid):
-        value = self.storage._read_json(self._path(tid))
+        value = self.storage.files.read_json(self._path(tid))
         if value.get("kind") != "script" or value.get("task_id") != tid:
             raise ValueError("脚本任务记录不匹配")
         return value
 
     def _write(self, job, *, settle=True):
         job["updated_at"] = _now()
-        self.storage._write_json(self._path(job["task_id"]), job)
+        self.storage.files.write_json(self._path(job["task_id"]), job)
         if settle and job.get("job_id"):
             self.identity.record_job(job)
-            self.storage._write_json(self._path(job["task_id"]), job)
+            self.storage.files.write_json(self._path(job["task_id"]), job)
 
     def _authorized(self, aid, wid, tid):
         projects = WorkspaceProjects(self.storage, self.identity, aid, wid)
@@ -68,12 +68,12 @@ class ScriptService:
                 self._write(job)
             elif job.get("credit_status") != settled.get("credit_status"):
                 job = settled
-                self.storage._write_json(self._path(job["task_id"]), job)
+                self.storage.files.write_json(self._path(job["task_id"]), job)
         return job
 
     def _versions(self):
-        path = self.storage._path(".workbench", "script-versions.json")
-        return self.storage._read_json(path) if path.exists() else {"schema_version": 1, "versions": {}}
+        path = self.storage.files.path(".workbench", "script-versions.json")
+        return self.storage.files.read_json(path) if path.exists() else {"schema_version": 1, "versions": {}}
 
     def _task_paths(self):
         # StorageManager stages atomic replacements as .tmp-*.json. They may
@@ -220,7 +220,7 @@ class ScriptService:
             # Restore reserved outbox before deciding whether this is a new request.
             pending = next((j for j in self.identity.pending_jobs() if j.get("task_id") == tid and j.get("kind") == "script"), None)
             if not self._path(tid).exists() and pending:
-                self.storage._write_json(self._path(tid), pending)
+                self.storage.files.write_json(self._path(tid), pending)
             if self._path(tid).exists():
                 old = self._authorized(account_id, workspace_id, tid)
                 if old["request_fingerprint"] != fingerprint:
@@ -274,9 +274,9 @@ class ScriptService:
             return self._public(job)
 
     def _candidate(self, job):
-        directory = self.storage._path("projects", job["project_id"], "tasks", job["task_id"], "logs", "script")
+        directory = self.storage.files.path("projects", job["project_id"], "tasks", job["task_id"], "logs", "script")
         directory.mkdir(parents=True, exist_ok=True)
-        return self.storage._check_path(directory / "candidate.txt")
+        return self.storage.files.check(directory / "candidate.txt")
 
     def _publish_candidate(self, job, text):
         candidate = self._candidate(job)
@@ -287,8 +287,8 @@ class ScriptService:
             return
         receipt = {"schema_version": 1, "task_id": job["task_id"], "request_fingerprint": job["request_fingerprint"],
                    "size_bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
-        self.storage._write_json(candidate.with_suffix(".complete.json"), receipt)
-        temporary = self.storage._check_path(candidate.parent / (".candidate-" + uuid4().hex + ".tmp"))
+        self.storage.files.write_json(candidate.with_suffix(".complete.json"), receipt)
+        temporary = self.storage.files.check(candidate.parent / (".candidate-" + uuid4().hex + ".tmp"))
         try:
             with temporary.open("xb") as stream:
                 stream.write(data)
@@ -298,11 +298,11 @@ class ScriptService:
                 raise ConflictError("已有候选正文，不能覆盖原执行")
             os.replace(temporary, candidate)
         finally:
-            self.storage._cleanup(temporary)
+            self.storage.files.cleanup(temporary)
 
     def _candidate_bytes(self, job):
         candidate = self._candidate(job)
-        receipt = self.storage._read_json(candidate.with_suffix(".complete.json"))
+        receipt = self.storage.files.read_json(candidate.with_suffix(".complete.json"))
         if candidate.stat().st_size > self.storage.config.max_text_bytes:
             raise ValueError("候选正文超过大小限制")
         data = candidate.read_bytes()
@@ -339,7 +339,7 @@ class ScriptService:
                            "resource_references": job.get("resource_references", {}),
                            "price": job.get("price", 0), "credit_transaction_id": job.get("credit_transaction_id")}
                 value["versions"][job["version_id"]] = version
-                self.storage._write_json(self.storage._path(".workbench", "script-versions.json"), value)
+                self.storage.files.write_json(self.storage.files.path(".workbench", "script-versions.json"), value)
             job["validation_report"] = {**check_structure(data.decode("utf-8"), job.get("creative_snapshot", {})),
                                         "file_exists": candidate.is_file(), "artifact_registered": True,
                                         "version_registered": True, "artifact_id": artifact.artifact_id,
@@ -373,7 +373,7 @@ class ScriptService:
                     # Keep the quoted exact model/effort; availability changes cause a refund, never substitution.
                     self.registry.resolve(job["model_id"], job["thinking_level"], job["generation_type"])
                     raw = self.adapter.generate(prompt=job["generation_prompt"], model_id=job["model_id"],
-                                                thinking_level=job["thinking_level"], work_dir=self.storage._check_path(candidate.parent / "codex"))
+                                                thinking_level=job["thinking_level"], work_dir=self.storage.files.check(candidate.parent / "codex"))
                     phase = "validate"
                     text = validate_generated_text(raw)
                     phase = "persist"
@@ -383,10 +383,10 @@ class ScriptService:
                     self._archive(job)
                 except Exception as exc:
                     # A returned product/failed archive is recoverable without replaying inference.
-                    uncertain = getattr(exc, "uncertain", False) or (phase == "persist" and (candidate.exists() or self.storage._check_path(candidate.parent / "codex" / "completed.json").exists()))
+                    uncertain = getattr(exc, "uncertain", False) or (phase == "persist" and (candidate.exists() or self.storage.files.check(candidate.parent / "codex" / "completed.json").exists()))
                     job.update(status="uncertain" if uncertain else "failed", finished_at=_now(), error=("正文已保留，归档状态待恢复；不会再次调用模型" if uncertain else str(exc)))
                     try:
-                        self.storage._check_path(candidate.parent / "error.log").write_text(traceback.format_exc(), encoding="utf-8")
+                        self.storage.files.check(candidate.parent / "error.log").write_text(traceback.format_exc(), encoding="utf-8")
                     except (OSError, ValueError):
                         pass  # Diagnostics must never prevent refund/terminal-state publication.
                     self._write(job)
@@ -402,9 +402,9 @@ class ScriptService:
             if job["status"] not in {"uncertain", "archiving", "running"}:
                 raise ConflictError("暂无已完成正文可恢复，请核实原执行状态")
             if not self._candidate(job).is_file():
-                work = self.storage._check_path(self._candidate(job).parent / "codex")
-                self.storage._check_path(work / "completed.json")
-                self.storage._check_path(work / "response.txt")
+                work = self.storage.files.check(self._candidate(job).parent / "codex")
+                self.storage.files.check(work / "completed.json")
+                self.storage.files.check(work / "response.txt")
                 if not hasattr(self.adapter, "recover") or not (work / "completed.json").is_file():
                     raise ConflictError("暂无已完成正文可恢复，请核实原执行状态")
                 text = self.adapter.recover(prompt=job["generation_prompt"], model_id=job["model_id"], thinking_level=job["thinking_level"], work_dir=work)
@@ -488,7 +488,7 @@ class ScriptService:
         text = self._read_artifact(job["output_artifact_id"])[0].decode("utf-8") if job["status"] == "completed" else ""
         versions = [{k: v for k, v in version.items() if k != "prompt"} for version in self._versions()["versions"].values() if version["document_id"] == job["document_id"]]
         return {**self._public(job), "text": text, "versions": sorted(versions, key=lambda v: v["version"]),
-                "can_recover": job["status"] == "uncertain" and (self._candidate(job).is_file() or self.storage._check_path(self._candidate(job).parent / "codex" / "completed.json").is_file())}
+                "can_recover": job["status"] == "uncertain" and (self._candidate(job).is_file() or self.storage.files.check(self._candidate(job).parent / "codex" / "completed.json").is_file())}
 
     def download(self, account_id, workspace_id, task_id):
         job = self._authorized(account_id, workspace_id, task_id)

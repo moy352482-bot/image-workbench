@@ -24,7 +24,8 @@ class ScriptRemoteWorker:
         if len(token) < 32 or not token.isascii() or any(c.isspace() for c in token):
             raise ValueError("执行器令牌无效")
         self.storage = StorageManager(StorageConfig(data_root=Path(cache_root)))
-        self.root = self.storage._path(".script-worker")
+        self.files = self.storage.files.scope(".script-worker")
+        self.root = self.files.root
         self.root.mkdir(exist_ok=True)
         self.adapter = adapter or CodexTextAdapter()
         self.registry = registry or ScriptModelRegistry()
@@ -32,10 +33,10 @@ class ScriptRemoteWorker:
         self.headers = {"Authorization": "Bearer " + token}
         with self.lock():
             path = self.root / "identity.json"
-            identity = self.storage._read_json(path) if path.exists() else {"schema_version": 1, "server": self.server, "worker_id": uuid4().hex}
+            identity = self.files.read_json(path) if path.exists() else {"schema_version": 1, "server": self.server, "worker_id": uuid4().hex}
             if identity["server"] != self.server:
                 raise ValueError("缓存属于其他服务器")
-            self.storage._write_json(path, identity)
+            self.files.write_json(path, identity)
         self.worker_id = _validate_id(identity["worker_id"])
 
     def lock(self):
@@ -53,13 +54,13 @@ class ScriptRemoteWorker:
         return response.json()
 
     def _directory(self, tid):
-        path = self.storage._check_path(self.root / _validate_id(tid))
+        path = self.files.check(self.root / _validate_id(tid))
         path.mkdir(exist_ok=True)
         return path
 
     def _save(self, journal):
         journal["schema_version"] = 1
-        self.storage._write_json(self._directory(journal["manifest"]["task_id"]) / "journal.json", journal)
+        self.files.write_json(self._directory(journal["manifest"]["task_id"]) / "journal.json", journal)
 
     def _result(self, journal, text):
         text = validate_generated_text(text)
@@ -122,7 +123,7 @@ class ScriptRemoteWorker:
         with self.lock():
             pending = []
             for path in sorted(self.root.glob("*/journal.json")):
-                journal = self.storage._read_json(self.storage._check_path(path))
+                journal = self.files.read_json(self.files.check(path))
                 if journal["phase"] != "done":
                     pending.append(journal)
             models = [{"model_id": m["model_id"], "efforts": [e["id"] for e in m["thinking_levels"]]} for m in self.registry.models() if m["available"]]
@@ -169,7 +170,7 @@ class ScriptRemoteWorker:
     def confirm_stopped(self, task_id):
         with self.lock():
             path = self._directory(_validate_id(task_id)) / "journal.json"
-            journal = self.storage._read_json(path)
+            journal = self.files.read_json(path)
             if journal["phase"] not in {"started", "uncertain", "starting"}:
                 raise ValueError("仅可解除已人工核实停止的待确认任务")
             journal.update(phase="result", result={"status": "failed", "attempt_id": journal["attempt_id"],

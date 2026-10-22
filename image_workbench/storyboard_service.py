@@ -32,22 +32,22 @@ class StoryboardService:
         self.registry = scripts.registry
         self.planner = planner or StoryboardPlanner()
         self.pricing_path = Path(pricing_path or CONFIG_ROOT / "storyboard_pricing.json")
-        self.root = storage._path(".workbench", "storyboards")
-        self.tasks_root = storage._path(".workbench", "storyboard-tasks")
+        self.root = storage.files.path(".workbench", "storyboards")
+        self.tasks_root = storage.files.path(".workbench", "storyboard-tasks")
         self.root.mkdir(parents=True, exist_ok=True)
         self.tasks_root.mkdir(parents=True, exist_ok=True)
 
     def _control(self):
-        return FileLock(self.storage._path(".workbench", "storyboard-control.lock"), timeout=30)
+        return FileLock(self.storage.files.path(".workbench", "storyboard-control.lock"), timeout=30)
 
     def _task_path(self, tid):
-        return self.storage._check_path(self.tasks_root / (_validate_id(tid) + ".json"))
+        return self.storage.files.check(self.tasks_root / (_validate_id(tid) + ".json"))
 
     def _board_path(self, bid):
-        return self.storage._check_path(self.root / (_validate_id(bid) + ".json"))
+        return self.storage.files.check(self.root / (_validate_id(bid) + ".json"))
 
     def _task_lock(self, tid):
-        return FileLock(self.storage._check_path(self.tasks_root / (_validate_id(tid) + ".lock")))
+        return FileLock(self.storage.files.check(self.tasks_root / (_validate_id(tid) + ".lock")))
 
     def _pricing(self):
         value = json.loads(self.pricing_path.read_text(encoding="utf-8"))
@@ -186,7 +186,7 @@ class StoryboardService:
         return pid
 
     def _task(self, aid, wid, tid):
-        value = self.storage._read_json(self._task_path(tid))
+        value = self.storage.files.read_json(self._task_path(tid))
         if value.get("kind") != "storyboard" or value.get("task_id") != tid:
             raise ValueError("分镜任务记录无效")
         if (value["account_id"], value["workspace_id"]) != (aid, wid):
@@ -196,10 +196,10 @@ class StoryboardService:
 
     def _write_task(self, job, *, settle=False):
         job["updated_at"] = _now()
-        self.storage._write_json(self._task_path(job["task_id"]), job)
+        self.storage.files.write_json(self._task_path(job["task_id"]), job)
         if settle and job.get("job_id"):
             self.identity.record_job(job)
-            self.storage._write_json(self._task_path(job["task_id"]), job)
+            self.storage.files.write_json(self._task_path(job["task_id"]), job)
 
     def _public_task(self, job):
         value = {k: deepcopy(v) for k, v in job.items() if k not in {"prompt", "source", "fingerprint", "quote", "candidate"}}
@@ -284,7 +284,7 @@ class StoryboardService:
         return self._public_task(job)
 
     def _work(self, job):
-        path = self.storage._path("projects", job["project_id"], "tasks", job["task_id"], "logs", "storyboard")
+        path = self.storage.files.path("projects", job["project_id"], "tasks", job["task_id"], "logs", "storyboard")
         path.mkdir(exist_ok=True)
         return path
 
@@ -295,8 +295,8 @@ class StoryboardService:
                 if job["status"] in {"completed", "failed", "cancelled"}:
                     return self.task(aid, wid, tid)
                 work = self._work(job)
-                candidate_path = self.storage._check_path(work / "candidate.json")
-                codex_receipt = self.storage._check_path(work / "codex" / "completed.json")
+                candidate_path = self.storage.files.check(work / "candidate.json")
+                codex_receipt = self.storage.files.check(work / "codex" / "completed.json")
                 recovering = job["status"] != "queued" and not candidate_path.exists() and codex_receipt.exists()
                 if job["status"] != "queued" and not candidate_path.exists() and not recovering:
                     job.update(status="uncertain", error="原执行结果待确认；不会重复调用模型")
@@ -305,7 +305,7 @@ class StoryboardService:
                 phase = "invoke"
                 try:
                     if candidate_path.exists():
-                        receipt = self.storage._read_json(candidate_path)
+                        receipt = self.storage.files.read_json(candidate_path)
                         if receipt.get("fingerprint") != job["fingerprint"] or receipt.get("sha256") != signature(receipt.get("plan")):
                             raise ValueError("分镜候选与任务凭据不一致，禁止归档")
                         raw = normalize_plan(receipt["plan"], job["options"], tid)
@@ -348,7 +348,7 @@ class StoryboardService:
                             if not compatibility["supported"]:
                                 raise ValueError("模型规划的素材时长不符合视频能力：" + compatibility["message"])
                         phase = "persist"
-                        self.storage._write_json(candidate_path, {"schema_version": 1, "plan": raw, "fingerprint": job["fingerprint"], "sha256": signature(raw)})
+                        self.storage.files.write_json(candidate_path, {"schema_version": 1, "plan": raw, "fingerprint": job["fingerprint"], "sha256": signature(raw)})
                     with self._control():
                         if job.get("replan"):
                             phase = "validate"
@@ -382,7 +382,7 @@ class StoryboardService:
             return self._public_task(job)
 
     def _board(self, aid, wid, bid):
-        value = self.storage._read_json(self._board_path(bid))
+        value = self.storage.files.read_json(self._board_path(bid))
         if value.get("storyboard_id") != bid or (value.get("account_id"), value.get("workspace_id")) != (aid, wid):
             raise FileNotFoundError("分镜不存在")
         WorkspaceProjects(self.storage, self.identity, aid, wid).get_subproject(value["subproject_id"])
@@ -405,7 +405,7 @@ class StoryboardService:
         envelope["current_version"] = record["version"]
         envelope["operations"][pending["request_id"]] = {"fingerprint": pending["fingerprint"], "version": record["version"]}
         envelope.pop("pending")
-        self.storage._write_json(self._board_path(envelope["storyboard_id"]), envelope)
+        self.storage.files.write_json(self._board_path(envelope["storyboard_id"]), envelope)
 
     def _save_version(self, envelope, record, rid, fingerprint):
         record = deepcopy(record)
@@ -415,7 +415,7 @@ class StoryboardService:
         record["parent_artifact_id"] = envelope["versions"][-1]["artifact_id"] if envelope["versions"] else None
         envelope["pending"] = {"record": record, "request_id": rid, "fingerprint": fingerprint,
                                "task_id": stable("version-task:" + envelope["storyboard_id"] + ":" + rid)}
-        self.storage._write_json(self._board_path(envelope["storyboard_id"]), envelope)
+        self.storage.files.write_json(self._board_path(envelope["storyboard_id"]), envelope)
         self._finish_version(envelope)
         return envelope["versions"][-1]
 
@@ -871,7 +871,7 @@ class StoryboardService:
 
     def pending_jobs(self):
         return [job for path in self.tasks_root.glob("*.json") if not path.name.startswith(".tmp-")
-                if (job := self.storage._read_json(path))["status"] in {"queued", "running", "uncertain"}]
+                if (job := self.storage.files.read_json(path))["status"] in {"queued", "running", "uncertain"}]
 
     def resume_pending(self):
         """Restart recovery: execute only queued/never-started work, or archive a durable candidate.
@@ -887,7 +887,7 @@ class StoryboardService:
         for path in self.tasks_root.glob("*.json"):
             if path.name.startswith(".tmp-"):
                 continue
-            job = self.storage._read_json(path)
+            job = self.storage.files.read_json(path)
             if job["status"] in {"completed", "failed"}:
                 try:
                     self.task(job["account_id"], job["workspace_id"], job["task_id"])

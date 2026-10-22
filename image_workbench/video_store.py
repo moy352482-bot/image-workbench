@@ -41,19 +41,20 @@ class VideoStore:
     def __init__(self, storage, identity=None):
         self.storage = storage
         self.identity = identity or IdentityStore(storage)
-        self.root = storage._path(".video")
+        self.files = storage.files.scope(".video")
+        self.root = self.files.root
         self.root.mkdir(exist_ok=True)
         for name in ("projects", "jobs", "outputs", "workers"):
             self._path(name).mkdir(exist_ok=True)
 
     def _path(self, *parts):
-        return self.storage._path(".video", *parts)
+        return self.files.path(*parts)
 
     def lock(self):
         return FileLock(self._path("control.lock"), timeout=30)
 
     def _read(self, path):
-        return self.storage._read_json(self.storage._check_path(path))
+        return self.files.read_json(self.files.check(path))
 
     def _optional(self, path):
         try:
@@ -62,11 +63,11 @@ class VideoStore:
             return None
 
     def _write(self, path, value):
-        self.storage._write_json(self.storage._check_path(path), {"schema_version": 1, **value})
+        self.files.write_json(self.files.check(path), {"schema_version": 1, **value})
 
     def _bytes(self, path, data):
-        path = self.storage._check_path(path)
-        temporary = self.storage._check_path(path.parent / (".tmp-" + uuid4().hex))
+        path = self.files.check(path)
+        temporary = self.files.check(path.parent / (".tmp-" + uuid4().hex))
         try:
             with temporary.open("xb") as stream:
                 stream.write(data)
@@ -74,7 +75,7 @@ class VideoStore:
                 os.fsync(stream.fileno())
             os.replace(temporary, path)
         finally:
-            self.storage._cleanup(temporary)
+            self.files.cleanup(temporary)
 
     def config(self):
         saved = self._optional(self._path("config.json")) or {}
@@ -188,7 +189,7 @@ class VideoStore:
         self.identity.require_workspace(account_id, workspace_id)
         result = []
         for directory in self._path("projects").iterdir():
-            self.storage._check_path(directory)
+            self.files.check(directory)
             if not directory.is_dir():
                 continue
             value = self._optional(directory / "project.json")
@@ -419,7 +420,7 @@ class VideoStore:
         with self.lock():
             self._project(account_id, workspace_id, pid)
             for directory in self._path("projects").iterdir():
-                if directory.name != pid and self.storage._check_path(directory / "shots" / (request_id + ".json")).exists():
+                if directory.name != pid and self.files.check(directory / "shots" / (request_id + ".json")).exists():
                     raise ConflictError("分镜标识已使用，请创建新的请求标识")
             for aid in reference_ids:
                 self._asset(pid, aid)
