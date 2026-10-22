@@ -10,3 +10,11 @@ class ComfyRejected(ValueError):
 
 class ArtifactInvalid(ValueError):
     """生成已结束，但产物不满足交付条件。"""
+
+
+class TextGenerationError(ValueError):
+    """Text provider failure; uncertain executions must not be relaunched."""
+
+    def __init__(self, message, *, uncertain=False):
+        super().__init__(message)
+        self.uncertain = uncertain

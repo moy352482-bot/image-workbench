@@ -17,7 +17,7 @@ SUITES = {
                 "test_plugins"],
     "storyboards": ["test_storyboard_http", "test_storyboard_planner", "test_storyboard_recovery", "test_storyboard_followup",
                    "test_video_pipeline", "test_script_web", "test_asset_storyboard_browser"],
-    "video": ["test_video", "test_h3_worker", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser"],
+    "video": ["test_video", "test_h3_worker", "test_h3_skill", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser"],
     "qwen": ["test_qwen"],
     "admin": ["test_admin", "test_deploy_release", "test_backup_workbench"],
     "storage": ["test_storage", "test_script_storage", "test_project_manager", "test_request_metadata_cache", "test_atomic_replace"],

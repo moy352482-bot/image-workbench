@@ -138,7 +138,8 @@
     "video": {
       "modules": [
         "video_store",
-        "h3_worker"
+        "h3_worker",
+        "h3_skill"
       ],
       "may_import": [
         "foundation",

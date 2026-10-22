@@ -8,18 +8,20 @@ import time
 from uuid import uuid4
 
 from .codex_runtime import _codex_executable, _child_environment, _stop_process, _DISABLED_FEATURES
+from .domain_errors import TextGenerationError
 
 
-class ScriptGenerationError(ValueError):
-    def __init__(self, message, *, uncertain=False):
-        super().__init__(message)
-        self.uncertain = uncertain
+class ScriptGenerationError(TextGenerationError):
+    """Backward-compatible script provider error."""
 
 
 class CodexTextAdapter:
-    def __init__(self, executable=None, timeout_seconds=600):
+    def __init__(self, executable=None, timeout_seconds=600, *, service_tier=None):
         self.executable = executable or os.environ.get("SCRIPT_CODEX_EXECUTABLE")
         self.timeout_seconds = timeout_seconds
+        if service_tier not in {None, "fast"}:
+            raise ValueError("文本执行器 service_tier 仅支持 fast 或默认值")
+        self.service_tier = service_tier
 
     def command(self, work_dir, model_id, thinking_level):
         command = [_codex_executable(self.executable), "--no-daemon", "--ask-for-approval", "never", "exec",
@@ -29,6 +31,8 @@ class CodexTextAdapter:
                    "-c", 'forced_login_method="chatgpt"', "-c", "mcp_servers={}",
                    "-c", 'web_search="disabled"', "-c", "project_doc_max_bytes=0",
                    "--cd", str(work_dir), "--output-last-message", str(work_dir / "response.txt")]
+        if self.service_tier is not None:
+            command.extend(["-c", "service_tier=" + json.dumps(self.service_tier)])
         for feature in (*_DISABLED_FEATURES, "image_generation"):
             command.extend(["--disable", feature])
         return [*command, "-"]
@@ -59,6 +63,8 @@ class CodexTextAdapter:
                        "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
                        "response_sha256": hashlib.sha256(data).hexdigest(), "response_size_bytes": len(data),
                        "completed_at_unix": time.time()}
+            if self.service_tier is not None:
+                receipt["requested_service_tier"] = self.service_tier
             temporary = work_dir / (".completed-" + uuid4().hex + ".tmp")
             try:
                 with temporary.open("x", encoding="utf-8", newline="") as stream:
@@ -92,6 +98,8 @@ class CodexTextAdapter:
         receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
         expected = {"model_id": model_id, "thinking_level": thinking_level, "returncode": 0,
                     "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest()}
+        if self.service_tier is not None:
+            expected["requested_service_tier"] = self.service_tier
         if any(receipt.get(k) != v for k, v in expected.items()) or response_file.stat().st_size > 256 * 1024:
             raise ScriptGenerationError("执行完成凭据不匹配", uncertain=True)
         data = response_file.read_bytes()

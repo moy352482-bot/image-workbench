@@ -163,3 +163,13 @@ ExecutionRecord 新增 failure_type、timing_events 以及 prepare/backend/codex
 任务继续按原规则执行、恢复和结算。停用不等于撤销已有授权，也不改变恢复为“重新生成”。
 详见 [插件试点合同](architecture/PLUGIN_PILOT.md) 与 `tests/test_plugins.py`。
 
+## H3 内置 Skill 调用（2026-10-22）
+
+`h3-worker` 默认装配 `h3-video-workflow`，新任务在本机参数／参考图校验后、ComfyUI 提交前，使用 `gpt-6-luna` 和 Codex `service_tier="fast"` 整理单镜提示词。思考强度为独立配置。模型不负责 GPU 提交、路径、积分和归档；文本输出只能改变提示词，其余已确认字段必须保持一致。
+
+本地 journal 新增可选 `skill_request`、`skill_plan`、`skill_error`；不改变服务端作业、HTTP 或积分协议。`skill_request` 保存完整 Skill 输入和模型配置；调用前持久化 `skill/invocation.json`，完成后沿用文本适配器的内容哈希凭据，并要求 `requested_service_tier=fast`。该字段证明请求配置，不证明服务端实际分配的处理档位。
+
+官方指南接入后，新 `skill_request` 另外保存 `prompt_format=minimax-h3-official-v1`、官方模式 `prompt_mode` 和所用指南 `guide_sha256`，完整指南正文已经包含在冻结的 `prompt` 中。仅带此格式版本的请求要求生成正文具有顺序正确且非空的官方三段／六段字段。更新本地 Skill 或指南不改写已有请求；没有此标记的旧文本凭据仍按原约定恢复，不补跑 Luna 或用新格式追溯拒绝旧结果。发布包必须同时携带两份指南、来源记录、许可与 NOTICE。
+
+已完成文本的重启恢复只校验原凭据，不再次调用模型。完成状态不明时仍处于 ComfyUI 提交前的 `ready`，执行器返回 `uncertain`，服务端保留已领取的运行状态和积分冻结；原凭据恢复后可继续同一任务。明确失败或输出不符合约束则按原失败流程结算，不提交视频。缺少 `skill_request` 的旧 journal 不插入调用，已提交图只对账与回收。覆盖见 `tests/test_h3_skill.py`、`tests/test_h3_worker.py`、`tests/test_script_adapter.py`。
+

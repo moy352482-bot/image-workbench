@@ -300,10 +300,10 @@
         if (index === 1 && !order[0]) throw new Error('请先选择首帧，再设置尾帧；图片已保存到项目素材库');
         if (order.includes(ids[0]) && order[index] !== ids[0]) throw new Error('同一张图片已用于另一帧，请选择其他素材');
         if (order.length > 2) throw new Error('当前已选多张参考图，请先减少选择再设置首尾帧');
-        order[index] = ids[0]; $('videoMode').value = 'I2V';
+        order[index] = ids[0]; $('videoMode').value = order.length === 2 || $('videoMode').value === 'FL2V' ? 'FL2V' : 'I2V';
       } else {
         for (const value of ids) if (!order.includes(value)) order.push(value);
-        const max = $('videoMode').value === 'I2V' ? 2 : 9;
+        const max = $('videoMode').value === 'I2V' ? 1 : $('videoMode').value === 'FL2V' ? 2 : 9;
         if (order.length > max) throw new Error(`当前模式最多选择 ${max} 张图片；图片已保存，请减少选择后重试`);
         if ($('videoMode').value === 'T2V') $('videoMode').value = 'R2V';
       }

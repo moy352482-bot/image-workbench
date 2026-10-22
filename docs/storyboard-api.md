@@ -2,6 +2,8 @@
 
 所有 HTTP 接口复用账号、Workspace、CSRF 边界，ID 为 32 位小写十六进制。时间为整数毫秒。
 
+内置分镜方法由 SKILL.md、shot-design.md 与 continuity.md 一同编译，报价覆盖三份文件的摘要；提交任务以可选 skill_reference 记录来源，prompt 冻结全文，排队执行及恢复不重新加载规则。既有输出 JSON 字段不变。方法来源、脚本／分镜职责和兼容说明见 [内置创作方法](creative_agent_skills.md)。
+
 ## 规划与脚本联动
 
 `GET /api/storyboards/config` → `{models, mock_enabled, real_enabled, video_models}`；模型档位的 price 属于分镜独立配置，null 不可执行。

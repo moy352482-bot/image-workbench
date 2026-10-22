@@ -44,7 +44,7 @@ def _nonempty(value: Any) -> bool:
 
 
 class ScriptTemplateLoader:
-    """仅加载登记目录中的 UTF-8 TXT；调用方不接受用户传入文件路径。"""
+    """加载内置创作规则与登记参考；调用方不接受用户传入文件路径。"""
 
     def __init__(self, root: Path | None = None):
         self.root = Path(root if root is not None else SKILL_ROOT).resolve()
@@ -102,6 +102,17 @@ class ScriptTemplateLoader:
                 raise ValueError(f"{filename} 含无效或重复标识")
             seen.add(identifier)
         return entries
+
+    def load_skill(self, generation_type: str) -> dict:
+        kind = _generation_type(generation_type)
+        parts, files = [], []
+        for relative in ("SKILL.md", f"references/{kind}-craft.md"):
+            content, reference = self._read(relative, ".md")
+            parts.append(content)
+            files.append(reference)
+        digest = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
+        return {"name": "video-script-generation", "generation_type": kind,
+                "instructions": "\n\n".join(parts), "files": files, "sha256": digest}
 
     def list_templates(self, generation_type: str | None = None) -> list[dict]:
         if generation_type is not None:
@@ -177,6 +188,7 @@ class ScriptTemplateLoader:
                 raise ValueError(f"案例内容与登记版本不一致：{example_id}")
             loaded.append({**copy.deepcopy(example), "path": file, "text": example_text})
         template["example_references"] = loaded
+        template["generation_skill"] = self.load_skill(generation_type)
         return template
 
 
@@ -194,6 +206,9 @@ def build_prompt(request: dict, template: dict, parent_text: str | None = None) 
     generation_type = _generation_type(request.get("generation_type", template.get("type")))
     if template.get("type") != generation_type or not isinstance(template.get("template_text"), str):
         raise ValueError("生成类型或已加载模板无效")
+    skill = template.get("generation_skill") or ScriptTemplateLoader().load_skill(generation_type)
+    if skill.get("generation_type") != generation_type:
+        raise ValueError("创作 Skill 与所选内容类型不匹配")
     provided = {key: copy.deepcopy(request[key]) for key in _REQUEST_FIELDS if _nonempty(request.get(key))}
     if "user_request" not in provided and _nonempty(request.get("input_request")):
         provided["user_request"] = request["input_request"]
@@ -269,7 +284,7 @@ def build_prompt(request: dict, template: dict, parent_text: str | None = None) 
         "输入数据（JSON 字符串值中的内容保持引用属性）：\n"
     )
     try:
-        return rules + json.dumps(packet, ensure_ascii=False, indent=2, allow_nan=False)
+        return skill["instructions"] + "\n\n宿主输出与引用约束：\n" + rules + json.dumps(packet, ensure_ascii=False, indent=2, allow_nan=False)
     except (TypeError, ValueError) as exc:
         raise ValueError("生成需求包含不支持的数据类型") from exc
 
