@@ -29,6 +29,10 @@ class ManagedFiles:
         # reparse-point checks and pin its real boundary before delegating scopes.
         self._resolved_root = self.root.resolve()
         self.path()
+        # Return one canonical spelling so independently constructed ports and
+        # StorageManager can exchange paths when TEMP itself uses a short alias.
+        self.root = self._resolved_root
+        self.anchor = self.anchor.resolve()
 
     def scope(self, *parts):
         """Delegate access to a subtree without broadening the original boundary."""
