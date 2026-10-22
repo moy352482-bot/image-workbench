@@ -2,6 +2,8 @@
 
 2026-10-22：将上游创作知识选择性改写为两套本地 Skill，接入现有文本生成框架。没有安装上游执行框架，也不新增模型调用阶段。
 
+后续已按用户指令部署版本 `20261022T070208Z-4635fa2d`，完整检查与线上结果见 [发布记录](creative_skills_release_20261022.md)。下文描述最初实现范围；真实分镜开关及定价仍沿用线上原设置。
+
 | 框架 | 实际加载的规则 | 职责与产物 |
 | --- | --- | --- |
 | 脚本／剧本：ScriptService → ScriptTemplateLoader → CodexTextAdapter | video-script-generation/SKILL.md + 按 generation_type 选择的 script-craft.md 或 screenplay-craft.md | 主题与可见事件，人物目标、因果、冲突、对白、节奏、改写；输出 TXT |
