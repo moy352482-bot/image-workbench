@@ -152,3 +152,27 @@ ExecutionRecord 新增 failure_type、timing_events 以及 prepare/backend/codex
 
 容量预检避免正常拒绝留下任务，最终检查与积分冻结、outbox 在同一数据库事务内执行。余额不足、不可用模型或容量超限不调用模型。独立分镜继续按其自己的配置报价；未配置真实价格不能当作免费，明确开启的 Mock 模式除外。
 
+## 脚本插件提交边界（2026-10-20）
+
+`ScriptGenerationPlugin.submit` 只调用原服务保存/复用持久任务，返回原任务 DTO；
+本地后台任务及远程 Worker 仍消费同一记录。插件不调用模型、不另建队列或账本。
+`ScriptService.submit(..., admission=None)` 新增可选的内部准入回调，
+在幂等旧请求查询之后、创建新 Task/冻结积分之前调用。原直接调用保持兼容。
+
+注册表停用脚本插件时拒绝新生成，旧请求重试返回原任务；已受理的 queued/running/uncertain
+任务继续按原规则执行、恢复和结算。停用不等于撤销已有授权，也不改变恢复为“重新生成”。
+详见 [插件试点合同](architecture/PLUGIN_PILOT.md) 与 `tests/test_plugins.py`。
+
+## 脚本到分镜的独立协调与只读诊断（2026-10-22）
+
+`ScriptStoryboardWorkflow` 负责两阶段选项/报价计划、完成后的规划触发和启动补偿。ScriptService
+接收数据计划并沿原事务保存 storyboard_options/quote/confirmed，不持有或调用分镜服务。
+StoryboardService 接收脚本源版本读取函数；任务事务、模型执行、候选归档仍归各服务所有。
+本地 run/recover 和远程 complete 先完成脚本事务并释放锁，再由协调器触发下游。
+重启扫描已完成脚本的持久意图，使用原稳定阶段 ID；只有未执行的 queued 阶段可运行。
+分镜失败保持为独立失败阶段，脚本 TXT、版本和已经完成的结算不回退；重传回执不重复生成或扣款。
+
+统一 recovery 查询仅投影状态和证据。脚本只有候选正文与哈希完成凭据一致，或原 Codex 成功回执
+与正文一致时才列出恢复归档动作；部分文件或受损回执不会被当作成功证据。
+图片、脚本、视频原有 uncertain/重试/人工确认规则保持，不由查询触发自动恢复或推理。
+

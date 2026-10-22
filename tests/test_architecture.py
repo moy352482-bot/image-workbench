@@ -7,9 +7,54 @@ from scripts.check_architecture import analyze, cycles, imports
 
 
 class ArchitectureTests(unittest.TestCase):
+    def test_current_policy_rejects_plugin_persistence_and_cross_feature_imports(self):
+        root_config = Path(__file__).resolve().parents[1] / "architecture.json"
+        config = json.loads(root_config.read_text(encoding="utf-8"))
+        config.pop("frontend", None)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            package = root / "image_workbench"
+            package.mkdir()
+            (root / "architecture.json").write_text(json.dumps(config), encoding="utf-8")
+            sources = {
+                "config": "from . import script_web\n",
+                "storage": "",
+                "video_store": "",
+                "script_web": "",
+                "script_service": "from . import video_store\nself.storage._write_json(path, value)\n",
+                "script_plugin": "from . import storage\nfrom fastapi import Request\n",
+            }
+            for name, source in sources.items():
+                (package / (name + ".py")).write_text(source, encoding="utf-8")
+            errors = "\n".join(analyze(root)["errors"])
+            self.assertIn("foundation -> http is forbidden", errors)
+            self.assertIn("scripts -> video is forbidden", errors)
+            self.assertIn("script_plugin -> storage is forbidden", errors)
+            self.assertIn("imports HTTP framework", errors)
+            self.assertIn("private storage API _write_json", errors)
+
     def test_repository_dependency_contracts(self):
         result = analyze()
         self.assertEqual(result["errors"], [], "\n".join(result["errors"]))
+
+    def test_video_state_export_and_consumer_backdoor_fail_architecture_gate(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            package = root / "app"
+            package.mkdir()
+            (root / "architecture.json").write_text(json.dumps({
+                "root_package": "app", "groups": {}, "http_framework_groups": [],
+                "frontend": {"template": "index.html", "entry": "video.js", "components": {},
+                             "state_ports": {"IWVideo": {"owner": "video.js", "consumers": ["pipeline.js", "storyboard.js"]}}}
+            }), encoding="utf-8")
+            (package / "index.html").write_text('<script src="/static/video.js"></script>', encoding="utf-8")
+            (package / "video.js").write_text('window.IWVideo = {state, refresh};', encoding="utf-8")
+            (package / "pipeline.js").write_text('const {state, api} = window.IWVideo;', encoding="utf-8")
+            (package / "storyboard.js").write_text('host.state.referenceOrder = [];', encoding="utf-8")
+            errors = "\n".join(analyze(root)["errors"])
+            self.assertIn("exports mutable page state", errors)
+            self.assertIn("pipeline.js: reaches into IWVideo state", errors)
+            self.assertIn("storyboard.js: reaches into IWVideo state", errors)
 
     def test_conditional_relative_and_absolute_imports_are_checked(self):
         found = list(imports("if True:\n    from ..scripts import run\nimport app.http\nfrom app import web\n", "app.http.routes"))

@@ -99,6 +99,10 @@ def install_video(app, store, pipeline=None):
     def project(pid: str, request: Request):
         return store.project(*owner(request), pid)
 
+    @app.get("/api/video/projects/{pid}/shots/{sid}/recovery")
+    def recovery_view(pid: str, sid: str, request: Request):
+        return store.recovery_view(*owner(request), pid, sid)
+
     @app.post("/api/video/projects/{pid}/assets")
     async def upload_assets(pid: str, request: Request):
         aid, wid = owner(request)

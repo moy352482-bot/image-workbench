@@ -95,14 +95,15 @@ class StoryboardRecoveryTests(unittest.TestCase):
         self.assertEqual(self.f.storage.get_artifact(board["artifact_id"]).format, "JSON")
 
     def test_restart_closes_script_completed_dependency_gap(self):
-        with patch.object(self.service, "dependency_completed", return_value=None):
+        with patch.object(self.f.app.script_workflow, "dependency_completed", return_value=None):
             script = self.f.generate_script(storyboard_options=self.f.options())
         self.assertEqual(script["status"], "completed")
         self.assertIsNone(script["storyboard_task"])
-        restarted = StoryboardService(self.f.storage, self.f.identity, self.f.app.script_service, self.f.app.video_store)
-        self.f.app.script_service.storyboards = restarted
-        restarted.resume_pending()
-        restarted.resume_pending()
+        restarted = StoryboardService(self.f.storage, self.f.identity, self.f.app.script_service.storyboard_source,
+                                      self.f.app.video_store, registry=self.f.app.script_service.registry)
+        self.f.app.storyboard_service = restarted
+        self.f.app.script_workflow.resume_pending()
+        self.f.app.script_workflow.resume_pending()
         boards = restarted.list_storyboards(self.f.aid, self.f.wid, video_project_id=self.f.pid)
         self.assertEqual(len(boards), 1)
         self.f.script_adapter.generate.assert_called_once()

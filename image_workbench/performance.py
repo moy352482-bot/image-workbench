@@ -139,8 +139,8 @@ class PerformanceTrace:
         """Telemetry failures must not change the task result or cause a retry."""
         try:
             payload = self.build(task, record)
-            directory = storage._path("logs", "performance")
+            directory = storage.files.path("logs", "performance")
             directory.mkdir(parents=True, exist_ok=True)
-            storage._write_json(storage._check_path(directory / f"{task.task_id}--{record.execution_id}.json"), payload)
+            storage.files.write_json(storage.files.check(directory / f"{task.task_id}--{record.execution_id}.json"), payload)
         except Exception as exc:
             logging.getLogger(__name__).warning("Performance record was not saved (%s)", type(exc).__name__)

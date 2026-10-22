@@ -20,6 +20,10 @@ def install_routes(app, state, storage):
     def task(project_id: str, task_id: str):
         return state.logical_task_view(task_id, main_project_id=project_id)
 
+    @app.get("/api/projects/{project_id}/tasks/{task_id}/recovery")
+    def recovery(project_id: str, task_id: str):
+        return state.logical_task_view(task_id, main_project_id=project_id)["recovery"]
+
     @app.post("/api/projects/{project_id}/tasks/{task_id}/run")
     def run(project_id: str, task_id: str, payload: RunTask):
         placement = state.projects.get_task_placement(task_id, main_project_id=project_id)
@@ -48,6 +52,10 @@ def install_routes(app, state, storage):
     @app.get("/api/tasks/{task_id}")
     def logical_task(task_id: str):
         return state.logical_task_view(task_id)
+
+    @app.get("/api/tasks/{task_id}/recovery")
+    def logical_recovery(task_id: str):
+        return state.logical_task_view(task_id)["recovery"]
 
     @app.patch("/api/tasks/{task_id}")
     def update_task(task_id: str, payload: TaskUpdate):

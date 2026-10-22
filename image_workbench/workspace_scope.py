@@ -127,6 +127,9 @@ class WorkspaceStorage:
     def __init__(self, storage, projects):
         self.raw, self.projects = storage, projects
         self.config, self.data_root = storage.config, storage.data_root
+        # Trusted services use this file port for shared queue/catalog metadata.
+        # Project/Artifact methods below remain the Workspace authorization boundary.
+        self.files = storage.files
 
     def get_artifact(self, artifact_id):
         item = self.raw.get_artifact(artifact_id)
@@ -137,12 +140,22 @@ class WorkspaceStorage:
         self.get_artifact(artifact_id)
         return self.raw.get_artifact_path(artifact_id)
 
+    def artifact_file(self, artifact):
+        self.projects.require_namespace(artifact.project_id)
+        return self.raw.artifact_file(artifact)
+
+    def inspect_image(self, path):
+        return self.raw.inspect_image(path)
+
+    def copy_image_source(self, source, destination):
+        return self.raw.copy_image_source(source, destination)
+
     def list_projects(self):
         allowed = set(self.projects.catalog_view()["storage_namespaces"].values())
         return [item for item in self.raw.list_projects() if item.project_id in allowed]
 
     def __getattr__(self, name):
-        project_methods = {"get_project", "create_task", "get_task", "list_tasks", "list_task_artifacts", "add_input_image", "register_output_image", "register_output_text", "register_output_document", "_require_source", "_require_text_source", "_project_dir", "_task_dir"}
+        project_methods = {"get_project", "create_task", "get_task", "list_tasks", "list_task_artifacts", "add_input_image", "register_output_image", "register_output_text", "register_output_document", "require_image_source", "task_files", "_require_source", "_require_text_source", "_project_dir", "_task_dir"}
         if name in project_methods:
             def checked(project_id, *args, **kwargs):
                 self.projects.require_namespace(project_id)

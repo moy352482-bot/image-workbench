@@ -3,6 +3,8 @@
 This is the only place that assembles all website features. Route installers
 receive their dependencies and must not construct unrelated feature services.
 """
+import os
+
 from .accounts_web import AccountApplication
 from .admin_web import install_admin
 from .storage import StorageManager
@@ -16,9 +18,17 @@ from .qwen_lab import QwenLabStore
 from .qwen_web import install_qwen
 from .storyboard_service import StoryboardService
 from .storyboard_web import install_storyboards
+from .plugin_api import PluginRegistry
+from .script_plugin import PLUGIN_ID, ScriptGenerationPlugin
+from .script_workflow import ScriptStoryboardWorkflow
 
 
-def create_app(storage: StorageManager | None = None, *, backend="codex", remote_access=None, registration_policy=None):
+def create_app(storage: StorageManager | None = None, *, backend="codex", remote_access=None, registration_policy=None,
+               disabled_plugins=None):
+    disabled = set(disabled_plugins if disabled_plugins is not None else
+                   filter(None, (item.strip() for item in os.environ.get("IMAGE_WORKBENCH_DISABLED_PLUGINS", "").split(","))))
+    if disabled - {PLUGIN_ID}:
+        raise ValueError(f"Unknown disabled plugins: {sorted(disabled - {PLUGIN_ID})}")
     application = AccountApplication(storage or StorageManager(), backend=backend,
                                      remote_access=remote_access, registration_policy=registration_policy)
     application.video_store = VideoStore(application.storage, application.identity)
@@ -26,12 +36,24 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     application.qwen_store = QwenLabStore(application.storage, application.identity)
     # Resolve text service per operation so tests/integrations can replace the
     # service without rebuilding routes. Identity and workspace scope stay intact.
-    scripts = lambda: application.script_service
-    images = lambda aid, wid: application.scoped_app(aid, wid).state.workbench
+    def scripts():
+        return application.script_service
+
+    def workflow():
+        return application.script_workflow
+
+    def images(aid, wid):
+        return application.scoped_app(aid, wid).state.workbench
+
+    application.plugins = PluginRegistry(services=("script-service",))
+    application.plugins.register(ScriptGenerationPlugin(workflow, application.plugins), enabled=PLUGIN_ID not in disabled)
     application.pipeline_service = PipelineService(application.video_store, scripts, images)
     install_admin(application)
     install_video(application.auth, application.video_store, application.pipeline_service)
-    install_scripts(application.auth, scripts, application.storage, remote_mode=bool(remote_access))
+    install_scripts(application.auth, scripts, application.storage, remote_mode=bool(remote_access),
+                    get_workflow=workflow,
+                    get_plugin=lambda: application.plugins.get(PLUGIN_ID),
+                    describe_plugin=lambda: application.plugins.describe(PLUGIN_ID))
     if remote_access:
         from .script_remote import ScriptRemoteQueue, RemoteScriptRegistry
         from .http_api.script_workers import install_script_worker
@@ -39,11 +61,12 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
         registry = RemoteScriptRegistry(application.script_queue)
         application.script_service.registry = registry
         application.script_service.router.registry = registry
-        install_script_worker(application.auth, application.script_queue)
+        install_script_worker(application.auth, application.script_queue, after_script=lambda task: workflow().after_script(task))
     application.storyboard_service = StoryboardService(application.storage, application.identity,
-                                                       application.script_service, application.video_store)
-    application.script_service.storyboards = application.storyboard_service
-    install_storyboards(application.auth, application.storyboard_service)
+                                                       lambda aid, wid, vid: scripts().storyboard_source(aid, wid, vid),
+                                                       application.video_store, registry=scripts().registry)
+    application.script_workflow = ScriptStoryboardWorkflow(scripts, lambda: application.storyboard_service)
+    install_storyboards(application.auth, application.storyboard_service, resume_pending=application.script_workflow.resume_pending)
     install_pipeline(application.auth, application.pipeline_service, application.video_store)
     install_qwen(application.auth, application.qwen_store)
     return application

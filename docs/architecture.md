@@ -4,6 +4,11 @@
 模块按职责维护，通过服务接口协作。改一个功能前，可先运行该功能检查；发布前运行完整检查。
 架构检查、接口兼容检查和行为回归共同降低跨功能回归风险，不能保证任意修改都不影响其他功能。
 
+2026-10-20 后续治理审计见 [当前架构](architecture/CURRENT_ARCHITECTURE.md)、
+[模块职责](architecture/MODULE_MAP.md)、[依赖审计](architecture/DEPENDENCY_AUDIT.md)、
+[技术债](architecture/TECHNICAL_DEBT.md) 与 [七个开源项目研究](architecture/OPEN_SOURCE_ARCHITECTURE_RESEARCH.md)。
+本指南保留日常修改入口；审计区分静态导入和运行时耦合，不把候选能力视为已实现。
+
 ## 从哪里修改
 
 | 修改目标 | 实现入口 | 需守住的边界 |
@@ -18,6 +23,9 @@
 | 图片状态写入、提交 | `workbench_state.py` | 任务锁、请求去重、冻结与恢复 |
 | 图片列表和详情 | `image_queries.py`、`image_status.py` | 查询投影、状态推导、计时口径；不启动任务 |
 | 脚本生成 | `script_service.py`、`script_models.py`、`script_templates.py` | 固定报价、版本不可覆盖、仅显式执行 |
+| 脚本→分镜协调 | `script_workflow.py` | 通过公开源版本/规划阶段端口协作；脚本事务结束后触发，重启消费已保存意图 |
+| 统一恢复诊断 | `task_recovery.py` 及三种媒体的 recovery 接口 | 只读状态/失败/证据/动作；不调用模型、补偿任务或结算 |
+| 脚本插件与启停 | `plugin_api.py`、`script_plugin.py` | 显式注册；通过 ScriptServicePort 复用任务、积分、产物、版本；停用保留历史和恢复 |
 | 脚本素材与模板 | `script_resources.py`、`script_engine.py`、`script_resource_web.py` | 空间隔离、结构解析、上传内容作为数据 |
 | 分镜规划 | `storyboard_service.py`、`storyboard_models.py`、`storyboard_planner.py` | 独立规划服务，通过已有脚本/视频服务衔接 |
 | 视频任务 | `video_store.py`、`h3_worker.py`、`video_web.py` | 任务回执、计费、媒体限制；视频持久化由 VideoStore 维护 |
@@ -25,7 +33,7 @@
 | 图片→脚本→视频联动 | `pipeline_service.py`、`video_pipeline.py` | HTTP 只解析输入；流程由服务编排，调用 VideoStore 的公开接口 |
 | 远程执行协议 | `remote_queue.py`、`script_remote.py`；`http_api/*_workers.py` | 队列实现不导入 FastAPI；断线只对账和回传，不自动重跑 |
 | 请求模型 | `contracts/` | 不导入业务实现或页面；保留现有字段与默认值 |
-| 通用异常、文件、媒体校验 | `domain_errors.py`、`atomic_files.py`、`media_validation.py` | 无业务、Web、账号依赖；文件工具调用者负责路径归属校验 |
+| 通用异常、文件、媒体校验 | `domain_errors.py`、`managed_files.py`、`atomic_files.py`、`media_validation.py` | 文件端口限制目录并验证路径；调用者负责先核验 Workspace 与资源归属 |
 | Codex 运行环境 | `codex_runtime.py` | 图片与文本共同使用可执行文件定位、子进程环境与终止规则 |
 | 管理检查、发布 | `admin_operations.py`、`admin_web.py`、`scripts/deploy_release.py` | 检查与发布包绑定同一源码；正式发布仍是独立操作 |
 
@@ -76,6 +84,10 @@ flowchart TD
 页面资源版本包含这四个文件，更新组件后刷新页面即可获取新版本。
 现有图片查看、对比、脚本页、视频页和管理页仍有自己的独立文件。
 
+视频 `IWVideo` 不导出可变 state。消费者通过 `snapshot` 读取副本，用 `captureContext/isCurrent` 核对
+账号、空间、项目和页面修订；`setReferences/addReferences` 另核对镜头草稿修订，`refreshProject`
+统一控制异步项目更新的先后。页面事件也只传副本，切换后晚到的上传、报价和刷新不能覆盖当前草稿。
+
 ## 验证命令
 
 在项目根目录运行：
@@ -102,6 +114,7 @@ flowchart TD
 
 检查包括：
 
+- 固定版本 Ruff 的历史基线增量检查；新诊断失败，旧问题不批量自动修复，详见 [质量检查](architecture/QUALITY_GATES.md)。
 - Python 静态导入（含函数内和条件分支内导入）的模块归属、允许方向与循环。
 - 业务/底层模块不得导入 FastAPI 或 Starlette。
 - 前端组件先于入口加载，组件不访问页面状态或相邻组件全局对象。
@@ -113,7 +126,7 @@ flowchart TD
 `tests/test_architecture.py`、`tests/test_http_contract.py` 与 `tests/test_frontend_modules.py`
 在普通 `unittest discover` 中执行，因此现有发布程序和管理中心的完整检查也会运行它们。
 没有 Node 时，普通 unittest 会明确跳过前端运行检查；CI 配置安装 Node 24 后执行完整验证。
-GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 时运行同一检查入口。
+工作流调用统一 `verify.py`；当前修改是否已在 GitHub 或生产执行，须查对应运行记录，不由本指南推断。
 
 静态导入检查不能证明运行时对象调用完全独立，也不替代业务测试；
 不要用动态导入、`getattr` 或从入口重新导出实现来规避边界。
@@ -129,8 +142,12 @@ GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 
 不能直接用新快照覆盖测试失败。本轮接口快照基于重构前的真实应用生成；
 同期新增的可选脚本/分镜字段使用兼容性检查放行，旧约束仍逐项核对。
 
-回滚应以 Git 提交和发布清单确定代码范围。业务数据与代码版本分开保存；
-回退代码不能撤销数据写入。实际部署与验证范围见 [发布记录](verified-release.md)。
+前一轮模块化工作开始时 Git 没有提交，其源码基线位于
+`work/modularization-20261020/source-before.zip`，旁边保存 SHA256。
+由于同一目录还有同期新增功能，回滚须按文件与变更范围合并；
+**不能整包覆盖当前目录，否则会丢失后续改动。** 验证记录、浏览器截图和本轮计划也在该目录。
+该记录属于历史模块化工作。后续架构治理另有 `work/architecture-governance-20261020/source-before.zip`；
+插件回滚步骤见 [试点说明](architecture/PLUGIN_PILOT.md)。本轮治理没有迁移业务数据或发布。
 
 ## 参考与取舍
 
@@ -141,3 +158,5 @@ GitHub Actions 的 `Verify module contracts` 工作流在 push 和 pull request 
 
 当前项目已有 unittest 和成熟的任务/积分持久化路径，因此采用小型标准库 AST 检查器、
 现有回归和公开服务接口，没有安装上述项目的插件，也没有引入新的业务运行依赖。
+后续治理增加 Ruff 开发依赖和显式 Python 插件契约；Import Linter、Pluggy 等采用决策以
+[开源研究](architecture/OPEN_SOURCE_ARCHITECTURE_RESEARCH.md) 为准。

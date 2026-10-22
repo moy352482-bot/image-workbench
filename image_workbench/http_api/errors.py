@@ -10,7 +10,7 @@ from ..project_manager import MigrationRequiredError, PlacementConflictError
 def install_error_handlers(app, storage):
     def log_error(exc):
         try:
-            with storage._path(".workbench", "web-errors.log").open("a", encoding="utf-8") as stream:
+            with storage.files.path(".workbench", "web-errors.log").open("a", encoding="utf-8") as stream:
                 stream.write(f"\n{_now()}\n{''.join(traceback.format_exception(exc))}\n")
         except OSError:
             pass

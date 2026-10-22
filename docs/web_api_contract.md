@@ -1,5 +1,11 @@
 # 第四阶段本地 Web 接口约定
 
+后续兼容扩展（2026-10-20）：脚本页面和 `/api/scripts/*` 路径、请求字段与已有响应字段保持兼容。
+`GET /api/scripts/config` 增加 `generation_plugin`（描述及 `enabled`），不替代模型目录的实际可用性。
+脚本插件停用后，新 quote/submit 返回 409；相同已受理请求的 submit 仍返回原任务，
+detail/list/download/recover 和手动版本入口继续按原权限与恢复合同工作。
+这是注册表明确停用时的新增行为，默认启用保持原流程。没有增加公开启停写接口。
+
 仅 localhost；同源请求。所有写操作附 `X-Workbench-CSRF`，值来自 `GET /api/config`。所有ID为32位小写十六进制；网页不传服务器路径。JSON错误为 `{detail: "可读中文摘要"}`，不返回内部异常或日志。
 
 - `GET /api/config` → `{csrf_token, backend: "codex"|"local", worker_running, max_input_images:8, max_image_bytes:20971520, max_upload_bytes:41943040, ratios:["auto","1:1","3:2","2:3"]}`。local显示“演练模式 · 不消耗生图额度”；codex显示“本地 Codex · 手动启动”。比例由提示词约束，不保证精确像素尺寸。
@@ -33,4 +39,21 @@ ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size
 - `GET/POST /api/video/projects/{project_id}/tray` 读取或调整暂存引用。POST 字段为 `artifact_id`、`media_type`、`action`（`add`/`remove`）及可选 `shot_id`；移出不删除原素材。
 - `POST /api/video/projects/{project_id}/shots/{shot_id}/clip` 以 `source_shot_id`、`artifact_id` 绑定同项目已完成视频；不能覆盖正在执行或已有成片的镜头。
 - `POST /api/scripts/tasks` 的 `quote_signature` 可省略。服务端仍从当前 Registry 计算真实价格并执行额度、模型可用性和幂等校验；若传入签名，继续校验签名有效性。旧客户端行为兼容，客户端提交的未知价格字段仍被拒绝。
+
+## 统一恢复诊断（2026-10-22，增量接口）
+
+- 图片：`GET /api/tasks/{task_id}/recovery`，亦可使用 `/api/projects/{project_id}/tasks/{task_id}/recovery`。
+- 脚本：`GET /api/scripts/tasks/{task_id}/recovery`。
+- 视频：`GET /api/video/projects/{pid}/shots/{sid}/recovery`。
+
+三种接口返回 `schema_version:1`、`kind`、`task_id`、`job_id`、`status`、`original_status`、`stage`、
+`failure:{code,message}|null`、`credit_status`、`evidence`、`actions` 和 `automatic_retry:false`。
+统一状态包括 draft/queued/running/completed/failed/uncertain/cancelled/blocked；底层状态保存在 original_status。
+证据只包含执行 ID 及候选、已验证候选、完成凭据、后端关联和产物的存在标记，不返回路径、凭据或原始日志。
+
+动作包含 `code`、`actor`（user/operator/worker）、`may_invoke_model`、`requires_confirmation`。
+`restore_archive` 使用已有候选或经校验的完成回执；`retry` 是明确的新提交，仍须遵守原报价/请求 ID 合同。
+uncertain 不提供重新生成动作；视频的原执行对账/最终回传由原 Worker 完成，不能把动作提示当作用户 API。
+查询先核验 Workspace，随后只读已有记录；不补齐 outbox、不结算、不启动模型。旧详情接口的兼容行为保留；
+图片详情、脚本任务和视频 current_job 额外包含相同的 recovery 投影。
 

@@ -171,9 +171,7 @@ class DirectScriptHTTPTests(unittest.TestCase):
         # The reusable HTTP fixture replaces ScriptService; reconnect its
         # independently composed storyboard stage without any real adapter.
         self.storyboards = self.app.storyboard_service
-        self.storyboards.scripts = self.service
         self.storyboards.registry = self.registry
-        self.service.storyboards = self.storyboards
         self.planner_adapter = Mock()
         self.planner_adapter.generate.side_effect = AssertionError("测试禁止真实分镜推理")
         self.storyboards.planner.adapter = self.planner_adapter

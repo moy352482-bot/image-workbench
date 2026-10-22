@@ -5,7 +5,7 @@ from .storage import _validate_id
 def task_input_artifacts(storage, project_id, task_id):
     inputs = [item for item in storage.list_task_artifacts(project_id, task_id) if item.kind == "input"]
     try:
-        options = storage._read_json(storage._path(".workbench", "tasks", project_id, task_id + ".json"))
+        options = storage.files.read_json(storage.files.path(".workbench", "tasks", project_id, task_id + ".json"))
     except FileNotFoundError:
         return inputs
     if (options.get("project_id"), options.get("task_id")) != (project_id, task_id):

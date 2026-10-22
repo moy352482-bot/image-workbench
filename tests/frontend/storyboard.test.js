@@ -92,6 +92,10 @@ function harness({ boards, assets = [], taskResults = {}, makeReplanTask = null 
   const calls = [];
   const host = { state: { account: { account_id: 'account', workspace_id: 'workspace' }, project: { project_id: 'project' }, referenceOrder: [] },
     notice: message => { host.notices.push(message); }, notices: [], refresh: async () => {} };
+  host.snapshot = () => structuredClone(host.state);
+  host.captureContext = () => ({id: host.state.project?.project_id, workspace: host.state.account?.workspace_id});
+  host.isCurrent = context => context.id === host.state.project?.project_id && context.workspace === host.state.account?.workspace_id;
+  host.setReferences = ids => { host.state.referenceOrder = [...ids]; return true; };
   host.api = async (url, options = {}) => {
     const method = options.method || 'GET'; const body = options.body ? JSON.parse(options.body) : null; calls.push({ url, method, body });
     if (url === '/api/storyboards/config') return { mock_enabled: true, real_enabled: false, models: [], video_models: [{ model_id: 'h3' }] };
@@ -136,6 +140,18 @@ async function quoteAndConfirm(h) {
   await tick();
   return h.calls.filter(call => call.method === 'POST' && call.url.endsWith('/replan')).at(-1)?.body;
 }
+
+test('passive project refresh can load later storyboard versions repeatedly', async () => {
+  const h = harness({ boards: [{storyboard_id:'board-a',version:1,status:'approved',shots:[shot('a1')],target_duration_ms:4000}] });
+  await h.start();
+  for (const version of [2, 3]) {
+    const record = h.records.get('board-a');
+    h.records.set('board-a', {...record, version, versions:[...record.versions,{version,status:'approved'}]});
+    await h.document.fire('video-project-view', {detail:{project:{project_id:'project'}}});
+    await tick(); await tick();
+    assert.equal(Number(byLabel(h.root, '历史版本（只读）').value), version);
+  }
+});
 
 test('same replan body on different storyboard records receives independent request IDs', async () => {
   const h = harness({ boards: [
