@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -19,7 +20,7 @@ SUITES = {
                    "test_video_pipeline", "test_script_web", "test_asset_storyboard_browser"],
     "video": ["test_video", "test_h3_worker", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser"],
     "qwen": ["test_qwen"],
-    "admin": ["test_admin", "test_deploy_release", "test_backup_workbench"],
+    "admin": ["test_admin", "test_deploy_release", "test_backup_workbench", "test_verification"],
     "storage": ["test_storage", "test_script_storage", "test_project_manager", "test_request_metadata_cache", "test_atomic_replace"],
 }
 
@@ -29,11 +30,13 @@ def source_fingerprint():
     for folder in ("image_workbench", "config", "skills"):
         files.update(p for p in (ROOT / folder).rglob("*")
                      if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc", ".pyo"})
-    for folder in ("tests", "scripts"):
-        files.update((ROOT / folder).glob("*.py"))
+    files.update((ROOT / "tests").glob("*.py"))
+    for suffix in ("*.py", "*.sh", "*.ps1"):
+        files.update((ROOT / "scripts").glob(suffix))
     for folder in ("tests/contracts", "tests/frontend"):
         files.update(p for p in (ROOT / folder).rglob("*") if p.is_file())
-    for name in ("architecture.json", "ruff.toml", "requirements-dev.txt", ".github/workflows/verify.yml"):
+    for name in ("architecture.json", "ruff.toml", "requirements.txt", "requirements-web.txt",
+                 "requirements-dev.txt", ".github/workflows/verify.yml"):
         files.add(ROOT / name)
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
 
@@ -53,6 +56,9 @@ def main(argv=None):
         result = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts" / check)], cwd=ROOT)
         if result.returncode:
             return result.returncode
+    if not shutil.which("node"):
+        print("Node.js is required for frontend verification; checks failed.", flush=True)
+        return 1
     command = [sys.executable, "-X", "utf8", "-m", "unittest"]
     command += ["-v", *("tests." + name for name in selected)] if selected else ["discover", "-s", "tests", "-v"]
     result = subprocess.run(command, cwd=ROOT)

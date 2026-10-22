@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -103,16 +102,12 @@ def ssh_arguments(config, *, scp=False):
 
 
 def validate_local(root, log_path):
-    print("运行本地回归检查……", flush=True)
+    print("运行统一质量、架构与回归检查……", flush=True)
     with log_path.open("wb") as stream:
-        result = subprocess.run([sys.executable, "-X", "utf8", "-m", "unittest", "discover", "-s", "tests", "-v"],
+        result = subprocess.run([sys.executable, "-X", "utf8", str(root / "scripts" / "verify.py")],
                                 cwd=root, stdout=stream, stderr=subprocess.STDOUT, check=False)
     if result.returncode:
         raise RuntimeError(f"本地检查未通过，未上传任何文件。检查结果：{log_path}")
-    node = shutil.which("node")
-    if node:
-        for path in sorted((root / "image_workbench" / "web_static").glob("*.js")):
-            subprocess.run([node, "--check", str(path)], check=True, cwd=root)
 
 
 def deploy(config, directory, archive, release_id, *, script_bytes=None, expected_archive_sha=None):

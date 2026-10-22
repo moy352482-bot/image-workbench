@@ -38,7 +38,9 @@ class ModuleIsolationTests(unittest.TestCase):
     def test_admin_report_is_invalidated_when_architecture_or_contract_changes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for name in ("architecture.json", "tests/contracts/http_routes.json", "tests/frontend/workbench.test.js"):
+            for name in ("architecture.json", "tests/contracts/http_routes.json", "tests/frontend/workbench.test.js",
+                         "ruff.toml", "requirements-dev.txt", ".github/workflows/verify.yml",
+                         "config/script_pricing.json", "skills/storyboard-planning/SKILL.md"):
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 before = source_fingerprint(root)
