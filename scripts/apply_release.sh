@@ -45,6 +45,8 @@ with tarfile.open(archive, 'r:gz') as bundle:
                 or path.parts[0] == 'image_workbench'
                 or member.name in {'config/script_models.json', 'config/script_pricing.json', 'config/script_routing.json', 'config/storyboard_pricing.json'}
                 or member.name == 'skills/storyboard-planning/SKILL.md'
+                or member.name in {'skills/image-generation-default/SKILL.md', 'skills/image-generation-default/styles.json',
+                                   'skills/image-generation-default/references/sources.md'}
                 or (path.parts[:2] == ('skills', 'video-script-generation') and path.suffix in {'.json', '.txt', '.md'}))):
             raise ValueError('Unexpected release member')
         seen.add(member.name)
@@ -63,7 +65,7 @@ python3 -m venv "$release/.venv"
 "$release/.venv/bin/python" -m pip install --disable-pip-version-check -r "$release/requirements-web.txt"
 (
     cd "$release"
-    "$release/.venv/bin/python" -c 'import json; from pathlib import Path; from image_workbench.cli import main; from image_workbench.web import create_app; from image_workbench.script_templates import ScriptTemplateLoader; from image_workbench.script_models import ScriptModelRegistry; from image_workbench.storyboard_planner import build_prompt; assert ScriptTemplateLoader().list_templates(); ScriptModelRegistry().configs(); assert build_prompt({"text": "release smoke", "artifact_id": "smoke", "version_id": "v1"}, {}, {}); assert isinstance(json.loads(Path("config/storyboard_pricing.json").read_text())["models"], dict)'
+    "$release/.venv/bin/python" -c 'import json; from pathlib import Path; from image_workbench.cli import main; from image_workbench.web import create_app; from image_workbench.script_templates import ScriptTemplateLoader; from image_workbench.script_models import ScriptModelRegistry; from image_workbench.storyboard_planner import build_prompt; from image_workbench.image_prompting import default_image_skill; assert ScriptTemplateLoader().list_templates(); ScriptModelRegistry().configs(); assert build_prompt({"text": "release smoke", "artifact_id": "smoke", "version_id": "v1"}, {}, {}); assert isinstance(json.loads(Path("config/storyboard_pricing.json").read_text())["models"], dict); assert default_image_skill().catalog()["styles"]; assert default_image_skill().compile("release smoke")["compiled_prompt"]'
 )
 
 health() {

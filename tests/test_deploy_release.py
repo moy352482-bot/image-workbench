@@ -174,6 +174,14 @@ class LinuxReleaseTests(unittest.TestCase):
             source.mkdir()
             (source / "image_workbench").mkdir()
             (source / "image_workbench" / "__init__.py").write_text("# fixture")
+            (source / "image_workbench" / "image_prompting.py").write_text("# image skill fixture")
+            skill = source / "skills" / "image-generation-default"
+            (skill / "references").mkdir(parents=True)
+            for name in ("SKILL.md", "styles.json", "references/sources.md"):
+                (skill / name).write_text("image skill fixture")
+            previews = source / "image_workbench" / "web_static" / "image-styles"
+            previews.mkdir(parents=True)
+            (previews / "sample.png").write_bytes(b"preview fixture")
             for name in ("requirements.txt", "requirements-web.txt"):
                 (source / name).write_text("")
             rid = "20261013T000000Z-12345678"
@@ -243,6 +251,8 @@ exec /usr/bin/readlink "$@"
             self.assertEqual((server / "current").resolve(), expected, result.stdout + result.stderr)
             self.assertEqual(result.returncode != 0, fail_health, result.stdout + result.stderr)
             self.assertEqual(len((root / "restarts").read_text().splitlines()), 2 if fail_health else 1)
+            self.assertEqual((server / "releases" / rid / "skills" / "image-generation-default" / "SKILL.md").read_text(),
+                             "image skill fixture")
 
     def test_success_switches_release_without_changing_data(self):
         self.simulate(False)
