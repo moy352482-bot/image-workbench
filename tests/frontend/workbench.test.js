@@ -68,6 +68,19 @@ test('execution time preserves explicit unknown values and queue semantics', () 
   assert.equal(format.formatSeconds(undefined), '—');
 });
 
+test('live execution time advances only running snapshots and keeps server results authoritative', () => {
+  const { WorkbenchFormat: format } = component('workbench-format.js');
+  const detail = { status: 'generating', elapsed_seconds: 59, execution_seconds: 59 };
+  assert.equal(format.executionTimingText(detail, 1), '生成中 · 已运行 1 分 0 秒');
+  assert.equal(format.executionTimingText(detail, 61), '生成中 · 已运行 2 分 0 秒');
+  assert.equal(detail.elapsed_seconds, 59, 'display interpolation must not change the server snapshot');
+  assert.equal(format.executionTimingText({ ...detail, status: 'queued' }, 30), '等待执行 · 尚未开始计时');
+  assert.equal(format.executionTimingText({ ...detail, status: 'failed', execution_seconds: 12 }, 30), '执行失败 · 本次执行耗时 12 秒');
+  for (const elapsed_seconds of [null, undefined, NaN, -1]) {
+    assert.equal(format.executionTimingText({ ...detail, elapsed_seconds }, 30), '生成中 · 已运行 —');
+  }
+});
+
 test('closing a preview invalidates an in-flight fallback and restores focus', async () => {
   const elements = new Map(), events = {};
   function node(selector) {

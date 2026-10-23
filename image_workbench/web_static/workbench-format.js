@@ -23,9 +23,14 @@
     if (Object.hasOwn(detail, 'execution_seconds')) return detail.execution_seconds;
     return detail.timings?.total_seconds ?? detail.elapsed_seconds ?? null;
   }
-  function executionTimingText(detail) {
+  function executionTimingText(detail, secondsSinceUpdate = 0) {
     if (detail.status === 'queued') return '等待执行 · 尚未开始计时';
-    if (['generating', 'checking'].includes(detail.status)) return `${statusText(detail.status)} · 已运行 ${formatSeconds(detail.elapsed_seconds)}`;
+    if (['generating', 'checking'].includes(detail.status)) {
+      const elapsed = Number.isFinite(detail.elapsed_seconds) && detail.elapsed_seconds >= 0
+        ? detail.elapsed_seconds + Math.max(0, Number.isFinite(secondsSinceUpdate) ? secondsSinceUpdate : 0)
+        : null;
+      return `${statusText(detail.status)} · 已运行 ${formatSeconds(elapsed)}`;
+    }
     if (detail.status === 'uncertain') return '执行状态待确认 · 最终耗时暂不可用';
     const seconds = executionDuration(detail);
     if (seconds !== null && seconds !== undefined) return `${detail.status === 'failed' ? '执行失败' : '本次执行完成'} · 本次执行耗时 ${formatSeconds(seconds)}`;

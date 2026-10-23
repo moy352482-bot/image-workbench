@@ -7,6 +7,7 @@
     config: null, csrf: '', projects: [], subprojects: [], tasks: [], projectId: '', subprojectId: '', taskId: '', detail: null,
     overview: null, files: [], referenceArtifacts: [], baseArtifact: null, polling: 0, busy: false, selectionVersion: 0, projectsLoadVersion: 0,
     account: null, showArchived: false, batchSelected: new Set(), pollingBusy: false, tasksLoadVersion: 0,
+    detailReceivedAt: 0, detailLoadVersion: 0, timing: 0,
   };
   const storageKeys = { project: 'image-workbench.project', subproject: 'image-workbench.subproject', task: 'image-workbench.task', pendingSave: 'image-workbench.pending-task-request', pendingProject: 'image-workbench.pending-project-request' };
   const ui = {
@@ -398,6 +399,8 @@
   async function selectTask(taskId) {
     if (taskId === state.taskId) return;
     closeImagePreviews();
+    stopPolling();
+    state.selectionVersion += 1;
     state.taskId = taskId;
     state.detail = null;
     saveLocalSelection();
@@ -415,17 +418,19 @@
   async function loadTaskDetail(taskId, quiet, expectedVersion) {
     if (!state.subprojectId || !taskId) return;
     const version = expectedVersion ?? state.selectionVersion;
+    const requestVersion = ++state.detailLoadVersion;
     try {
       const detail = await api(`/api/tasks/${encodeURIComponent(taskId)}`);
-      if (state.taskId !== taskId || state.selectionVersion !== version) return;
+      if (state.taskId !== taskId || state.selectionVersion !== version || requestVersion !== state.detailLoadVersion) return;
       state.detail = detail;
+      state.detailReceivedAt = performance.now();
       state.tasks = state.tasks.map(task => task.task_id === taskId ? { ...task, ...detail } : task);
       saveLocalSelection();
       renderTasks();
       renderDetail(detail);
       syncPolling();
     } catch (error) {
-      if (state.selectionVersion !== version) return;
+      if (state.taskId !== taskId || state.selectionVersion !== version || requestVersion !== state.detailLoadVersion) return;
       if (!quiet) toast(error.message, true);
       if (!quiet) showNoTask();
     }
@@ -456,6 +461,20 @@
   function stopPolling() {
     if (state.polling) window.clearInterval(state.polling);
     state.polling = 0;
+    stopTiming();
+  }
+  function stopTiming() {
+    if (state.timing) window.clearInterval(state.timing);
+    state.timing = 0;
+  }
+  function currentTimingText(detail) {
+    // Advance the server's elapsed snapshot with a monotonic local clock, not the client's wall time.
+    return executionTimingText(detail, (performance.now() - state.detailReceivedAt) / 1000);
+  }
+  function updateTiming() {
+    if (!state.detail || state.detail.task_id !== state.taskId) return;
+    const label = $('.detail-progress span', ui.details);
+    if (label) label.textContent = currentTimingText(state.detail);
   }
   function setResultStatus(detail) {
     const status = detail.status;
@@ -516,7 +535,7 @@
     }
     if (controls.childElementCount) ui.details.append(controls);
 
-    const timingText = executionTimingText(detail);
+    const timingText = currentTimingText(detail);
     if (timingText) {
       const statusLine = document.createElement('div');
       statusLine.className = 'detail-error';
@@ -527,6 +546,9 @@
         : '从本次执行开始计时，不含任务保存后的等待和排队时间。';
       ui.details.append(statusLine);
     }
+    if (['generating', 'checking'].includes(detail.status) && Number.isFinite(detail.elapsed_seconds) && detail.elapsed_seconds >= 0) {
+      if (!state.timing) state.timing = window.setInterval(updateTiming, 1000);
+    } else stopTiming();
     if (detail.error_summary) appendText(ui.details, 'div', 'detail-error', detail.error_summary);
 
     const outputs = Array.isArray(detail.outputs) ? detail.outputs : [];
@@ -1217,5 +1239,6 @@
     if (getOperation() === 'generate' && state.baseArtifact) clearBaseArtifact();
     updateEditHelp();
   }));
+  document.addEventListener('visibilitychange', updateTiming);
   init();
 })();
