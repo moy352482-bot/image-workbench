@@ -1,9 +1,9 @@
 # 图片 API 接入
 
 2026-10-23，依据用户提供的《API接口文档.md》v1.0 添加 `image-api` 图片 Provider。
-本地已实现，尚未调用真实 API、未发布或切换线上后端。提供的文档把服务地址写成
-`https://your-domain.com`；附件也没有可提取的实际域名或下载来源。API Key 无法推导服务地址，
-因此目前不能验证 Key、接口可达性、真实耗时、稳定性或编辑质量。
+用户补充供应方入口后，确认实际基础地址为 `https://subdirect.aicodexvip.top`，
+使用 `gpt-image-2`。最终版本已完成三轮真实生成和编辑验收，6 次请求均成功。
+完整发布回归和线上切换结果见 [本次验收记录](image_api_release_20261023.md)。
 
 ## 接入范围
 
@@ -12,9 +12,13 @@
 - 复用 `TaskRunner`、`LocalWorker`/`RemoteWorker`、`WorkbenchState`、`StorageManager` 和
   `IdentityStore`，不新增任务队列、数据模型或 Core 事务。HTTP/CLI 只增加后端选项。
 - 无参考图调用 `/v1/images/generations`；带参考图生成、已有图编辑调用 `/v1/images/edits`。
-  编辑基底排在附加参考图之前，以文档支持的 Base64 JSON 发送；每个任务请求 1 张图片。
+  编辑基底排在附加参考图之前，以 `images: [{image_url: "data:image/png;base64,..."}]`
+  发送（MIME 类型随图片变化）；每个任务请求 1 张图片。文档的独立 `base64` 字段实测返回
+  HTTP 400，已按供应方实际支持的 Data URL 修正，没有自动改参数重复计费。
   只请求 `b64_json` 返回，候选图写入本次 `products/`，由既有流程检查和归档，不接收任意下载地址。
 - `1:1`、`3:2`、`2:3` 分别传 `1024x1024`、`1536x1024`、`1024x1536`；自动比例不发送 `size`。
+  比例由原任务选项显式传至 Provider，远端清单增加可选 `aspect_ratio`，缺省仍为 `auto`。
+  保留线上默认图片创作 Skill 和八种风格，比例不依赖解析编译后的提示词。
   参考图、编辑基底和历史版本沿用原有空间权限、快照、归档和来源关系。
 - 网站积分延续原规则：纯文生图 40，带参考图或编辑 60，由原账本冻结、结算和退款。
   供应方实际收费由其 API 账号承担；未从文档推定价格。
@@ -41,6 +45,11 @@ $env:IMAGE_WORKBENCH_IMAGE_API_CONFIG = (Resolve-Path 'deploy/image-api.local.js
 配套 `remote-worker --backend image-api` 运行在受控执行主机；Key 只交给该执行器。
 服务器与 Worker 必须使用相同后端，各后端使用独立远程缓存。
 
+服务器部署模板为 `deploy/image-api-worker.service`，用现有远程队列协议运行独立执行器。
+Key 存放在 `/etc/image-workbench-image-api.json`，权限 `0600`、属主 `image-workbench`；
+缓存使用 `/var/lib/image-workbench-image-api`，不覆盖旧执行器缓存。主服务重启会联动重启
+API Worker；发布前仍须确认图片队列空闲。原 Codex 配置与程序保留。
+
 切换前须确认旧后端没有排队、执行中或待确认作业，保留旧配置与旧 Worker 缓存。
 回退时恢复 `codex` 配置和原执行器，无需迁移历史图片。回退程序代码时保留新任务及候选产物证据。
 
@@ -55,12 +64,11 @@ $env:IMAGE_WORKBENCH_IMAGE_API_CONFIG = (Resolve-Path 'deploy/image-api.local.js
 .venv/Scripts/python.exe -X utf8 scripts/verify.py --module images
 ```
 
-本次结果：142 项全部通过（78.687 秒），含 13 项新 API 专项用例；Ruff 无新增诊断，
-架构检查 86 个模块、422 条导入、0 违规。检查期间源码指纹未变化。日志保留在
-`work/image-api-integration/module-checks.txt`。发布文件清单包含新 Provider，排除私密配置。
-这些是离线功能回归，不能替代下述真实供应方测试。
+初版图片模块检查 142 项通过。合入线上现有风格和创作规则后，针对性检查 43 项通过，
+含 13 项 API 专项用例；Ruff 无新增诊断，架构检查 87 个模块、425 条导入、0 违规。
+发布仍执行完整统一检查，记录在本次发布包的 `checks.txt`，不以局部检查替代。
 
-得到真实地址后执行三轮实际验收，每轮均记录 API 耗时、工作台总耗时、状态、输出图片和修改效果：
+三轮实际验收使用独立临时数据和真实 API，经工作台 HTTP 提交、Worker、回传、归档、下载全链路：
 
 | 轮次 | 生成 | 修改与检查 |
 | --- | --- | --- |
@@ -69,4 +77,5 @@ $env:IMAGE_WORKBENCH_IMAGE_API_CONFIG = (Resolve-Path 'deploy/image-api.local.js
 | 3 | 使用前两轮图片作多图参考，生成产品场景 | 修改杯子颜色，检查主体与背景连续性 |
 
 每轮独立发起一次生成、一次编辑，不用自动重试掩盖失败，不把 Mock 结果当作真实 API 性能。
-三轮结果通过后才运行发布所需完整回归并上线；上线后核验实际版本、后端选择和执行器心跳。
+每轮记录见 `work/image-api-integration/live-release-round-{1,2,3}/run.json`。
+三轮结果通过后运行发布所需完整回归并上线；上线后核验实际版本、后端选择和执行器心跳。

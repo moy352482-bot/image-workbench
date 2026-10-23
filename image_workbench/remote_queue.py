@@ -57,13 +57,15 @@ class RemoteQueue:
         def asset(item):
             return {key: getattr(item, key) for key in ("artifact_id", "sha256", "size_bytes", "format")}
         task_payload = asdict(task)
+        options = self.state.task_options(task.project_id, task.task_id) or {}
         if job["action"] == "generate":
-            task_payload["prompt"] = execution_prompt(task, self.state.task_options(task.project_id, task.task_id), reference_count=len(inputs))
+            task_payload["prompt"] = execution_prompt(task, options, reference_count=len(inputs))
         return {"schema_version": 1, "job_id": job["job_id"], "claim_id": job["claim_id"],
                 "task": task_payload, "backend": job["backend"], "action": job["action"],
                 "inputs": [asset(item) for item in inputs],
                 "base": asset(self.storage.get_artifact(task.base_artifact_id)) if task.base_artifact_id else None,
-                "max_image_bytes": self.storage.config.max_image_bytes}
+                "max_image_bytes": self.storage.config.max_image_bytes,
+                "aspect_ratio": options.get("aspect_ratio", "auto")}
 
     def claim(self, worker_id, backend):
         with self.state.control_lock():

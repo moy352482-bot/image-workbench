@@ -38,7 +38,8 @@ class ImageAPIBackendTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name).resolve()
         self.storage = StorageManager(StorageConfig(data_root=self.root / "data", max_image_bytes=2048))
-        self.project = self.storage.create_project("API 测试")
+        self.state = WorkbenchState(self.storage, backend="image-api")
+        self.project = self.state.create_project("API 测试", uuid4().hex)
         self.runner = TaskRunner(self.storage)
         self.calls = []
         self.image = png()
@@ -58,10 +59,10 @@ class ImageAPIBackendTests(unittest.TestCase):
         self.addCleanup(self.client.close)
         self.backend = ImageAPIBackend("https://images.test/v1/", self.key, client=self.client)
 
-    def run_task(self, prompt="生成一个产品图", *, base=None, inputs=()):
-        task = self.storage.create_task(self.project.project_id, "edit" if base else "generate", prompt, base)
-        for path in inputs:
-            self.storage.add_input_image(task.project_id, task.task_id, path)
+    def run_task(self, prompt="生成一个产品图", *, base=None, inputs=(), aspect_ratio="auto"):
+        task = self.state.create_task(self.project.project_id, request_id=uuid4().hex,
+                                      operation="edit" if base else "generate", prompt=prompt,
+                                      base_artifact_id=base, inputs=inputs, aspect_ratio=aspect_ratio)
         record = self.runner.run(task.project_id, task.task_id, self.backend, idempotency_key=uuid4().hex)
         return task, record
 
@@ -69,7 +70,7 @@ class ImageAPIBackendTests(unittest.TestCase):
         return self.runner.get_execution_directory(record.project_id, record.task_id, record.execution_id)
 
     def test_generation_is_archived_once_with_auth_dimensions_and_timing(self):
-        task, record = self.run_task("产品照\n画面宽高比 3:2。")
+        task, record = self.run_task("产品照", aspect_ratio="3:2")
         self.assertEqual(record.status, "succeeded")
         request = self.calls[0]
         self.assertEqual(str(request.url), "https://images.test/v1/images/generations")
@@ -77,6 +78,7 @@ class ImageAPIBackendTests(unittest.TestCase):
         body = json.loads(request.content)
         self.assertEqual((body["size"], body["n"], body["response_format"]), ("1536x1024", 1, "b64_json"))
         self.assertTrue(body["history_disabled"])
+        self.assertIn("本次视觉需求", body["prompt"])
         artifact = record.output_artifact_ids[0]
         self.assertEqual(self.storage.get_artifact_path(artifact).read_bytes(), self.image)
         self.assertGreater(record.backend_seconds, 0)
@@ -92,7 +94,7 @@ class ImageAPIBackendTests(unittest.TestCase):
         aid = original.output_artifact_ids[0]
         reference = self.root / "reference.png"
         reference.write_bytes(png("blue"))
-        _, edited = self.run_task("把杯子改成蓝色\n画面宽高比 2:3。", base=aid, inputs=[reference])
+        _, edited = self.run_task("把杯子改成蓝色", base=aid, inputs=[reference], aspect_ratio="2:3")
         self.assertEqual(edited.status, "succeeded")
         self.assertEqual(self.calls[-1].url.path, "/v1/images/edits")
         body = json.loads(self.calls[-1].content)
@@ -278,6 +280,8 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
             base = output["artifact_id"]
         self.assertEqual(len(self.calls), 2)
         self.assertEqual([r.url.path for r in self.calls], ["/v1/images/generations", "/v1/images/edits"])
+        self.assertTrue(all(json.loads(r.content)["size"] == "1024x1024" for r in self.calls))
+        self.assertTrue(all("本次视觉需求" in json.loads(r.content)["prompt"] for r in self.calls))
         self.assertNotIn("private-test-key", self.browser.get("/api/config").text)
 
     def test_failed_api_job_releases_credit_and_survives_worker_restart_without_retry(self):

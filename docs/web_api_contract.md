@@ -20,6 +20,8 @@ detail/list/download/recover 和手动版本入口继续按原权限与恢复合
 
 2026-10-23：Worker 的 `POST /api/worker/claim` 请求 `backend` 在 `codex`、`local` 基础上增加
 `image-api`。原请求与默认值兼容，仍必须与服务器当前后端匹配；接口快照仅更新该字段允许值。
+远端领取清单新增可选 `aspect_ratio`（`auto`、`1:1`、`3:2`、`2:3`），来自保存的任务选项；
+新 Worker 读取旧清单时缺省为 `auto`，旧 Worker 可忽略该新增字段。已编译的图片 Skill 提示词仍按原协议传递。
 - `GET /api/projects` → `{projects:[{project_id,name,created_at}]}`。
 - `POST /api/projects`，JSON `{request_id,name}` → Project。request_id在同一次保存意图内固定，重发不创建重复项目。
 - `GET /api/projects/{pid}/tasks` → `{tasks:[{task_id,project_id,operation,prompt,base_artifact_id,created_at,status,status_label,input_count,output_count,preview_artifact:ArtifactDTO|null}]}`，新到旧。摘要包含首张输出预览，不必逐项打开详情才能看到缩略图。

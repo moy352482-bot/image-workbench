@@ -7,7 +7,6 @@ import json
 import mimetypes
 import os
 from pathlib import Path
-import re
 import time
 from urllib.parse import urlsplit
 
@@ -67,10 +66,11 @@ class ImageAPIBackend:
         endpoint = "/v1/images/edits" if references else "/v1/images/generations"
         payload = {"model": self.model, "prompt": request.task.prompt, "n": 1,
                    "response_format": "b64_json", "quality": "auto", "stream": False}
-        # 工作台已将用户选择的比例固定在任务提示词末尾；不改变旧任务格式。
-        ratio = re.search(r"\n画面宽高比 (1:1|3:2|2:3)。$", request.task.prompt)
-        if ratio:
-            payload["size"] = {"1:1": "1024x1024", "3:2": "1536x1024", "2:3": "1024x1536"}[ratio[1]]
+        sizes = {"1:1": "1024x1024", "3:2": "1536x1024", "2:3": "1024x1536"}
+        if request.aspect_ratio != "auto":
+            if request.aspect_ratio not in sizes:
+                raise BackendError("图片比例无效", failure_type="prepare_failed")
+            payload["size"] = sizes[request.aspect_ratio]
         if references:
             images = []
             for path in references:

@@ -103,7 +103,8 @@ class RemoteWorker:
             raise ValueError("编辑基底不完整")
         request = BackendRequest(manifest["job_id"], task, directory, inputs, base,
             directory / "stdout.log", directory / "stderr.log", self.timeout,
-            min(manifest["max_image_bytes"], self.storage.config.max_image_bytes))
+            min(manifest["max_image_bytes"], self.storage.config.max_image_bytes),
+            aspect_ratio=manifest.get("aspect_ratio", "auto"))
         if journal["phase"] == "ready":
             journal.update(phase="starting", attempt_id=uuid4().hex)
             self._save(journal)
