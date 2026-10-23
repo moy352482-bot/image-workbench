@@ -76,9 +76,9 @@ class ImageAPIBackend:
             for path in references:
                 if not 0 < path.stat().st_size <= min(request.max_image_bytes, 50 * 1024 * 1024):
                     raise BackendError("参考图片大小超出限制", failure_type="prepare_failed")
-                images.append({"base64": base64.b64encode(path.read_bytes()).decode("ascii"),
-                               "filename": path.name,
-                               "mime_type": mimetypes.guess_type(path.name)[0] or "application/octet-stream"})
+                mime_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+                encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+                images.append({"image_url": f"data:{mime_type};base64,{encoded}"})
             payload["images"] = images
         else:
             payload["history_disabled"] = True
