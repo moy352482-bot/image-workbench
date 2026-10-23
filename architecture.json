@@ -73,7 +73,8 @@
       "modules": [
         "image_backend",
         "codex_backend",
-        "image_api_backend"
+        "image_api_backend",
+        "image_prompting"
       ],
       "may_import": [
         "foundation",
@@ -289,7 +290,8 @@
       "WorkbenchFormat": "web_static/workbench-format.js",
       "WorkbenchApi": "web_static/workbench-api.js",
       "WorkbenchPreview": "web_static/workbench-preview.js",
-      "WorkbenchAccounts": "web_static/workbench-accounts.js"
+      "WorkbenchAccounts": "web_static/workbench-accounts.js",
+      "WorkbenchStyles": "web_static/workbench-styles.js"
     },
     "state_ports": {
       "IWVideo": {

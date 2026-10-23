@@ -1,6 +1,6 @@
 """确定性执行流程及归档恢复；不在这里实现任何图片生成模型。"""
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime
 import hashlib
 import math
@@ -13,6 +13,7 @@ from uuid import uuid4
 from .image_backend import BackendError, BackendRequest, BackendResult, ImageBackend
 from .storage import MetadataError, StorageManager, _now, _text, _validate_id
 from .image_references import task_input_artifacts
+from .image_prompting import execution_prompt
 from .timing import measure, phase_seconds
 from .locking import FileLock
 from .performance import PerformanceTrace
@@ -294,13 +295,18 @@ class TaskRunner:
                     if (copied_size, copied_hash) != (base.size_bytes, base.sha256):
                         raise ValueError("编辑基底图片内容与登记记录不一致")
                     self.storage.inspect_image(edit_image)
+                try:
+                    options = self.storage.files.read_json(self.storage.files.path(".workbench", "tasks", project_id, task_id + ".json"))
+                except FileNotFoundError:
+                    options = None
+                execution_task = replace(task, prompt=execution_prompt(task, options, reference_count=len(inputs)))
                 request = BackendRequest(
-                    execution_id, task, work, tuple(reference_paths), edit_image,
+                    execution_id, execution_task, work, tuple(reference_paths), edit_image,
                     stdout, stderr, timeout_seconds, self.storage.config.max_image_bytes,
                     performance,
                 )
                 self.storage.files.write_json(work / "request.json", {
-                    "schema_version": 1, "execution_id": execution_id, "task": asdict(task),
+                    "schema_version": 1, "execution_id": execution_id, "task": asdict(execution_task),
                     "reference_images": [path.relative_to(self.storage.data_root).as_posix() for path in reference_paths],
                     "edit_image": edit_image.relative_to(self.storage.data_root).as_posix() if edit_image else None,
                     "timeout_seconds": timeout_seconds,

@@ -1,5 +1,12 @@
 # 第二阶段：本地任务执行接口
 
+兼容扩展（2026-10-22）：网站保存任务时在附加记录中冻结默认图片 Skill 与可选风格的提示词快照。
+本地 `TaskRunner` 在构造 `BackendRequest` 时使用该快照的 `compiled_prompt`，远程 `RemoteQueue` 在现有
+`task.prompt` 字段传送同一文本。原始磁盘 Task 不改写，其他传输字段不变，旧执行器仍可读取；
+旧任务没有快照时在执行边界应用当前默认 Skill。`work/request.json` 保存实际传给后端的提示词。
+这一步不调用额外模型，不增加图片次数，不改变提交确认、积分、恢复、重试和归档行为。
+`retry_archive` 不经过生图提示词整理或模型调用。详见 [图片默认 Skill](image_generation_skill.md)。
+
 本阶段仍是可信本地脚本、单进程顺序调用，不提供网页或账号权限。
 执行链固定为 `TaskRunner → ImageBackend → 本次产物 → StorageManager`。
 默认 Codex 后端不调用额外付费图片 API，不自动重试生成，不修改 Codex 全局配置或登录方式。

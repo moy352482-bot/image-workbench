@@ -6,6 +6,10 @@ from ..domain_errors import ConflictError
 from .uploads import save_task
 
 def install_routes(app, state, storage):
+    @app.get("/api/image-styles")
+    def image_styles():
+        return state.image_style_catalog()
+
     @app.get("/api/projects/{project_id}/tasks")
     def tasks(project_id: str):
         _, _, records = state.project_views(project_id)

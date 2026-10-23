@@ -21,6 +21,7 @@ from .domain_errors import ConflictError
 from .image_status import STATUS_LABELS, FAILURE_MESSAGES, _execution_timing, _seconds_between
 from .image_queries import ImageQueries
 from .image_references import task_input_artifacts
+from .image_prompting import default_image_skill
 
 
 class WorkbenchState:
@@ -82,6 +83,9 @@ class WorkbenchState:
         if value and (value.get("project_id"), value.get("task_id")) != (project_id, task_id):
             raise ValueError("附加任务记录不匹配")
         return value
+
+    def image_style_catalog(self):
+        return default_image_skill().catalog()
 
     def get_job(self, project_id, task_id):
         value = self._read_optional(self._task_file("jobs", project_id, task_id))
@@ -162,7 +166,7 @@ class WorkbenchState:
             return existing
 
     def create_task(self, project_id, *, request_id, operation, prompt, aspect_ratio="auto", base_artifact_id=None, inputs=(),
-                    subproject_id=None, name=None, description="", reference_artifact_ids=()):
+                    subproject_id=None, name=None, description="", reference_artifact_ids=(), style_id=None):
         _validate_id(request_id)
         _text(prompt, "提示词")
         if len(prompt) > 12000:
@@ -198,6 +202,8 @@ class WorkbenchState:
         parts = [project_id, sub.subproject_id, name, description, operation, prompt, aspect_ratio, base_artifact_id, hashes]
         if reference_artifact_ids:
             parts.append(list(reference_artifact_ids))
+        if style_id:
+            parts.append({"style_id": style_id})
         fingerprint = hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()
         with self.control_lock():
             previous = self.task_options(project_id, request_id)
@@ -207,9 +213,13 @@ class WorkbenchState:
                 if previous["state"] != "ready":
                     raise ConflictError("上次保存未完成，未启动模型；请建立新的草稿")
                 return self.storage.get_task(project_id, request_id)
+            image_prompt = default_image_skill().compile(
+                prompt, operation=operation, style_id=style_id, aspect_ratio=aspect_ratio,
+                reference_count=len(inputs) + len(reference_artifact_ids),
+            )
             options = {"schema_version": 1, "project_id": project_id, "task_id": request_id,
                        "fingerprint": fingerprint, "aspect_ratio": aspect_ratio, "state": "preparing", "created_at": _now(),
-                       "reference_artifact_ids": list(reference_artifact_ids)}
+                       "reference_artifact_ids": list(reference_artifact_ids), "image_prompt": image_prompt}
             path = self._task_file("tasks", project_id, request_id, create=True)
             self.storage.files.write_json(path, options)
             try:

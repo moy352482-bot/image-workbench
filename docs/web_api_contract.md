@@ -1,5 +1,13 @@
 # 第四阶段本地 Web 接口约定
 
+图片兼容扩展（2026-10-22）：新增经原身份/Workspace 入口访问的 `GET /api/image-styles`，返回
+`{skill_id,version,default_enabled:true,styles:[{id,name,category,summary,tags,prompt,example_prompt,aspect_ratio,preview_url,preview_alt,sources}]}`。
+任务创建 multipart 增加可选 `style_id`；不传或空值均表示遵循原始需求，但仍使用默认图片 Skill。
+未知风格返回 400，同一保存请求改变风格返回 409。旧请求字段、路径及提交/计费边界不变。
+TaskDetail 增加 `image_prompt`（旧记录为 null），包含 `skill_id,skill_version,skill_sha256,style_id,style_name,source_prompt,compiled_prompt,spec`；
+任务列表不携带该较大的快照。预览是随网站发布的公共示例，选择风格不会上传或绑定预览图。
+完整调用与兼容策略见 [图片默认 Skill](image_generation_skill.md)。
+
 后续兼容扩展（2026-10-20）：脚本页面和 `/api/scripts/*` 路径、请求字段与已有响应字段保持兼容。
 `GET /api/scripts/config` 增加 `generation_plugin`（描述及 `enabled`），不替代模型目录的实际可用性。
 脚本插件停用后，新 quote/submit 返回 409；相同已受理请求的 submit 仍返回原任务，

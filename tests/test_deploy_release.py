@@ -30,6 +30,24 @@ class DeployTests(unittest.TestCase):
         (self.root / "key").write_text("test key placeholder")
         self.config = {"host": "192.0.2.10", "user": "ubuntu", "port": 22, "private_key": str(self.root / "key")}
 
+    def test_image_skill_is_required_and_included_with_preview_assets(self):
+        (self.root / "image_workbench/image_prompting.py").write_text("# prompt compiler")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        skill = self.root / "skills/image-generation-default"
+        (skill / "references").mkdir(parents=True)
+        for name in ("SKILL.md", "styles.json", "references/sources.md"):
+            (skill / name).write_text("test fixture", encoding="utf-8")
+        previews = self.root / "image_workbench/web_static/image-styles"
+        previews.mkdir(parents=True)
+        (previews / "sample.png").write_bytes(b"preview fixture")
+        archive, manifest = deploy.package(self.root, self.root, "image-skill-test")
+        with tarfile.open(archive) as bundle:
+            self.assertIn("skills/image-generation-default/SKILL.md", bundle.getnames())
+            self.assertIn("skills/image-generation-default/styles.json", bundle.getnames())
+            self.assertIn("image_workbench/web_static/image-styles/sample.png", bundle.getnames())
+        self.assertEqual(deploy.fingerprint(self.root), manifest["files"])
+
     def test_remote_extractor_accepts_complete_runtime_bundle_and_rejects_extra_files(self):
         script = (ROOT / "scripts/apply_release.sh").read_text(encoding="utf-8")
         extraction = script.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
@@ -215,6 +233,14 @@ class LinuxReleaseTests(unittest.TestCase):
             source.mkdir()
             (source / "image_workbench").mkdir()
             (source / "image_workbench" / "__init__.py").write_text("# fixture")
+            (source / "image_workbench" / "image_prompting.py").write_text("# image skill fixture")
+            skill = source / "skills" / "image-generation-default"
+            (skill / "references").mkdir(parents=True)
+            for name in ("SKILL.md", "styles.json", "references/sources.md"):
+                (skill / name).write_text("image skill fixture")
+            previews = source / "image_workbench" / "web_static" / "image-styles"
+            previews.mkdir(parents=True)
+            (previews / "sample.png").write_bytes(b"preview fixture")
             for name in ("requirements.txt", "requirements-web.txt"):
                 (source / name).write_text("")
             rid = "20261013T000000Z-12345678"
@@ -284,6 +310,8 @@ exec /usr/bin/readlink "$@"
             self.assertEqual((server / "current").resolve(), expected, result.stdout + result.stderr)
             self.assertEqual(result.returncode != 0, fail_health, result.stdout + result.stderr)
             self.assertEqual(len((root / "restarts").read_text().splitlines()), 2 if fail_health else 1)
+            self.assertEqual((server / "releases" / rid / "skills" / "image-generation-default" / "SKILL.md").read_text(),
+                             "image skill fixture")
 
     def test_success_switches_release_without_changing_data(self):
         self.simulate(False)

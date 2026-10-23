@@ -1,0 +1,110 @@
+{
+  "skill_id": "image-generation-default",
+  "version": "1.0.0",
+  "styles": [
+    {
+      "id": "cinematic-realism",
+      "name": "电影叙事",
+      "category": "写实摄影",
+      "summary": "有来源的光、克制的色调与清晰的空间层次。",
+      "tags": ["电影感", "场景", "人物"],
+      "prompt": "采用电影写实表达：光线有明确来源，主体与背景通过明暗、景深和有限冷暖对比分离，保留暗部细节和自然材质。镜头距离服从用户构图，不自动增加雨雾、角色或剧情。",
+      "example_prompt": "一位穿深蓝外套的成年茶馆店主站在木质柜台旁，侧窗的傍晚光照亮他的脸和柜台上的白瓷茶杯。中景，视线略偏离镜头，前景是轻微虚化的门框，背景可见简洁茶架。电影写实风格，暖色窗光与中性暗部，皮肤和木材有自然纹理，画面安静，不出现其他人和文字。",
+      "aspect_ratio": "3:2",
+      "preview": "cinematic-realism.png",
+      "preview_alt": "傍晚侧窗光中的茶馆店主，电影写实风格示例",
+      "sources": [{"name": "ZeroLu · 夜景摄影案例", "url": "https://github.com/ZeroLu/awesome-gpt-image#convenience-store-night-scene"}]
+    },
+    {
+      "id": "commercial-product",
+      "name": "极简产品",
+      "category": "商品设计",
+      "summary": "干净背景、柔和棚光，突出产品轮廓和材质。",
+      "tags": ["电商", "产品", "材质"],
+      "prompt": "采用简洁商业产品摄影：以用户指定商品为唯一视觉重心，背景干净，使用柔和主光与可信接触阴影呈现轮廓和材质。保留商品结构、固定色与精确标签，不因风格虚构品牌、成分或功效。",
+      "example_prompt": "一把青绿色哑光陶瓷手冲咖啡壶，圆润壶身、细长壶嘴和弧形把手，单独放在米白色石质台面上。三分之二侧面视角，左上方大面积柔光，浅灰米色背景，清晰的接触阴影和细腻陶瓷质感。极简产品广告摄影，画面有留白，不出现杯子、植物、品牌和文字。",
+      "aspect_ratio": "1:1",
+      "preview": "commercial-product.png",
+      "preview_alt": "米白背景上的青绿色陶瓷咖啡壶产品摄影示例",
+      "sources": [{"name": "ZeroLu · 产品海报案例", "url": "https://github.com/ZeroLu/awesome-gpt-image#high-end-skincare-product-poster"}]
+    },
+    {
+      "id": "watercolor",
+      "name": "清透水彩",
+      "category": "绘画插画",
+      "summary": "透明叠色、柔软边缘和纸张肌理，适合温柔场景。",
+      "tags": ["水彩", "自然", "绘本"],
+      "prompt": "以透明水彩表现用户主体：轻薄叠色、局部湿画边缘、适量纸白和可见纸张纹理，重点结构仍清晰。颜色与场景服从原始需求，不自动增加花朵、人物或画面文字。",
+      "example_prompt": "一间白墙蓝窗的小花店坐落在安静街角，门口只有两盆绿色植物，一辆浅黄色自行车靠在墙边。三分之二视角，清晨柔光，透明水彩插画，蓝灰阴影与少量暖黄色呼应，纸张纹理和轻微颜料晕染清晰，周围保留大面积纸白，不画人物和店招文字。",
+      "aspect_ratio": "3:2",
+      "preview": "watercolor.png",
+      "preview_alt": "蓝窗花店与黄色自行车的清透水彩插画示例",
+      "sources": [{"name": "YouMind · 水彩与留白案例", "url": "https://youmind.com/gpt-image-2-prompts?id=36728"}]
+    },
+    {
+      "id": "miniature-3d",
+      "name": "微缩 3D",
+      "category": "绘画插画",
+      "summary": "微缩场景、圆润模型和柔和环境光。",
+      "tags": ["3D", "微缩", "等距"],
+      "prompt": "采用微缩 3D 场景表达：明确的体块、柔和倒角、细腻哑光材质与环境光，使用统一透视和合理接触阴影。没有指定镜头时可用略俯视的三分之二视角；不将样例中的装饰、人物和场景移入用户需求。",
+      "example_prompt": "一座微缩玻璃温室放在圆角浅米色底座上，绿色金属框架，内部整齐排列六盆叶片植物，门口一只小陶土花盆。略俯视的三分之二视角，精致 3D 模型，柔和倒角、哑光材质、温暖环境光和细腻阴影，纯淡青色背景，不出现人物、文字和多余建筑。",
+      "aspect_ratio": "1:1",
+      "preview": "miniature-3d.png",
+      "preview_alt": "淡青背景上的微缩玻璃温室 3D 示例",
+      "sources": [{"name": "YouMind · 微缩场景案例", "url": "https://youmind.com/gpt-image-2-prompts?id=36729"}]
+    },
+    {
+      "id": "retro-film",
+      "name": "复古胶片",
+      "category": "写实摄影",
+      "summary": "细颗粒、轻微褪色与自然抓拍的生活质感。",
+      "tags": ["胶片", "街拍", "生活"],
+      "prompt": "采用复古胶片摄影语言：细微颗粒、温和高光过渡、适度褪色和自然抓拍构图，主体细节仍可辨认。保留用户指定颜色，不擅自加日期戳、划痕、漏光、边框或时代道具。",
+      "example_prompt": "夏日下午，一辆红色城市自行车停在街角浅黄色旧墙旁，墙上有树叶投下的斑驳阴影，车篮里是一只折叠的米色帆布袋。自然街拍构图，复古胶片质感，细颗粒、柔和高光和轻微褪色，保留自行车的红色，不出现人物、招牌文字、日期戳和照片边框。",
+      "aspect_ratio": "3:2",
+      "preview": "retro-film.png",
+      "preview_alt": "旧墙和树影旁红色自行车的复古胶片摄影示例",
+      "sources": [{"name": "ZeroLu · 胶片相机质感案例", "url": "https://github.com/ZeroLu/awesome-gpt-image#90s-point-and-shoot-aesthetic"}]
+    },
+    {
+      "id": "graphic-poster",
+      "name": "平面海报",
+      "category": "商品设计",
+      "summary": "明确的视觉主次、几何色块和可读的文字层级。",
+      "tags": ["海报", "中文", "排版"],
+      "prompt": "采用现代平面海报设计：建立一个视觉中心，使用清晰色块和有节奏的留白组织信息；只排版用户明确要求的文字，逐字准确，层级和对齐清楚。用户未要求文案时保留无字画面，不虚构日期、地点、价格或品牌。",
+      "example_prompt": "设计一张春日市集海报，奶油白底色，中心是一只用几何色块绘成的橙色郁金香，叶片为深绿色。顶部仅写中文标题“春日市集”，底部仅写“把日常过成风景”。标题大而清晰，正文小一号，所有文字逐字准确，布局有宽松留白，现代平面印刷质感，不添加日期、地点、二维码和其他文字。",
+      "aspect_ratio": "2:3",
+      "preview": "graphic-poster.png",
+      "preview_alt": "橙色郁金香和春日市集中文标题的平面海报示例",
+      "sources": [{"name": "ZeroLu · 简洁设计案例", "url": "https://github.com/ZeroLu/awesome-gpt-image#minimal-design-prompt-collection"}]
+    },
+    {
+      "id": "anime-cel",
+      "name": "动画赛璐璐",
+      "category": "绘画插画",
+      "summary": "干净线稿、明确色块和稳定的角色轮廓。",
+      "tags": ["动画", "角色", "分镜"],
+      "prompt": "采用动画赛璐璐表达：清楚且有变化的轮廓线、干净平涂和有限阴影层级，眼神与动作具体，前后景层次清晰。保留用户角色身份、年龄、发型和服装；不模仿特定作品角色，不自动添加漫画格、对白框或字幕。",
+      "example_prompt": "一位短棕发、穿米色风衣的成年女性坐在列车窗边读一本深绿色封面的书，窗外是模糊的春日田野。半身侧面构图，下午阳光落在书页和袖口，动画赛璐璐风格，干净线稿、平涂色块和两层柔和阴影，表情专注，车厢内没有其他人，不出现文字和对白框。",
+      "aspect_ratio": "3:2",
+      "preview": "anime-cel.png",
+      "preview_alt": "列车窗边成年女性读书的赛璐璐动画插画示例",
+      "sources": [{"name": "ZeroLu · 角色表情与一致性案例", "url": "https://github.com/ZeroLu/awesome-gpt-image#16-panel-anime-expression-grid"}]
+    },
+    {
+      "id": "food-editorial",
+      "name": "自然美食",
+      "category": "写实摄影",
+      "summary": "侧窗柔光与自然食材纹理，保留真实的食欲感。",
+      "tags": ["美食", "静物", "生活方式"],
+      "prompt": "采用自然美食编辑摄影：侧向柔光刻画食物纹理和新鲜度，景深适度，器皿和食材比例可信。只呈现需求中的食材与道具，不添加配料、餐具、文字或不合理的油光与蒸汽。",
+      "example_prompt": "浅米色陶瓷盘中放着一片莓果芝士蛋糕，表面有三颗蓝莓和一颗切半的草莓，盘子置于浅色亚麻布上。近距离三分之二视角，左侧窗光，真实柔软的蛋糕切面、哑光陶瓷与自然果实纹理，背景轻微虚化，清新美食杂志摄影，不出现餐具、其他食物和文字。",
+      "aspect_ratio": "1:1",
+      "preview": "food-editorial.png",
+      "preview_alt": "侧窗柔光下莓果芝士蛋糕的自然美食摄影示例",
+      "sources": [{"name": "YouMind · 食物与商业摄影案例库", "url": "https://github.com/YouMind-OpenLab/awesome-gpt-image-2"}]
+    }
+  ]
+}

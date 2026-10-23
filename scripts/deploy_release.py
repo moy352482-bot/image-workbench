@@ -52,6 +52,9 @@ def runtime_files(root):
             "SKILL.md", "references/shot-design.md", "references/continuity.md", "references/SOURCES.json",
             "NOTICE.txt", "licenses/drama-skills.txt", "licenses/vimax.txt", "licenses/toonflow.txt", "licenses/minimax-h3.txt"))
         paths.append(root / "config" / "storyboard_pricing.json")
+    if (root / "image_workbench" / "image_prompting.py").is_file():
+        skill = root / "skills" / "image-generation-default"
+        paths.extend(skill / name for name in ("SKILL.md", "styles.json", "references/sources.md"))
     if (root / "image_workbench" / "h3_skill.py").is_file():
         paths.extend(root / "skills" / "h3-video-workflow" / name for name in (
             "SKILL.md", "references/base-en.txt", "references/ref-en.txt", "references/SOURCES.json", "LICENSE", "NOTICE"))
