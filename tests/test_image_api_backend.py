@@ -147,6 +147,16 @@ class ImageAPIBackendTests(unittest.TestCase):
                 self.assertNotIn(self.key, record.error)
                 self.assertEqual(len(self.calls), previous + 1)
 
+    def test_content_policy_refusal_has_distinct_safe_error_without_retry(self):
+        self.status = 400
+        self.response = {"error": {"code": "content_policy_violation", "message": "private reason " + self.key}}
+        _, record = self.run_task("普通民众的历史生活场景", aspect_ratio="3:2")
+        self.assertEqual(record.failure_type, "image_api_content_rejected")
+        self.assertEqual(record.status, "execution_failed")
+        self.assertEqual(len(self.calls), 1)
+        self.assertNotIn(self.key, record.error)
+        self.assertEqual(record.output_artifact_ids, [])
+
     def test_malformed_missing_and_nonimage_results_never_become_success(self):
         cases = [({}, "missing_artifact"), ({"data": []}, "missing_artifact"),
                  ({"data": [{"url": "https://other.test/image.png"}]}, "missing_artifact"),
@@ -232,9 +242,12 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
         self.sid = response.json()["subprojects"][0]["subproject_id"]
         self.calls = []
         self.fail = False
+        self.content_rejected = False
 
         def handler(request):
             self.calls.append(request)
+            if self.content_rejected:
+                return httpx.Response(400, json={"error": {"code": "content_policy_violation", "message": "private-test-key"}})
             if self.fail:
                 return httpx.Response(503, json={"error": {"message": "暂不可用"}})
             return httpx.Response(200, json={"data": [{"b64_json": base64.b64encode(png()).decode()}]})
@@ -300,4 +313,21 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
         self.assertEqual(detail["status"], "failed")
         self.assertEqual(detail["failure_type"], "image_api_failed")
         self.assertEqual(self.wallet()["remaining_credit"], before)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_content_rejection_survives_remote_protocol_and_refunds_credit(self):
+        self.content_rejected = True
+        task = self.task()
+        before = self.wallet()["remaining_credit"]
+        response = self.browser.post(f"/api/tasks/{task['task_id']}/run",
+                                     json={"request_id": uuid4().hex, "confirm_generation": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.worker.run_once(), "failed")
+        detail = self.browser.get(f"/api/tasks/{task['task_id']}").json()
+        self.assertEqual(detail["failure_type"], "image_api_content_rejected")
+        self.assertIn("内容审核", detail["error_summary"])
+        self.assertEqual(detail["credit_status"], "refunded")
+        self.assertEqual(self.wallet()["remaining_credit"], before)
+        self.assertNotIn("private-test-key", json.dumps(detail))
+        self.assertEqual(self.worker.run_once(), "idle")
         self.assertEqual(len(self.calls), 1)

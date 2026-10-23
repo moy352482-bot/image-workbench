@@ -6,7 +6,7 @@
   const state = {
     config: null, csrf: '', projects: [], subprojects: [], tasks: [], projectId: '', subprojectId: '', taskId: '', detail: null,
     overview: null, files: [], referenceArtifacts: [], baseArtifact: null, polling: 0, busy: false, selectionVersion: 0, projectsLoadVersion: 0,
-    account: null, showArchived: false,
+    account: null, showArchived: false, batchSelected: new Set(), pollingBusy: false, tasksLoadVersion: 0,
   };
   const storageKeys = { project: 'image-workbench.project', subproject: 'image-workbench.subproject', task: 'image-workbench.task', pendingSave: 'image-workbench.pending-task-request', pendingProject: 'image-workbench.pending-project-request' };
   const ui = {
@@ -14,7 +14,8 @@
     taskList: $('#taskList'), taskCount: $('#taskCount'), prompt: $('#promptInput'), promptCount: $('#promptCount'),
     ratio: $('#ratioSelect'), imageInput: $('#imageInput'), previews: $('#filePreviewList'), basePanel: $('#baseImagePanel'),
     basePreview: $('#baseImagePreview'), refUpload: $('#referenceUploadPanel'), form: $('#taskForm'),
-    saveButton: $('#saveTaskButton'), formMessage: $('#formMessage'), resultContent: $('#resultContent'),
+    saveButton: $('#saveTaskButton'), generateButton: $('#generateTaskButton'), formMessage: $('#formMessage'), resultContent: $('#resultContent'),
+    batchButton: $('#batchGenerateButton'), selectDrafts: $('#selectDraftTasks'), batchSummary: $('#batchSelectionSummary'), batchMessage: $('#batchMessage'),
     details: $('#taskDetails'), resultState: $('#resultState'), backendBadge: $('#backendBadge'), workerBadge: $('#workerBadge'),
     toastRegion: $('#toastRegion'), projectDialog: $('#projectDialog'), projectForm: $('#projectForm'),
     projectNameInput: $('#projectNameInput'), projectDescriptionInput: $('#projectDescriptionInput'), projectSubmit: $('#createProjectSubmit'), imageDialog: $('#imageDialog'),
@@ -75,7 +76,9 @@
   function setBusy(value) {
     state.busy = value;
     ui.saveButton.disabled = value || !state.subprojectId || Boolean(state.config?.project_migration_required);
+    ui.generateButton.disabled = ui.saveButton.disabled;
     $('#createProjectSubmit').disabled = value || Boolean(state.config?.project_migration_required);
+    renderBatchToolbar();
   }
   function writesBlocked() { return Boolean(state.config?.project_migration_required); }
   function clearDraftMedia() {
@@ -174,7 +177,9 @@
   function resetSelection(mainId, subId = '') {
     closeImagePreviews();
     stopPolling(); state.selectionVersion += 1;
-    if (state.projectId !== mainId || state.subprojectId !== subId) clearDraftMedia();
+    if (state.projectId !== mainId || state.subprojectId !== subId) {
+      clearDraftMedia(); state.batchSelected.clear(); ui.batchMessage.hidden = true;
+    }
     state.projectId = mainId; state.subprojectId = subId; state.taskId = ''; state.detail = null; state.tasks = [];
     localStorage.setItem(storageKeys.project, mainId);
     if (subId) localStorage.setItem(storageKeys.subproject, subId); else localStorage.removeItem(storageKeys.subproject);
@@ -191,6 +196,7 @@
     ui.projectName.textContent = sub ? sub.name : '项目总览';
     ui.heading.textContent = sub ? sub.name : (main ? main.name : '创作项目');
     ui.saveButton.disabled = !subId || state.busy || Boolean(state.config.project_migration_required);
+    ui.generateButton.disabled = ui.saveButton.disabled;
     return ++state.selectionVersion;
   }
   async function selectMainProject(projectId, quiet = false) {
@@ -260,9 +266,10 @@
     closeMobileProjectNav();
     const preferredTaskId = localStorage.getItem(storageKeys.task);
     const version = resetSelection(mainId, subId);
+    const requestVersion = ++state.tasksLoadVersion;
     try {
       const payload = await api(`/api/subprojects/${encodeURIComponent(subId)}/tasks`);
-      if (version !== state.selectionVersion || state.projectId !== mainId || state.subprojectId !== subId) return;
+      if (requestVersion !== state.tasksLoadVersion || version !== state.selectionVersion || state.projectId !== mainId || state.subprojectId !== subId) return;
       state.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
       state.subprojects = state.projects.find(p => (p.main_project_id || p.project_id) === mainId)?.subprojects || [];
       const chosen = state.tasks.find(task => task.task_id === preferredTaskId) || state.tasks[0];
@@ -270,7 +277,7 @@
       renderProjects(); renderTasks();
       if (chosen) await loadTaskDetail(chosen.task_id, true, version);
       else showNoTask();
-    } catch (error) { if (!quiet) toast(error.message, true); }
+    } catch (error) { if (requestVersion === state.tasksLoadVersion && version === state.selectionVersion && !quiet) toast(error.message, true); }
   }
   async function selectProject(projectId) {
     return selectMainProject(projectId);
@@ -278,9 +285,10 @@
   async function loadTasks(preferredId) {
     if (!state.subprojectId) return;
     const version = state.selectionVersion;
+    const requestVersion = ++state.tasksLoadVersion;
     try {
       const payload = await api(`/api/subprojects/${encodeURIComponent(state.subprojectId)}/tasks`);
-      if (version !== state.selectionVersion) return;
+      if (requestVersion !== state.tasksLoadVersion || version !== state.selectionVersion) return;
       state.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
       if (payload.subproject) {
         const main = state.projects.find(item => (item.main_project_id || item.project_id) === state.projectId);
@@ -299,7 +307,7 @@
       if (chosen) await loadTaskDetail(chosen.task_id, false);
       else { state.detail = null; showNoTask(); }
     } catch (error) {
-      if (version !== state.selectionVersion) return;
+      if (requestVersion !== state.tasksLoadVersion || version !== state.selectionVersion) return;
       toast(error.message, true);
       state.tasks = [];
       renderTasks();
@@ -309,6 +317,7 @@
   function renderTasks() {
     ui.taskList.replaceChildren();
     ui.taskCount.textContent = `${state.tasks.length} 个任务`;
+    renderBatchToolbar();
     if (!state.tasks.length) {
       const empty = document.createElement('div');
       empty.className = 'list-empty';
@@ -319,6 +328,20 @@
       return;
     }
     for (const task of state.tasks) {
+      const row = appendText(ui.taskList, 'div', 'task-list-item', '');
+      const pick = appendText(row, 'label', 'batch-task-pick', '');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox'; checkbox.className = 'batch-task-checkbox';
+      checkbox.dataset.available = String(task.can_generate === true);
+      checkbox.checked = state.batchSelected.has(task.task_id);
+      checkbox.disabled = state.busy || writesBlocked() || task.can_generate !== true;
+      checkbox.setAttribute('aria-label', `选择任务：${task.name || task.prompt || task.task_id}`);
+      pick.title = task.can_generate ? '选择这项待生成任务' : '已提交或执行过的任务不参与批量生成';
+      pick.append(checkbox);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) state.batchSelected.add(task.task_id); else state.batchSelected.delete(task.task_id);
+        renderBatchToolbar();
+      });
       const button = document.createElement('button');
       button.type = 'button';
       button.className = `task-row${task.task_id === state.taskId ? ' selected' : ''}`;
@@ -344,7 +367,7 @@
       const move = appendText(actions, 'button', 'task-inline-action', '移动'); move.type = 'button';
       move.disabled = writesBlocked();
       move.addEventListener('click', event => { event.stopPropagation(); openMoveTask(task); });
-      ui.taskList.append(button);
+      row.append(button);
       const thumbHolder = thumb;
       const matchingDetail = state.detail && state.detail.task_id === task.task_id ? state.detail : null;
       const preview = task.preview_artifact || (matchingDetail && matchingDetail.outputs && matchingDetail.outputs[0]);
@@ -352,6 +375,25 @@
         thumbHolder.replaceChildren(safeImage(preview, '任务结果缩略图'));
       }
     }
+  }
+  function renderBatchToolbar() {
+    const eligible = state.tasks.filter(task => task.can_generate === true);
+    const available = new Set(eligible.map(task => task.task_id));
+    for (const id of state.batchSelected) if (!available.has(id)) state.batchSelected.delete(id);
+    const selected = eligible.filter(task => state.batchSelected.has(task.task_id));
+    const knownCost = selected.every(task => typeof task.estimated_credit === 'number');
+    const total = selected.reduce((sum, task) => sum + (task.estimated_credit || 0), 0);
+    ui.batchSummary.textContent = selected.length
+      ? `已选 ${selected.length} 项${knownCost ? ` · 预计 ${total} 积分` : ''}`
+      : (eligible.length ? `${eligible.length} 项待生成 · 请选择任务` : '先保存任务，再选择批量生成');
+    ui.selectDrafts.checked = eligible.length > 0 && selected.length === eligible.length;
+    ui.selectDrafts.indeterminate = selected.length > 0 && selected.length < eligible.length;
+    ui.selectDrafts.disabled = state.busy || writesBlocked() || !eligible.length;
+    ui.batchButton.disabled = state.busy || writesBlocked() || !selected.length;
+    ui.batchButton.textContent = `批量生成 (${selected.length})`;
+    ui.taskList.querySelectorAll('.batch-task-checkbox').forEach(input => {
+      input.disabled = state.busy || writesBlocked() || input.dataset.available !== 'true';
+    });
   }
   async function selectTask(taskId) {
     if (taskId === state.taskId) return;
@@ -381,8 +423,7 @@
       saveLocalSelection();
       renderTasks();
       renderDetail(detail);
-      if (['queued', 'generating', 'checking', 'uncertain'].includes(detail.status)) startPolling();
-      else stopPolling();
+      syncPolling();
     } catch (error) {
       if (state.selectionVersion !== version) return;
       if (!quiet) toast(error.message, true);
@@ -391,7 +432,26 @@
   }
   function startPolling() {
     if (state.polling) return;
-    state.polling = window.setInterval(() => { if (state.taskId && !state.busy) loadTaskDetail(state.taskId, true); }, 3000);
+    state.polling = window.setInterval(refreshTaskStates, 3000);
+  }
+  function syncPolling() {
+    if (state.tasks.some(task => ['queued', 'generating', 'checking', 'uncertain'].includes(task.status))) startPolling();
+    else stopPolling();
+  }
+  async function refreshTaskStates() {
+    if (!state.subprojectId || state.busy || state.pollingBusy) return;
+    state.pollingBusy = true;
+    const version = state.selectionVersion;
+    const requestVersion = ++state.tasksLoadVersion;
+    try {
+      const payload = await api(`/api/subprojects/${encodeURIComponent(state.subprojectId)}/tasks`);
+      if (requestVersion !== state.tasksLoadVersion || version !== state.selectionVersion) return;
+      state.tasks = payload.tasks;
+      renderTasks();
+      if (state.taskId) await loadTaskDetail(state.taskId, true, version);
+      syncPolling();
+    } catch (error) { /* 保留当前列表，下一次轮询继续同步。 */ }
+    finally { state.pollingBusy = false; }
   }
   function stopPolling() {
     if (state.polling) window.clearInterval(state.polling);
@@ -437,7 +497,12 @@
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
-    if (detail.can_generate || detail.can_retry) {
+    if (detail.can_retry) {
+      const revise = appendText(controls, 'button', detail.failure_type === 'image_api_content_rejected' ? 'primary-button' : 'secondary-button', '修改需求后新建');
+      revise.type = 'button'; revise.disabled = state.busy || writesBlocked();
+      revise.addEventListener('click', () => reviseTask(detail));
+    }
+    if ((detail.can_generate || detail.can_retry) && detail.failure_type !== 'image_api_content_rejected') {
       const run = appendText(controls, 'button', 'run-button', detail.can_retry ? (state.config.backend === 'local' ? '重新演练' : '重试生成') : (state.config.backend === 'local' ? '开始演练' : '开始生成'));
       run.type = 'button';
       run.disabled = state.busy || writesBlocked();
@@ -620,9 +685,7 @@
     setBusy(true);
     setMessage('正在提交执行请求…');
     try {
-      const body = { request_id: requestId(), confirm_generation: true };
-      if (detail.can_retry) body.retry_of = (detail.current_job && detail.current_job.job_id) || detail.last_execution_id;
-      await api(`/api/tasks/${encodeURIComponent(detail.task_id)}/run`, { method: 'POST', body: JSON.stringify(body) });
+      await submitTask(detail);
       setMessage('已提交，正在读取执行状态。');
       toast(state.config.backend === 'local' ? '演练已开始，正在检查任务状态。' : '执行已提交，正在检查任务状态。');
       await loadTaskDetail(detail.task_id, false);
@@ -630,6 +693,69 @@
       setMessage(error.message, true);
       toast(error.message, true);
     } finally { await refreshAccount(); setBusy(false); if (state.detail) renderDetail(state.detail); }
+  }
+  async function submitTask(detail, headers = {}) {
+    const body = { request_id: requestId(), confirm_generation: true };
+    if (detail.can_retry) body.retry_of = detail.current_job?.job_id || detail.last_execution_id;
+    return api(`/api/tasks/${encodeURIComponent(detail.task_id)}/run`, { method: 'POST', headers, body: JSON.stringify(body) });
+  }
+  async function runBatch() {
+    if (state.busy || writesBlocked() || !state.batchSelected.size) return;
+    const ids = new Set(state.batchSelected);
+    const subId = state.subprojectId, version = state.selectionVersion;
+    const headers = state.account?.workspace_id ? {'X-Workspace-ID': state.account.workspace_id} : {};
+    let submitted = 0;
+    setBusy(true);
+    ui.batchMessage.hidden = false; ui.batchMessage.classList.remove('error');
+    ui.batchMessage.textContent = '正在核对任务与可用积分…';
+    try {
+      const payload = await api(`/api/subprojects/${encodeURIComponent(subId)}/tasks`, {headers});
+      const tasks = payload.tasks.filter(task => ids.has(task.task_id) && task.can_generate === true)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      if (!tasks.length) throw new Error('所选任务已提交或状态已变化，请查看最新列表。');
+      const credits = (await api('/api/credits', {headers})).credits;
+      const total = tasks.reduce((sum, task) => sum + task.estimated_credit, 0);
+      if (!credits.is_unlimited && Number.isFinite(total) && credits.remaining_credit < total) {
+        throw new Error(`积分不足：所选任务共需 ${total} 积分，当前可用 ${credits.remaining_credit}，本次尚未提交。`);
+      }
+      for (const task of tasks) {
+        await submitTask(task, headers);
+        submitted += 1;
+        if (version === state.selectionVersion) {
+          state.batchSelected.delete(task.task_id);
+          ui.batchMessage.textContent = `正在提交 ${submitted} / ${tasks.length} 项…`;
+        }
+      }
+      const message = `已提交 ${submitted} 项任务，将按队列依次生成。`;
+      if (version === state.selectionVersion) ui.batchMessage.textContent = message;
+      toast(message);
+    } catch (error) {
+      const message = `${submitted ? `已确认提交 ${submitted} 项；后续提交已暂停。` : ''}${error.message}`;
+      if (version === state.selectionVersion) {
+        ui.batchMessage.textContent = message; ui.batchMessage.classList.add('error');
+      }
+      toast(message, true);
+    } finally {
+      if (version === state.selectionVersion) await loadTasks(state.taskId);
+      await refreshAccount(); setBusy(false);
+      if (state.detail) renderDetail(state.detail);
+    }
+  }
+  function reviseTask(detail) {
+    if (state.busy || writesBlocked()) return;
+    clearDraftMedia();
+    ui.prompt.value = detail.image_prompt?.source_prompt || detail.prompt.replace(/\n画面宽高比 (1:1|3:2|2:3)。$/, '');
+    ui.ratio.value = detail.aspect_ratio || 'auto';
+    imageStyles.setValue(detail.image_prompt?.style_id || '');
+    $(`input[name="operation"][value="${detail.operation === 'edit' ? 'edit' : 'generate'}"]`).checked = true;
+    state.referenceArtifacts = [...(detail.inputs || [])];
+    state.baseArtifact = detail.base_image || null;
+    ui.basePanel.hidden = !state.baseArtifact;
+    if (state.baseArtifact) ui.basePreview.append(safeImage(state.baseArtifact, '原任务基底图片'));
+    renderFiles(); updateEditHelp();
+    ui.prompt.dispatchEvent(new Event('input'));
+    ui.prompt.focus(); ui.form.scrollIntoView({behavior: 'smooth', block: 'start'});
+    setMessage('已载入原需求、风格、比例和参考图。修改后可保存或直接生成，原任务会保留。');
   }
   async function restoreTask(detail) {
     if (writesBlocked()) { toast('已有数据需要先完成项目层级迁移。', true); return; }
@@ -861,6 +987,10 @@
     const saveMainId = state.projectId;
     const saveSubId = state.subprojectId;
     const saveVersion = state.selectionVersion;
+    const generateNow = event.submitter === ui.generateButton;
+    const saveSignature = fingerprint();
+    const headers = state.account?.workspace_id ? {'X-Workspace-ID': state.account.workspace_id} : {};
+    let saved = null;
     setBusy(true);
     setMessage('正在保存任务…');
     const form = new FormData();
@@ -873,32 +1003,40 @@
     form.set('reference_artifact_ids', JSON.stringify(state.referenceArtifacts.map(a => a.artifact_id)));
     for (const file of state.files) form.append('files', file, file.name);
     try {
-      const detail = await api(`/api/subprojects/${encodeURIComponent(saveSubId)}/tasks`, { method: 'POST', body: form });
+      const detail = await api(`/api/subprojects/${encodeURIComponent(saveSubId)}/tasks`, { method: 'POST', body: form, headers });
+      saved = detail;
+      localStorage.removeItem(storageKeys.pendingSave);
       if (saveVersion !== state.selectionVersion || saveMainId !== state.projectId || saveSubId !== state.subprojectId) {
-        localStorage.removeItem(storageKeys.pendingSave);
-        toast('任务已保存到原子项目。当前页面仍停留在你刚选择的子项目。');
+        if (generateNow) await submitTask(detail, headers);
+        toast(generateNow ? '任务已保存并提交到原子项目。' : '任务已保存到原子项目。当前页面仍停留在你刚选择的子项目。');
         return;
       }
-      localStorage.removeItem(storageKeys.pendingSave);
       state.taskId = detail.task_id;
-      state.baseArtifact = null;
       localStorage.setItem(storageKeys.task, detail.task_id);
-      ui.basePanel.hidden = true;
-      ui.refUpload.hidden = false;
-      state.files = []; state.referenceArtifacts = [];
-      ui.imageInput.value = '';
-      renderFiles();
-      ui.prompt.value = '';
-      previousExample = null;
-      $('#undoStyleExample').hidden = true;
-      ui.prompt.dispatchEvent(new Event('input'));
-      setMessage('任务已保存。开始执行需要你单独点击按钮。');
-      toast('任务已保存为草稿。');
+      if (fingerprint() === saveSignature) {
+        clearDraftMedia(); ui.prompt.value = ''; previousExample = null;
+        $('#undoStyleExample').hidden = true;
+        ui.prompt.dispatchEvent(new Event('input'));
+      }
+      if (generateNow) {
+        setMessage('任务已保存，正在提交生成…');
+        await submitTask(detail, headers);
+        setMessage('已保存并提交生成，可在任务历史中查看进度。');
+        toast('任务已提交生成。');
+      } else {
+        state.batchSelected.add(detail.task_id);
+        setMessage('已保存并选中，可继续添加任务，或在下方批量生成。');
+        toast('任务已保存为草稿，未消耗积分。');
+      }
       await loadTasks(detail.task_id);
     } catch (error) {
-      setMessage(`${error.message} 可再次保存以重试。`, true);
+      if (saveVersion === state.selectionVersion) {
+        setMessage(saved ? `任务已保存，生成提交未确认：${error.message} 请在任务历史中查看状态后继续。` : `${error.message} 可再次保存以重试。`, true);
+        if (saved) await loadTasks(saved.task_id);
+      }
       toast(error.message, true);
     } finally {
+      if (generateNow) await refreshAccount();
       setBusy(false);
       if (state.detail && state.detail.task_id === state.taskId) renderDetail(state.detail);
     }
@@ -1013,6 +1151,12 @@
 
   $('#archiveFilter').addEventListener('click', async () => { state.showArchived = !state.showArchived; $('#archiveFilter').textContent = state.showArchived ? '返回进行中项目' : '查看已归档项目'; await loadProjects(); });
   ui.form.addEventListener('submit', saveTask);
+  ui.batchButton.addEventListener('click', runBatch);
+  ui.selectDrafts.addEventListener('change', () => {
+    state.batchSelected.clear();
+    if (ui.selectDrafts.checked) state.tasks.filter(task => task.can_generate === true).forEach(task => state.batchSelected.add(task.task_id));
+    renderTasks();
+  });
   ui.prompt.addEventListener('input', () => { ui.promptCount.textContent = `${ui.prompt.value.length} / 4000`; });
   
   $('#newProjectButton').addEventListener('click', () => openProjectDialog('new-main'));

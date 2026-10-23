@@ -117,6 +117,10 @@ class ImageAPIBackend:
                 "error": result.get("error") if isinstance(result, dict) else "响应不是 JSON",
             })
             if not 200 <= response_status < 300:
+                error = result.get("error") if isinstance(result, dict) else None
+                if isinstance(error, dict) and error.get("code") == "content_policy_violation":
+                    raise BackendError("图片供应方的内容审核拒绝了本次生成，请调整需求后新建任务。",
+                                       failure_type="image_api_content_rejected")
                 raise BackendError(f"图片 API 请求失败（HTTP {response_status}），详见 api-response.json",
                                    failure_type="image_api_failed")
             entries = result.get("data") if isinstance(result, dict) else None

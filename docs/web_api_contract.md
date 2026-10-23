@@ -36,6 +36,10 @@ TaskDetail在任务摘要基础上增加：`inputs:[ArtifactDTO]`, `outputs:[Art
 
 ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size_bytes,created_at,source_artifact_id,url,download_url,review_status:"pending"|"approved",reviewed_at`。
 
+2026-10-23：任务列表摘要也返回派生字段 `can_generate`，用于选择可批量提交的草稿；详情原字段不变。
+“直接生成”显式串联保存和 run，“批量生成”按所选草稿逐项调用已有 run，不新增另一套执行或积分接口。
+新增 `image_api_content_rejected` 失败类型，表示供应方明确返回 `content_policy_violation`；页面只显示固定说明。
+
 界面status：`draft`待开始、`queued`等待执行、`generating`生成中、`checking`检查产物、`awaiting_review`等待审核、`approved`已通过、`failed`执行失败、`uncertain`状态待确认。
 
 前端使用textContent显示项目名、提示词、错误和ID；不把用户内容注入innerHTML。静态HTML片段可以使用模板。JS/CSS使用独立文件，不引入CDN或内联脚本。禁止自动发run/restore；这些接口只在按钮点击时调用。刷新只读取状态。
