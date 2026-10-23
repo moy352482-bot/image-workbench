@@ -498,11 +498,11 @@
     const controls = document.createElement('div');
     controls.className = 'task-controls';
     if (detail.can_retry) {
-      const revise = appendText(controls, 'button', detail.failure_type === 'image_api_content_rejected' ? 'primary-button' : 'secondary-button', '修改需求后新建');
+      const revise = appendText(controls, 'button', 'secondary-button', '修改需求后新建');
       revise.type = 'button'; revise.disabled = state.busy || writesBlocked();
       revise.addEventListener('click', () => reviseTask(detail));
     }
-    if ((detail.can_generate || detail.can_retry) && detail.failure_type !== 'image_api_content_rejected') {
+    if (detail.can_generate || detail.can_retry) {
       const run = appendText(controls, 'button', 'run-button', detail.can_retry ? (state.config.backend === 'local' ? '重新演练' : '重试生成') : (state.config.backend === 'local' ? '开始演练' : '开始生成'));
       run.type = 'button';
       run.disabled = state.busy || writesBlocked();
@@ -726,7 +726,7 @@
           ui.batchMessage.textContent = `正在提交 ${submitted} / ${tasks.length} 项…`;
         }
       }
-      const message = `已提交 ${submitted} 项任务，将按队列依次生成。`;
+      const message = `已提交 ${submitted} 项任务，系统将自动安排生成。`;
       if (version === state.selectionVersion) ui.batchMessage.textContent = message;
       toast(message);
     } catch (error) {

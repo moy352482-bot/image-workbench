@@ -1,13 +1,17 @@
 """图片 API 协议和真实工作台队列/账本回归；外部模型由 HTTP Mock 替代。"""
 
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import io
 import json
 import os
 from pathlib import Path
 import tempfile
+import threading
+import time
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import httpx
@@ -21,6 +25,7 @@ from image_workbench.contracts.image_queue import Claim
 from image_workbench.image_api_backend import ImageAPIBackend
 from image_workbench.remote_access import RemoteAccess
 from image_workbench.remote_worker import RemoteWorker
+from image_workbench.scheduling import SchedulingPolicy
 from image_workbench.web import create_app
 from image_workbench.worker import confirm_stopped
 from image_workbench.workbench_state import WorkbenchState
@@ -47,9 +52,16 @@ class ImageAPIBackendTests(unittest.TestCase):
         self.response = {"data": [{"b64_json": base64.b64encode(self.image).decode()}], "usage": {"total_tokens": 2}}
         self.status = 200
         self.error = None
+        self.responses = []
+        self.sleep = Mock()
+        clock = patch('image_workbench.image_api_backend.time', SimpleNamespace(monotonic=time.monotonic, sleep=self.sleep))
+        clock.start()
+        self.addCleanup(clock.stop)
 
         def handler(request):
             self.calls.append(request)
+            if self.responses:
+                return self.responses.pop(0)
             if self.error:
                 raise self.error
             headers = {"Location": "https://other.test/image.png"} if self.status == 307 else {}
@@ -59,11 +71,11 @@ class ImageAPIBackendTests(unittest.TestCase):
         self.addCleanup(self.client.close)
         self.backend = ImageAPIBackend("https://images.test/v1/", self.key, client=self.client)
 
-    def run_task(self, prompt="生成一个产品图", *, base=None, inputs=(), aspect_ratio="auto"):
+    def run_task(self, prompt="生成一个产品图", *, base=None, inputs=(), aspect_ratio="auto", timeout=600):
         task = self.state.create_task(self.project.project_id, request_id=uuid4().hex,
                                       operation="edit" if base else "generate", prompt=prompt,
                                       base_artifact_id=base, inputs=inputs, aspect_ratio=aspect_ratio)
-        record = self.runner.run(task.project_id, task.task_id, self.backend, idempotency_key=uuid4().hex)
+        record = self.runner.run(task.project_id, task.task_id, self.backend, idempotency_key=uuid4().hex, timeout_seconds=timeout)
         return task, record
 
     def run_path(self, record):
@@ -120,8 +132,8 @@ class ImageAPIBackendTests(unittest.TestCase):
         self.assertEqual(len(body["images"]), 2)
         self.assertNotIn("size", body)
 
-    def test_http_errors_are_not_retried_and_diagnostics_redact_key(self):
-        for code in (401, 429, 502, 503, 504):
+    def test_http_errors_retry_only_recoverable_statuses_and_redact_key(self):
+        for code in (400, 401, 403, 422, 429, 500, 502, 503, 504):
             with self.subTest(code=code):
                 self.status = code
                 self.response = {"error": {"message": "rejected Bearer " + self.key, "code": str(code)}}
@@ -129,15 +141,20 @@ class ImageAPIBackendTests(unittest.TestCase):
                 _, record = self.run_task()
                 self.assertEqual(record.status, "execution_failed")
                 self.assertEqual(record.failure_type, "image_api_failed")
-                self.assertEqual(len(self.calls), previous + 1)
+                expected = 3 if code in {429, 500, 502, 503, 504} else 1
+                self.assertEqual(len(self.calls), previous + expected)
                 self.assertEqual(record.output_artifact_ids, [])
                 diagnostic = (self.run_path(record) / "work" / "api-response.json").read_text(encoding="utf-8")
                 self.assertNotIn(self.key, diagnostic)
                 self.assertNotIn(self.key, record.error)
                 self.assertEqual(json.loads(diagnostic)["status_code"], code)
+                self.assertEqual(json.loads(diagnostic)["attempt_count"], expected)
 
-    def test_timeout_and_connection_failure_do_not_repeat_model_call(self):
+    def test_unknown_outcomes_do_not_repeat_and_failed_connections_are_bounded(self):
         for error, status, failure in ((httpx.ReadTimeout("secret " + self.key), "timed_out", "image_api_timeout"),
+                                       (httpx.WriteTimeout("secret " + self.key), "timed_out", "image_api_timeout"),
+                                       (httpx.ReadError("secret " + self.key), "execution_failed", "image_api_failed"),
+                                       (httpx.ConnectTimeout("secret " + self.key), "execution_failed", "image_api_failed"),
                                        (httpx.ConnectError("secret " + self.key), "execution_failed", "image_api_failed")):
             with self.subTest(status=status):
                 self.error = error
@@ -145,17 +162,56 @@ class ImageAPIBackendTests(unittest.TestCase):
                 _, record = self.run_task()
                 self.assertEqual((record.status, record.failure_type), (status, failure))
                 self.assertNotIn(self.key, record.error)
-                self.assertEqual(len(self.calls), previous + 1)
+                expected = 3 if isinstance(error, (httpx.ConnectError, httpx.ConnectTimeout)) else 1
+                self.assertEqual(len(self.calls), previous + expected)
 
-    def test_content_policy_refusal_has_distinct_safe_error_without_retry(self):
+    def test_content_policy_refusal_stops_after_three_attempts_with_safe_error(self):
         self.status = 400
         self.response = {"error": {"code": "content_policy_violation", "message": "private reason " + self.key}}
         _, record = self.run_task("普通民众的历史生活场景", aspect_ratio="3:2")
         self.assertEqual(record.failure_type, "image_api_content_rejected")
         self.assertEqual(record.status, "execution_failed")
-        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(len(self.calls), 3)
         self.assertNotIn(self.key, record.error)
         self.assertEqual(record.output_artifact_ids, [])
+
+    def test_retry_keeps_exact_body_and_archives_only_the_successful_result(self):
+        self.responses = [httpx.Response(400, json={"error": {"code": "content_policy_violation"}}),
+                          httpx.Response(503, json={"error": {"code": "busy"}}),
+                          httpx.Response(200, json=self.response)]
+        _, record = self.run_task("中世纪普通民众的生活场景", aspect_ratio="3:2")
+        self.assertEqual(record.status, "succeeded")
+        self.assertEqual(len(record.output_artifact_ids), 1)
+        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(len({call.content for call in self.calls}), 1)
+        self.assertEqual([call.args[0] for call in self.sleep.call_args_list], [2, 5])
+        info = json.loads((self.run_path(record) / 'work/api-response.json').read_text(encoding='utf-8'))
+        self.assertEqual([attempt['status_code'] for attempt in info['attempts']], [400, 503, 200])
+
+    def test_retry_preserves_edit_base_references_and_ratio(self):
+        _, original = self.run_task()
+        self.responses = [httpx.Response(503, json={"error": "busy"}), httpx.Response(200, json=self.response)]
+        reference = self.root / 'reference.png'
+        reference.write_bytes(png('green'))
+        _, record = self.run_task('改成蓝色', base=original.output_artifact_ids[0], inputs=[reference], aspect_ratio='2:3')
+        self.assertEqual(record.status, 'succeeded')
+        self.assertEqual(self.calls[-1].content, self.calls[-2].content)
+        payload = json.loads(self.calls[-1].content)
+        self.assertEqual((payload['size'], len(payload['images'])), ('1024x1536', 2))
+
+    def test_retry_respects_retry_after_and_overall_deadline(self):
+        self.responses = [httpx.Response(429, headers={'Retry-After': '7'}, json={'error': 'busy'}),
+                          httpx.Response(200, json=self.response)]
+        _, record = self.run_task()
+        self.assertEqual(record.status, 'succeeded')
+        self.sleep.assert_called_once_with(7)
+        self.sleep.reset_mock()
+        self.status, self.response = 503, {'error': 'busy'}
+        before = len(self.calls)
+        _, record = self.run_task(timeout=1)
+        self.assertEqual(record.status, 'execution_failed')
+        self.assertEqual(len(self.calls), before + 1)
+        self.sleep.assert_not_called()
 
     def test_malformed_missing_and_nonimage_results_never_become_success(self):
         cases = [({}, "missing_artifact"), ({"data": []}, "missing_artifact"),
@@ -243,9 +299,16 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
         self.calls = []
         self.fail = False
         self.content_rejected = False
+        self.failures_remaining = 0
+        clock = patch('image_workbench.image_api_backend.time', SimpleNamespace(monotonic=time.monotonic, sleep=Mock()))
+        clock.start()
+        self.addCleanup(clock.stop)
 
         def handler(request):
             self.calls.append(request)
+            if self.failures_remaining:
+                self.failures_remaining -= 1
+                return httpx.Response(503, json={"error": {"message": "暂不可用"}})
             if self.content_rejected:
                 return httpx.Response(400, json={"error": {"code": "content_policy_violation", "message": "private-test-key"}})
             if self.fail:
@@ -313,7 +376,7 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
         self.assertEqual(detail["status"], "failed")
         self.assertEqual(detail["failure_type"], "image_api_failed")
         self.assertEqual(self.wallet()["remaining_credit"], before)
-        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(len(self.calls), 3)
 
     def test_content_rejection_survives_remote_protocol_and_refunds_credit(self):
         self.content_rejected = True
@@ -330,4 +393,111 @@ class ImageAPIWorkbenchTests(unittest.TestCase):
         self.assertEqual(self.wallet()["remaining_credit"], before)
         self.assertNotIn("private-test-key", json.dumps(detail))
         self.assertEqual(self.worker.run_once(), "idle")
-        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(len(self.calls), 3)
+
+    def test_retry_success_settles_one_job_once_and_worker_restart_does_not_repeat(self):
+        self.failures_remaining = 2
+        task = self.task()
+        before = self.wallet()['remaining_credit']
+        response = self.browser.post(f"/api/tasks/{task['task_id']}/run",
+                                     json={"request_id": uuid4().hex, "confirm_generation": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.wallet()['frozen_credit'], 40)
+        self.assertEqual(self.worker.run_once(), 'completed')
+        detail = self.browser.get(f"/api/tasks/{task['task_id']}").json()
+        self.assertEqual(detail['status'], 'awaiting_review')
+        self.assertEqual((len(detail['outputs']), len(detail['executions'])), (1, 1))
+        self.assertEqual(len(self.app.state.workbench.list_jobs()), 1)
+        self.assertEqual(self.wallet()['remaining_credit'], before - 40)
+        self.assertEqual(self.wallet()['frozen_credit'], 0)
+        restarted = RemoteWorker(self.access.origin, self.access.worker_token, self.root / 'worker', self.worker.backend,
+                                 client=TestClient(self.app, base_url=self.access.origin))
+        self.addCleanup(restarted.close)
+        self.assertEqual(restarted.run_once(), 'idle')
+        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(len({call.content for call in self.calls}), 1)
+
+    def test_four_workers_share_six_multiuser_tasks_without_crossing_results_or_credit(self):
+        self.app.state.workbench.scheduling_policy = SchedulingPolicy(4, 4)
+        other = TestClient(self.app, base_url=self.access.origin)
+        self.addCleanup(other.close)
+        csrf = other.get('/api/auth/config').json()['csrf_token']
+        credentials = {'username': 'secondimageuser', 'password': 'another-test-password'}
+        for endpoint in ('register', 'login'):
+            response = other.post('/api/auth/' + endpoint, json=credentials, headers={'X-Workbench-CSRF': csrf})
+            self.assertEqual(response.status_code, 200)
+        other.headers['X-Workbench-CSRF'] = other.get('/api/config').json()['csrf_token']
+        response = other.post('/api/main-projects', json={'name': '另一个用户', 'request_id': uuid4().hex})
+        self.assertEqual(response.status_code, 200)
+        other_sid = response.json()['subprojects'][0]['subproject_id']
+        clients, tasks, expected = [self.browser, other], [], {}
+        colors = ['red', 'green', 'blue', 'yellow', 'purple', 'coral']
+        for index in range(6):
+            owner = index % 2
+            client = clients[owner]
+            sid = self.sid if owner == 0 else other_sid
+            response = client.post(f'/api/subprojects/{sid}/tasks', data={
+                'request_id': uuid4().hex, 'operation': 'generate', 'prompt': f'多用户并行任务 {index}', 'aspect_ratio': '1:1'})
+            self.assertEqual(response.status_code, 200)
+            task = response.json()
+            tasks.append((owner, task))
+            expected[task['image_prompt']['compiled_prompt']] = png(colors[index])
+            response = client.post(f"/api/tasks/{task['task_id']}/run", json={'request_id': uuid4().hex, 'confirm_generation': True})
+            self.assertEqual(response.status_code, 200)
+        lock, four_active, release = threading.Lock(), threading.Event(), threading.Event()
+        observed = {'active': 0, 'peak': 0, 'calls': 0}
+
+        def handler(request):
+            with lock:
+                observed['active'] += 1
+                observed['calls'] += 1
+                observed['peak'] = max(observed['peak'], observed['active'])
+                if observed['active'] == 4:
+                    four_active.set()
+            try:
+                if not release.wait(timeout=15):
+                    raise RuntimeError('parallel workers did not reach the provider together')
+                raw = expected[json.loads(request.content)['prompt']]
+                return httpx.Response(200, json={'data': [{'b64_json': base64.b64encode(raw).decode()}]})
+            finally:
+                with lock:
+                    observed['active'] -= 1
+
+        workers = []
+        for index in range(5):
+            provider = httpx.Client(transport=httpx.MockTransport(handler))
+            self.addCleanup(provider.close)
+            backend = ImageAPIBackend('https://provider.test', 'parallel-test-key', client=provider)
+            worker = RemoteWorker(self.access.origin, self.access.worker_token, self.root / f'parallel-{index}', backend,
+                                  client=TestClient(self.app, base_url=self.access.origin))
+            self.addCleanup(worker.close)
+            workers.append(worker)
+        self.assertEqual(len({worker.worker_id for worker in workers}), 5)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = [pool.submit(worker.run_once) for worker in workers[:4]]
+            try:
+                self.assertTrue(four_active.wait(timeout=15))
+                jobs = self.app.state.workbench.list_jobs()
+                self.assertEqual(sum(job['status'] == 'running' for job in jobs), 4)
+                self.assertEqual(sum(job['status'] == 'queued' for job in jobs), 2)
+                self.assertEqual(workers[4].run_once(), 'idle')
+                for client in clients:
+                    self.assertEqual(client.get('/api/credits').json()['credits']['frozen_credit'], 120)
+            finally:
+                release.set()
+            self.assertEqual([future.result(timeout=30) for future in futures], ['completed'] * 4)
+            next_results = list(pool.map(lambda worker: worker.run_once(), workers[:4]))
+        self.assertEqual(next_results.count('completed'), 2)
+        self.assertEqual(next_results.count('idle'), 2)
+        self.assertEqual(observed, {'active': 0, 'peak': 4, 'calls': 6})
+        for owner, task in tasks:
+            detail = clients[owner].get(f"/api/tasks/{task['task_id']}").json()
+            self.assertEqual(detail['status'], 'awaiting_review')
+            self.assertEqual(len(detail['outputs']), 1)
+            output = detail['outputs'][0]
+            self.assertEqual(clients[owner].get(output['url']).content, expected[task['image_prompt']['compiled_prompt']])
+            self.assertEqual(clients[1 - owner].get(f"/api/tasks/{task['task_id']}").status_code, 404)
+            self.assertEqual(clients[1 - owner].get(output['url']).status_code, 404)
+        for client in clients:
+            wallet = client.get('/api/credits').json()['credits']
+            self.assertEqual((wallet['remaining_credit'], wallet['frozen_credit']), (80, 0))

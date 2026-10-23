@@ -5,7 +5,7 @@ import math
 STATUS_LABELS = {"draft": "待开始", "queued": "等待执行", "generating": "生成中", "checking": "检查产物",
                  "awaiting_review": "等待审核", "approved": "已通过", "failed": "执行失败", "uncertain": "状态待确认"}
 FAILURE_MESSAGES = {
-    "image_api_content_rejected": "图片供应方的内容审核拒绝了本次生成。请检查需求和参考图，修改后新建任务；供应方未提供具体触发原因。",
+    "image_api_content_rejected": "图片供应方的内容审核拒绝了本次生成。可以使用原需求重试，或修改需求后新建任务；供应方未提供具体触发原因。",
     "image_api_failed": "图片供应方未完成本次请求，可能涉及内容审核或服务限制。可以修改需求后新建任务，或稍后手动重试。",
     "image_api_timeout": "图片 API 请求超时，上游完成状态未知；不会自动重新生成。",
     "prepare_failed": "输入或任务准备失败，请检查图片和提示词。",
