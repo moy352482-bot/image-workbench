@@ -131,7 +131,12 @@ class ScriptGenerationBrowserTests(unittest.TestCase):
         # Poll the real task endpoint through the browser request client.
         deadline = time.monotonic() + 12
         while time.monotonic() < deadline:
-            result = self.context.request.get(self.origin + f"/api/scripts/tasks/{tid}").json()
+            response = self.context.request.get(self.origin + f"/api/scripts/tasks/{tid}")
+            if response.status != 200:
+                log = self.root / "data/.workbench/web-errors.log"
+                diagnostic = log.read_text(encoding="utf-8") if log.is_file() else "No server error log"
+                self.fail(f"Task read returned {response.status}: {response.text()}\n{diagnostic}")
+            result = response.json()
             if result["status"] not in {"queued", "running", "archiving", "checking"}:
                 self.assertEqual(result["status"], "completed", result)
                 return result
