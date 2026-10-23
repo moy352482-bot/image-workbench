@@ -929,8 +929,9 @@
     state.config = await api('/api/config');
     state.csrf = state.config.csrf_token || '';
     const remote = state.config.execution_mode === 'remote';
+    const workerName = state.config.backend === 'image-api' ? '图片执行器' : '本机执行器';
     ui.workerBadge.textContent = remote
-      ? (state.config.worker_running ? '本机执行器在线' : '本机执行器离线 · 新任务排队')
+      ? (state.config.worker_running ? `${workerName}在线` : `${workerName}离线 · 新任务排队`)
       : (state.config.worker_running ? '执行器已运行' : '执行器未启动');
   }
   async function init() {
@@ -943,7 +944,8 @@
       ui.backendBadge.replaceChildren();
       const dot = document.createElement('i');
       ui.backendBadge.append(dot, document.createTextNode(local ? '演练环境 · 固定测试图'
-        : (state.config.execution_mode === 'remote' ? '云端提交 · 本机 Codex 生成' : '本地 Codex · 手动启动')));
+        : state.config.backend === 'image-api' ? '图片 API · 生成与编辑'
+          : (state.config.execution_mode === 'remote' ? '云端提交 · 本机 Codex 生成' : '本地 Codex · 手动启动')));
       $('#practiceNotice').hidden = !local;
       if (local) document.title = '演练环境（固定测试图）· Image Workbench';
       if (state.config.execution_mode === 'remote') {

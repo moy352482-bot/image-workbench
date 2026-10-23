@@ -8,7 +8,10 @@ detail/list/download/recover 和手动版本入口继续按原权限与恢复合
 
 仅 localhost；同源请求。所有写操作附 `X-Workbench-CSRF`，值来自 `GET /api/config`。所有ID为32位小写十六进制；网页不传服务器路径。JSON错误为 `{detail: "可读中文摘要"}`，不返回内部异常或日志。
 
-- `GET /api/config` → `{csrf_token, backend: "codex"|"local", worker_running, max_input_images:8, max_image_bytes:20971520, max_upload_bytes:41943040, ratios:["auto","1:1","3:2","2:3"]}`。local显示“演练模式 · 不消耗生图额度”；codex显示“本地 Codex · 手动启动”。比例由提示词约束，不保证精确像素尺寸。
+- `GET /api/config` → `{csrf_token, backend: "codex"|"local"|"image-api", worker_running, max_input_images:8, max_image_bytes:20971520, max_upload_bytes:41943040, ratios:["auto","1:1","3:2","2:3"]}`。local显示演练环境；codex显示本地或远程 Codex；image-api显示“图片 API · 生成与编辑”。默认仍是 codex。Codex 比例由提示词约束；图片 API 将显式比例传为对应 size，实际产物仍做解码校验。配置接口不返回供应方地址、API Key 或私密配置路径。
+
+2026-10-23：Worker 的 `POST /api/worker/claim` 请求 `backend` 在 `codex`、`local` 基础上增加
+`image-api`。原请求与默认值兼容，仍必须与服务器当前后端匹配；接口快照仅更新该字段允许值。
 - `GET /api/projects` → `{projects:[{project_id,name,created_at}]}`。
 - `POST /api/projects`，JSON `{request_id,name}` → Project。request_id在同一次保存意图内固定，重发不创建重复项目。
 - `GET /api/projects/{pid}/tasks` → `{tasks:[{task_id,project_id,operation,prompt,base_artifact_id,created_at,status,status_label,input_count,output_count,preview_artifact:ArtifactDTO|null}]}`，新到旧。摘要包含首张输出预览，不必逐项打开详情才能看到缩略图。

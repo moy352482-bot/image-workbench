@@ -46,11 +46,11 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("--project", required=True)
         command.add_argument("--task", required=True)
         if name == "run":
-            command.add_argument("--backend", choices=("local", "codex"), required=True)
+            command.add_argument("--backend", choices=("local", "codex", "image-api"), required=True)
             command.add_argument("--image", type=Path, action="append", default=[], help="local 后端的已有测试产物，可重复指定")
             command.add_argument("--timeout", type=float, default=300)
             command.add_argument("--model", help="可选 Codex 模型标识，例如 gpt-6-luna")
-            command.add_argument("--allow-image-generation", action="store_true", help="主动启动一次真实 Codex 图片请求，会使用账号生成额度")
+            command.add_argument("--allow-image-generation", action="store_true", help="主动启动一次真实图片请求，会使用所选后端额度")
         elif name in ("status", "retry-archive", "mark-interrupted"):
             command.add_argument("--execution", required=name != "status")
     commands.add_parser("doctor", help="仅本地环境检查，不调用模型")
@@ -63,7 +63,7 @@ def _parser() -> argparse.ArgumentParser:
     batch = commands.add_parser("batch", help="读取 JSON 清单，顺序执行最多 20 项并输出报告")
     batch.add_argument("--manifest", type=Path, required=True)
     batch.add_argument("--reports-root", type=Path, default=Path("reports"))
-    batch.add_argument("--backend", choices=("local", "codex"), required=True)
+    batch.add_argument("--backend", choices=("local", "codex", "image-api"), required=True)
     batch.add_argument("--image", type=Path, action="append", default=[], help="local 后端测试产物")
     batch.add_argument("--timeout", type=float, default=600)
     batch.add_argument("--model", help="可选 Codex 模型标识；恢复时必须与原批次一致")
@@ -71,7 +71,7 @@ def _parser() -> argparse.ArgumentParser:
     batch.add_argument("--allow-image-generation", action="store_true", help="允许本清单真实生图，会消耗账号额度")
     for name in ("web", "worker"):
         command = commands.add_parser(name, help="本机网页工作台" if name == "web" else "独立顺序执行队列")
-        command.add_argument("--backend", choices=("local", "codex"), default="codex")
+        command.add_argument("--backend", choices=("local", "codex", "image-api"), default="codex")
         command.add_argument("--image", type=Path, action="append", default=[], help="演练后端使用的已有图片")
         command.add_argument("--timeout", type=float, default=600)
         if name == "web":
@@ -80,11 +80,12 @@ def _parser() -> argparse.ArgumentParser:
             command.add_argument("--once", action="store_true", help="仅处理至多一个已提交作业后退出")
     cloud = commands.add_parser("cloud", help="云端收任务模式；只归档回传图片，不启动本机 Codex")
     cloud.add_argument("--port", type=int, default=7860)
-    cloud.add_argument("--backend", choices=("codex", "local"), default="codex")
+    cloud.add_argument("--backend", choices=("codex", "local", "image-api"),
+                       default=os.environ.get("IMAGE_WORKBENCH_IMAGE_BACKEND", "codex"))
     remote = commands.add_parser("remote-worker", help="本机主动领取云端任务并回传图片")
     remote.add_argument("--server", required=True, help="HTTPS 源站地址；本机联调/SSH 隧道可用 HTTP")
     remote.add_argument("--cache-root", type=Path, required=True, help="独立持久缓存，不要使用原项目 data 目录")
-    remote.add_argument("--backend", choices=("codex", "local"), default="codex")
+    remote.add_argument("--backend", choices=("codex", "local", "image-api"), default="codex")
     remote.add_argument("--image", type=Path, action="append", default=[], help="local 演练输出")
     remote.add_argument("--timeout", type=float, default=600)
     remote.add_argument("--poll-seconds", type=float, default=5)
@@ -108,18 +109,29 @@ def _print(value) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2))
 
 
+def _image_backend(args):
+    if args.backend == "local":
+        return LocalFileBackend(args.image)
+    if args.backend == "image-api":
+        from .image_api_backend import ImageAPIBackend
+        return ImageAPIBackend.from_environment()
+    return CodexImageBackend(model=getattr(args, "model", None))
+
+
 def main(argv=None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
     if args.command in {"run", "batch", "web", "worker", "remote-worker"}:
-        if args.command in {"run", "batch"} and args.backend == "codex" and not args.allow_image_generation:
+        if args.command in {"run", "batch"} and args.backend != "local" and not args.allow_image_generation:
             parser.error("真实生图必须由你主动添加 --allow-image-generation")
-        if args.backend == "codex" and args.image:
+        if args.backend != "local" and args.image:
             parser.error("--image 只用于 local；真实生图的参考图来自任务的 --input 和 --base")
         if args.backend == "local" and not args.image:
             parser.error("local 后端至少需要一项 --image 已有图片路径")
         if not math.isfinite(args.timeout) or args.timeout <= 0:
             parser.error("--timeout 必须大于0")
+        if args.backend == "image-api" and getattr(args, "model", None):
+            parser.error("图片 API 模型请用 IMAGE_WORKBENCH_IMAGE_API_MODEL 或私密配置设置")
     if args.command == "remote-worker" and (not math.isfinite(args.poll_seconds) or args.poll_seconds < 1):
         parser.error("--poll-seconds 必须为至少1秒的有限数")
     if args.command in {"worker-confirm-stopped", "script-confirm-stopped"} and not args.confirm_stopped:
@@ -180,7 +192,7 @@ def main(argv=None) -> int:
         if args.command == "remote-worker":
             from .remote_worker import RemoteWorker
             token = os.environ.get("IMAGE_WORKBENCH_WORKER_TOKEN", "")
-            backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend()
+            backend = _image_backend(args)
             worker = RemoteWorker(args.server, token, args.cache_root, backend, timeout=args.timeout)
             try:
                 if args.confirm_stopped:
@@ -243,7 +255,7 @@ def main(argv=None) -> int:
             for path in args.image:
                 storage.inspect_image(path)
             if args.command == "worker":
-                backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend()
+                backend = _image_backend(args)
                 LocalWorker(state, backend, timeout_seconds=args.timeout).serve(once=args.once)
             else:
                 import uvicorn
@@ -253,7 +265,7 @@ def main(argv=None) -> int:
                 uvicorn.run(app, host="127.0.0.1", port=args.port, workers=1, reload=False, access_log=False)
             return 0
         if args.command == "batch":
-            backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend(model=args.model)
+            backend = _image_backend(args)
             report = BatchRunner(storage).run(
                 args.manifest, backend, reports_root=args.reports_root, timeout_seconds=args.timeout,
                 progress=lambda message: print(message, file=sys.stderr, flush=True),
@@ -281,7 +293,7 @@ def main(argv=None) -> int:
             _print({"project_id": args.project, "task_id": args.task, "outputs": outputs})
             return 0
         if args.command == "run":
-            backend = LocalFileBackend(args.image) if args.backend == "local" else CodexImageBackend(model=args.model)
+            backend = _image_backend(args)
             record = runner.run(args.project, args.task, backend, timeout_seconds=args.timeout)
         elif args.command == "status":
             record = runner.get_execution(args.project, args.task, args.execution)

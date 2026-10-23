@@ -93,7 +93,7 @@
             </section>
           </aside>
         </section>
-        <footer class="page-footer"><span>Image Workbench</span><span>{{ '云端收取需求 · 本机生成图片' if remote_mode else '本地图片创作 · 安全保存' }}</span></footer>
+        <footer class="page-footer"><span>Image Workbench</span><span>{{ '图片 API 创作 · 历史版本保存' if image_api_mode else ('云端收取需求 · 本机生成图片' if remote_mode else '本地图片创作 · 安全保存') }}</span></footer>
       </div>
     </main>
   </div>

@@ -5,6 +5,8 @@ import math
 STATUS_LABELS = {"draft": "待开始", "queued": "等待执行", "generating": "生成中", "checking": "检查产物",
                  "awaiting_review": "等待审核", "approved": "已通过", "failed": "执行失败", "uncertain": "状态待确认"}
 FAILURE_MESSAGES = {
+    "image_api_failed": "图片 API 请求失败，请核查接口配置和执行日志后手动重试。",
+    "image_api_timeout": "图片 API 请求超时，上游完成状态未知；不会自动重新生成。",
     "prepare_failed": "输入或任务准备失败，请检查图片和提示词。",
     "codex_launch_failed": "无法启动本地 Codex，请检查本地安装和登录状态。",
     "codex_timeout": "本次 Codex 执行超时，日志已保留；不会自动重新生成。",

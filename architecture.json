@@ -72,7 +72,8 @@
     "image_backend": {
       "modules": [
         "image_backend",
-        "codex_backend"
+        "codex_backend",
+        "image_api_backend"
       ],
       "may_import": [
         "foundation",

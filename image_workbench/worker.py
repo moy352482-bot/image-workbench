@@ -8,8 +8,6 @@ import sys
 import time
 import traceback
 
-from .codex_backend import CodexImageBackend
-from .image_backend import LocalFileBackend
 from .locking import LockBusyError
 from .storage import StorageManager, _now
 from .task_runner import StateUpdateError
@@ -110,7 +108,11 @@ def confirm_stopped(state, project_id, task_id):
         job = state.get_job(project_id, task_id)
         if not job or (job["status"] != "uncertain" and not (job.get("worker_id") and job["status"] == "running")):
             raise ConflictError("只有状态待确认的作业可以人工解除")
-        record = LocalWorker(state, CodexImageBackend() if state.backend == "codex" else LocalFileBackend([]))._record(job)
+        execution_id = job.get("restore_execution_id") or job["job_id"]
+        try:
+            record = state.runner.get_execution(project_id, task_id, execution_id)
+        except FileNotFoundError:
+            record = None
         if record and record.status in {"running", "archiving"}:
             state.runner.mark_interrupted(project_id, task_id, record.execution_id)
         job.update(status="failed", failure_type="interrupted", finished_at=_now())

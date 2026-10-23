@@ -5,7 +5,7 @@ ID = r"^[0-9a-f]{32}$"
 class Claim(BaseModel):
     model_config = ConfigDict(extra="forbid")
     worker_id: str = Field(pattern=ID)
-    backend: str = Field(pattern=r"^(codex|local)$")
+    backend: str = Field(pattern=r"^(codex|local|image-api)$")
 
 
 class Complete(BaseModel):

@@ -2,7 +2,9 @@
 
 本阶段仍是可信本地脚本、单进程顺序调用，不提供网页或账号权限。
 执行链固定为 `TaskRunner → ImageBackend → 本次产物 → StorageManager`。
-不调用额外付费图片 API，不自动重试生成，不修改 Codex 全局配置或登录方式。
+默认 Codex 后端不调用额外付费图片 API，不自动重试生成，不修改 Codex 全局配置或登录方式。
+2026-10-23 新增显式选择的 `image-api` 后端；配置、付费调用边界和验证状态见
+[图片 API 接入](image_api_integration.md)。旧后端与默认值保留。
 
 ## 接口（独立测试据此编写）
 
