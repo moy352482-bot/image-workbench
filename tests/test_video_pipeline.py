@@ -109,6 +109,31 @@ class PipelineTests(unittest.TestCase):
         response = self.alice.post(self.prefix + "/images", json={"request_id": uuid4().hex, "prompt": "示意图", "reference_ids": [asset["asset_id"]]})
         self.assertEqual(response.status_code, 404)
 
+    def test_deleted_linked_project_is_hidden_and_restore_recovers_original_assets(self):
+        asset = self.alice.post(self.prefix + "/assets", files=[
+            ("files", ("reference.png", png(), "image/png"))]).json()["assets"][0]
+        original_assets = self.alice.get(self.prefix).json()["assets"]
+        mid = self.link["main_project_id"]
+        self.assertEqual(self.alice.delete(f"/api/project-actions/{mid}").status_code, 200)
+        self.assertEqual(self.alice.get("/api/video/projects").json()["projects"], [])
+        for path in (self.prefix, self.prefix + "/pipeline", asset["url"]):
+            self.assertEqual(self.alice.get(path).status_code, 404, path)
+        self.assertEqual(self.alice.post(self.prefix + "/assets", files=[
+            ("files", ("new.png", png("blue"), "image/png"))]).status_code, 404)
+        self.assertEqual(self.alice.post(f"/api/project-actions/{mid}/restore").status_code, 200)
+        self.assertEqual(self.alice.get("/api/video/projects").json()["projects"][0]["project_id"], self.pid)
+        self.assertEqual(self.alice.get(asset["url"]).content, png())
+        self.assertEqual(self.alice.get(self.prefix).json()["assets"], original_assets)
+        self.adapter.generate.assert_not_called()
+
+    def test_linked_project_moved_out_of_workspace_is_not_listed_or_readable(self):
+        mid = self.link["main_project_id"]
+        self.assertEqual(self.alice.post(f"/api/project-actions/{mid}/move",
+                                       json={"workspace_id": self.other_wid}).status_code, 200)
+        self.assertEqual(self.alice.get("/api/video/projects").json()["projects"], [])
+        self.assertEqual(self.alice.get(self.prefix).status_code, 404)
+        self.assertEqual(self.bobby.get(self.prefix).status_code, 404)
+
     def test_script_upload_versions_and_generation_are_saved_and_selected(self):
         rid = uuid4().hex
         response = self.upload_script(rid=rid)

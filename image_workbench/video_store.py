@@ -136,7 +136,19 @@ class VideoStore:
         value = self._read(self._project_path(pid))
         if (value.get("account_id"), value.get("workspace_id"), value.get("project_id")) != (account_id, workspace_id, pid):
             raise FileNotFoundError("视频项目不存在")
+        if not self._linked_project_available(value, account_id, workspace_id):
+            raise FileNotFoundError("关联项目已删除或不在当前工作空间")
         return value
+
+    def _linked_project_available(self, project, account_id, workspace_id):
+        link = project.get("pipeline")
+        if not link:
+            return True
+        try:
+            owner = self.identity.ownership(link["main_project_id"])
+        except FileNotFoundError:
+            return False
+        return not owner["deleted"] and (owner["account_id"], owner["workspace_id"]) == (account_id, workspace_id)
 
     def create_project(self, account_id, workspace_id, request_id, name, script=""):
         self.identity.require_workspace(account_id, workspace_id)
@@ -194,7 +206,8 @@ class VideoStore:
             if not directory.is_dir():
                 continue
             value = self._optional(directory / "project.json")
-            if value and (value.get("account_id"), value.get("workspace_id")) == (account_id, workspace_id):
+            if (value and (value.get("account_id"), value.get("workspace_id")) == (account_id, workspace_id)
+                    and self._linked_project_available(value, account_id, workspace_id)):
                 result.append({key: value[key] for key in ("project_id", "name", "script", "created_at")})
         return sorted(result, key=lambda p: (p["created_at"], p["project_id"]), reverse=True)
 

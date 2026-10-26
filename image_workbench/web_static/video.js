@@ -73,7 +73,7 @@
     const response = await fetch(path, { ...options, headers, credentials: 'same-origin' });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) { location.assign('/login'); throw new Error('请重新登录'); }
-    if (!response.ok) throw new Error(typeof payload.detail === 'string' ? payload.detail : '请求未完成，请稍后重试');
+    if (!response.ok) throw Object.assign(new Error(typeof payload.detail === 'string' ? payload.detail : '请求未完成，请稍后重试'), {status: response.status});
     return payload;
   }
   async function busy(button, action) {
@@ -298,7 +298,17 @@
   async function refreshProject(context = captureContext(), {notify = true} = {}) {
     if (!context.id || !isCurrent(context)) return null;
     const sequence = ++state.projectReadSequence;
-    const project = await api(`/api/video/projects/${context.id}`, {headers: {'X-Workspace-ID': context.workspace}});
+    let project;
+    try { project = await api(`/api/video/projects/${context.id}`, {headers: {'X-Workspace-ID': context.workspace}}); }
+    catch (error) {
+      if (!isCurrent(context) || sequence !== state.projectReadSequence) return null;
+      if (error.status !== 404) throw error;
+      clearProject(true);
+      const cleared = captureContext();
+      await loadProjects();
+      if (isCurrent(cleared)) notice('当前项目已删除或移出此工作空间。可在图片工作台回收站恢复项目，或直接上传图片开始新作品。', true);
+      return null;
+    }
     if (!isCurrent(context) || sequence !== state.projectReadSequence) return null;
     projectView(project, false, false, notify);
     return structuredClone(project);
@@ -314,16 +324,17 @@
     } finally { if (state.loading === context) state.loading = false; }
   }
 
-  $('newVideoProject').addEventListener('click', () => {
+  function clearProject(preserveDraft = false) {
     state.draftRevision = (state.draftRevision || 0) + 1; state.selectingProject = null; state.project = null; state.projectSignature = '';
     state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; shotChanged();
-    $('videoShotForm').reset(); $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
+    if (!preserveDraft) $('videoShotForm').reset();
+    $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
     renderAssets({ assets: [] }); renderShots({ shots: [] });
-    document.dispatchEvent(new CustomEvent('video-project-cleared')); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
+    document.dispatchEvent(new CustomEvent('video-project-cleared', {detail: {preserveDraft}})); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
     $('videoProjectCrumb').textContent = '新作品'; notice('');
     const url = new URL(location.href); url.searchParams.delete('project'); history.replaceState(null, '', url);
-    loadProjects().catch(error => notice(error.message, true));
-  });
+  }
+  $('newVideoProject').addEventListener('click', () => { clearProject(); loadProjects().catch(error => notice(error.message, true)); });
   $('videoShotForm').addEventListener('submit', event => {
     event.preventDefault();
     busy(event.submitter, async () => {
@@ -345,7 +356,7 @@
   $('videoShotForm').addEventListener('change', shotChanged);
   $('videoResolution').addEventListener('change', resolutionView);
   $('videoDuration').addEventListener('input', quote);
-  $('videoRefresh').addEventListener('click', event => busy(event.currentTarget, async () => { await refresh(); await loadProjects(); notice('状态已刷新'); }));
+  $('videoRefresh').addEventListener('click', event => busy(event.currentTarget, async () => { const context = captureContext(); await refresh(); await loadProjects(); if (isCurrent(context)) notice('状态已刷新'); }));
   $('videoWorkspace').addEventListener('change', async event => { state.draftRevision++; state.switchingWorkspace = true; try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { state.switchingWorkspace = false; event.target.value = state.account.workspace_id; notice(error.message, true); } });
   $('videoLogout').addEventListener('click', event => busy(event.currentTarget, async () => { await api('/api/auth/logout', { method: 'POST' }); location.assign('/login'); }));
 
