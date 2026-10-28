@@ -451,7 +451,7 @@ class ScriptGenerationBrowserTests(unittest.TestCase):
                 self.record(kind + "_model_failure_to_visible_error_and_refund", started)
         self.assertEqual(self.model.generate.call_count, 2)
 
-    def test_storyboard_optional_mock_is_explicit_and_real_mode_disabled(self):
+    def test_storyboard_optional_mock_is_explicit_with_api_also_available(self):
         for kind in ENTRIES:
             with self.subTest(entry=kind):
                 self.ready(kind, model="gpt-6-luna", effort="high")
@@ -461,10 +461,11 @@ class ScriptGenerationBrowserTests(unittest.TestCase):
                 panel.locator("summary").click()
                 toggle = panel.locator(".storyboard-check input[type=checkbox]").first
                 expect(toggle).not_to_be_checked()
-                expect(panel.locator('select[name="mode"] option[value="codex"]')).to_have_js_property("disabled", True, timeout=5000)
+                expect(panel.locator('select[name="mode"] option[value="api"]')).to_have_js_property("disabled", False, timeout=5000)
                 expect(panel.locator('select[name="mode"] option[value="mock"]')).to_have_js_property("disabled", False)
-                expect(panel.locator('select[name="mode"] option[value="mock"]')).to_contain_text("Mock")
+                expect(panel.locator('select[name="mode"] option[value="mock"]')).to_contain_text("离线规则")
                 started = time.perf_counter()
+                panel.locator('select[name="mode"]').select_option("mock")
                 toggle.check()
                 expect(self.ui(kind, "Generate")).to_be_enabled(timeout=8000)
                 self.record(kind + "_enable_mock_storyboard_to_quote", started)

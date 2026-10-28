@@ -1,4 +1,4 @@
-"""Local H3 Skill planner for the online video queue."""
+"""Server-side Skill planner for the online video queue."""
 from pathlib import Path
 import threading
 import time

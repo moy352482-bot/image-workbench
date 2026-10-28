@@ -150,7 +150,18 @@ class ImageActionsBrowserTests(unittest.TestCase):
     def test_failed_direct_submission_keeps_saved_task_without_creating_duplicate(self):
         self.root_page()
         self.page.locator("#promptInput").fill("直接生成一个木屋")
-        self.page.route("**/api/tasks/*/run", lambda route: route.abort(), times=1)
+        submissions = []
+
+        def fail_first_submission(route):
+            submissions.append(route.request.url)
+            if len(submissions) == 1:
+                route.abort()
+            else:
+                route.continue_()
+
+        # Keep interception enabled while the UI immediately reloads the task list.
+        # Removing the last route during abort can strand that GET in Chromium.
+        self.page.route("**/api/tasks/*/run", fail_first_submission)
         self.page.locator("#generateTaskButton").click()
         expect(self.page.locator("#formMessage")).to_contain_text("任务已保存，生成提交未确认")
         expect(self.page.locator("#promptInput")).to_have_value("")
@@ -159,6 +170,7 @@ class ImageActionsBrowserTests(unittest.TestCase):
         expect(self.page.locator("#resultState")).to_have_text("等待执行")
         self.assertEqual(len(self.get(f"/api/subprojects/{self.link['subproject_id']}/tasks")["tasks"]), 1)
         self.assertEqual(len(self.app.state.workbench.list_jobs()), 1)
+        self.assertEqual(len(submissions), 2)
 
     def test_late_initial_list_cannot_replace_a_saved_task_after_submission_failure(self):
         delayed = []

@@ -28,7 +28,7 @@
   function shotChanged() { state.shotRevision++; state.shotRequest = uuid(); }
   function setReferences(ids, {context = captureContext(), mode = $('videoMode').value} = {}) {
     if (!isCurrent(context, context.id, true)) return false;
-    if ($('videoBackend').value === 'online-2.0' && (ids.length || mode !== 'T2V')) throw new Error('在线视频 2.0 暂不支持参考图，请切换到本机 H3');
+    if ($('videoBackend').value === 'online-2.0' && (ids.length || mode !== 'T2V')) throw new Error('当前 SD2.0 通道暂不支持参考图，图片仍保留在项目素材库');
     const order = [...new Set(ids)];
     if (!state.project || order.some(id => !state.project.assets.some(asset => asset.asset_id === id))) throw new Error('参考图片不属于当前项目，请刷新后重新选择');
     if (!Object.hasOwn(modes, mode) || order.length > (mode === 'I2V' ? 1 : mode === 'FL2V' ? 2 : 9)) throw new Error('参考图片数量不符合当前模式');
@@ -124,12 +124,14 @@
     const c = state.config;
     const enabled = enabledResolutions();
     const h3Option = $('videoBackend').querySelector('option[value="h3"]');
-    h3Option.disabled = c.local_h3_available === false;
-    h3Option.hidden = c.local_h3_available === false;
-    if (h3Option.disabled && $('videoBackend').value === 'h3') { $('videoBackend').value = 'online-2.0'; updateBackend(); }
+    if (h3Option) {
+      h3Option.disabled = c.local_h3_available === false;
+      h3Option.hidden = c.local_h3_available === false;
+      if (h3Option.disabled && $('videoBackend').value === 'h3') { $('videoBackend').value = 'online-2.0'; updateBackend(); }
+    }
     const backend = $('videoBackend').value;
     const online = backend === 'h3' ? c.worker_online : c.workers_online?.[backend] && c.workers_online?.['online-planner'];
-    $('videoWorkerStatus').textContent = `${backend === 'h3' ? 'H3' : '在线视频 2.0'} 执行器${online ? '在线' : '离线 · 新任务排队'}`;
+    $('videoWorkerStatus').textContent = `${backend === 'h3' ? 'H3' : 'SD2.0'} 执行器${online ? '在线' : '离线 · 新任务排队'}`;
     $('videoAdminLink').hidden = !state.account.is_admin;
     document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !state.account.is_admin; });
     const previous = $('videoResolution').value;
@@ -205,9 +207,9 @@
     }
     $('videoMode').disabled = online;
     for (const option of $('videoResolution').options) option.disabled = online && option.value !== '720p';
-    $('videoBackendHelp').textContent = online ? '保留 H3 Skill 整理提示词，使用在线视频 2.0 生成；支持文生视频，时长 5、10 或 15 秒。参考图暂未开放。' : '本机 H3 支持参考图、首帧和首尾帧。';
+    $('videoBackendHelp').textContent = online ? 'DeepSeek Flash 按 SD2.0 Skill 整理提示词，再生成视频；支持文生视频，时长 5、10 或 15 秒。参考图暂未开放。' : '本机 H3 支持参考图、首帧和首尾帧。';
     const isOnline = online ? state.config?.workers_online?.['online-2.0'] && state.config?.workers_online?.['online-planner'] : state.config?.worker_online;
-    $('videoWorkerStatus').textContent = `${online ? '在线视频 2.0' : 'H3'} 执行器${isOnline ? '在线' : '离线 · 新任务排队'}`;
+    $('videoWorkerStatus').textContent = `${online ? 'SD2.0' : 'H3'} 执行器${isOnline ? '在线' : '离线 · 新任务排队'}`;
     updateMode(); resolutionView(); shotChanged();
   }
   function referenceLabels() {
@@ -236,7 +238,7 @@
       const cost = job?.credit_cost ?? expected;
       const size = Number.isInteger(shot.width) && Number.isInteger(shot.height) ? ` · ${shot.width} × ${shot.height}` : '';
       const displayMode = shot.mode === 'I2V' && shot.reference_ids?.length === 2 ? 'FL2V' : shot.mode;
-      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${shot.backend === 'online-2.0' ? '在线视频 2.0 · ' : 'H3 · '}${modes[displayMode] || displayMode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
+      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${shot.backend === 'online-2.0' ? 'SD2.0 · ' : 'H3 · '}${modes[displayMode] || displayMode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
       copy.append(heading, el('p', 'video-shot-meta', meta), el('p', 'video-shot-prompt', shot.prompt));
       if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild || blockedReason ? '' : '可检查素材后重新提交。'}`));
       const actions = el('div', 'video-shot-actions');
@@ -371,7 +373,7 @@
       const context = captureContext();
       const mode = $('videoMode').value;
       const refs = mode === 'T2V' ? [] : [...state.referenceOrder];
-      if ($('videoBackend').value === 'online-2.0' && ![5, 10, 15].includes(Number($('videoDuration').value))) throw new Error('在线视频 2.0 的时长请选择 5、10 或 15 秒');
+      if ($('videoBackend').value === 'online-2.0' && ![5, 10, 15].includes(Number($('videoDuration').value))) throw new Error('SD2.0 的时长请选择 5、10 或 15 秒');
       if (mode === 'I2V' && refs.length !== 1) throw new Error('首帧模式需要选择 1 张参考图');
       if (mode === 'FL2V' && refs.length !== 2) throw new Error('首尾帧模式需要选择 2 张参考图，依次为首帧和尾帧');
       if (mode === 'R2V' && (refs.length < 1 || refs.length > 9)) throw new Error('参考素材模式需要选择 1–9 张参考图');

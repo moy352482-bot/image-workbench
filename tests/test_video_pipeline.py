@@ -24,6 +24,7 @@ class PipelineTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.storage = StorageManager(StorageConfig(data_root=self.root / "data"))
         self.app = create_app(self.storage, backend="local")
+        self.app.video_store.enabled_backends = ("h3", "online-2.0")  # Legacy queue compatibility fixture.
         self.identity = self.app.identity
         with self.identity.transaction() as db:
             self.aid, self.wid = self.identity._account(db, "pipeline_alice", None)
@@ -63,7 +64,7 @@ class PipelineTests(unittest.TestCase):
     def test_page_has_three_generate_upload_steps_and_visible_reference_input(self):
         page = self.alice.get("/video")
         self.assertEqual(page.status_code, 200)
-        for value in ("pipelineImages", "pipelineScripts", "pipelineVideos", "pipelineImageReferenceFiles", "pipelineScriptUpload", "pipelineVideoUpload", "上传参考图", "生成参考图", "生成脚本", "生成视频", "本机 H3", "在线视频 2.0"):
+        for value in ("pipelineImages", "pipelineScripts", "pipelineVideos", "pipelineImageReferenceFiles", "pipelineScriptUpload", "pipelineVideoUpload", "上传参考图", "生成参考图", "生成脚本", "生成视频", "SD2.0", "Seedance 2.0"):
             self.assertIn(value, page.text)
         self.assertNotIn('id="videoProjectDetail" hidden', page.text)
         self.assertNotIn('data-pipeline-pane="image:upload" hidden', page.text)

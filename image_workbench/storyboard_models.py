@@ -85,7 +85,7 @@ def normalize_shot(raw, *, shot_id, order, options):
                   aspect_ratio=raw.get("aspect_ratio", options.get("aspect_ratio", "16:9")),
                   video_model_id=raw.get("video_model_id", options.get("video_model_id", "h3")),
                   source_shot_ids=ids(raw.get("source_shot_ids", [])), status="planned")
-    if result["aspect_ratio"] not in RATIOS or result["video_model_id"] != "h3":
+    if result["aspect_ratio"] not in RATIOS or result["video_model_id"] not in {"h3", "online-2.0"}:
         raise ValueError("镜头画幅或视频模型无效")
     for name in ("start_frame_artifact_id", "end_frame_artifact_id"):
         value = raw.get(name)
@@ -129,5 +129,7 @@ def normalize_plan(raw, options, task_id):
     result = deepcopy(raw)
     result["shots"] = [normalize_shot(s, shot_id=uuid5(NAMESPACE_URL, task_id + ":" + str(i)).hex,
                                      order=i + 1, options=options) for i, s in enumerate(raw["shots"])]
+    if any(s["video_model_id"] != options["video_model_id"] for s in result["shots"]):
+        raise ValueError("规划不能改变已选择的视频模型")
     result["duration_conflict"] = duration_conflict(result["shots"], options["target_duration_ms"], raw.get("duration_conflict"))
     return {"shots": result["shots"], "duration_conflict": result["duration_conflict"]}

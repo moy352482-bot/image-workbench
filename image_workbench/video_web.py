@@ -85,7 +85,8 @@ def install_video(app, store, pipeline=None):
         revision = max((directory / "web_static" / name).stat().st_mtime_ns for name in
                        ("video.css", "pipeline.css", "storyboard.css", "video.js", "pipeline.js", "storyboard.js",
                         "asset-input.css", "asset-input.js", "asset-actions.js", "script-pricing.js"))
-        return templates.TemplateResponse(request=request, name="video.html", context={"asset_version": str(revision)},
+        return templates.TemplateResponse(request=request, name="video.html", context={"asset_version": str(revision),
+                                          "legacy_h3_enabled": store.config()["local_h3_available"]},
                                           headers={"Cache-Control": "no-store"})
 
     @app.get("/api/video/config")

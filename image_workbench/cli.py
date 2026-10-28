@@ -95,7 +95,7 @@ def _parser() -> argparse.ArgumentParser:
     h3.add_argument("--config", type=Path, required=True, help="本机视频执行器 JSON 配置")
     h3.add_argument("--once", action="store_true", help="仅轮询一次并处理至多一个已提交镜头")
     h3.add_argument("--check", action="store_true", help="仅只读检查 ComfyUI 节点、模板和工具，不领取或生成任务")
-    online_planner = commands.add_parser("online-video-planner", help="使用现有 H3 Skill 整理在线视频提示词")
+    online_planner = commands.add_parser("online-video-planner", help="通过 DeepSeek Flash 与 SD2.0 Skill 整理视频提示词")
     online_planner.add_argument("--worker-config", type=Path, required=True)
     online_planner.add_argument("--cache", type=Path, required=True)
     confirm = commands.add_parser("worker-confirm-stopped", help="确认原 Codex 子进程已停止后，解除状态待确认作业；本命令不结束进程")
@@ -148,14 +148,12 @@ def main(argv=None) -> int:
             parser.error("应用迁移必须提供 --expected-fingerprint")
     try:
         if args.command == "online-video-planner":
-            from .h3_skill import H3SkillPlanner, load_h3_skill_config
+            from .seedance_skill import SeedanceSkillPlanner
+            from .deepseek_text import DeepSeekTextAdapter
             from .h3_worker import RemoteVideoTransport
             from .online_video_planner import OnlineVideoPlanner
-            from .script_adapter import CodexTextAdapter
             remote = json.loads(args.worker_config.read_text(encoding="utf-8-sig"))
-            config = load_h3_skill_config()
-            planner = H3SkillPlanner(CodexTextAdapter(timeout_seconds=config["timeout_seconds"],
-                service_tier=config["service_tier"]), config=config)
+            planner = SeedanceSkillPlanner(DeepSeekTextAdapter())
             transport = RemoteVideoTransport(remote["server"], remote["worker_token"])
             try:
                 OnlineVideoPlanner(transport, planner, args.cache).run()

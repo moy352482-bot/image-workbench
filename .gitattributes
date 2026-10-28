@@ -1,2 +1,1 @@
-# Prompt resources include registered SHA-256 digests; preserve exact bytes.
-skills/** -text
+* -text

@@ -21,6 +21,8 @@ description: 将已保存的脚本或剧本版本转换为待审核的结构化�
 
 选中镜头不连续时，按原 order 形成连续的小组。每个输出镜头必须在 source_shot_ids 标明其来源小组中的 Shot ID，不能跨越未选中的镜头；每个选中小组至少有一个候选镜头。宿主在各小组原位置插入候选，未选镜头内容与相对顺序保持不变。
 
+video_model_id 必须复制输入 request.video_model_id，不能用示例值覆盖用户选择。
+
 返回结构：
 
 ```json
@@ -29,7 +31,7 @@ description: 将已保存的脚本或剧本版本转换为待审核的结构化�
     "title": "镜头标题",
     "scene_id": "场景名称或标识",
     "narrative_duration_ms": 3000,
-    "generation_duration_ms": 4000,
+    "generation_duration_ms": 5000,
     "duration_reason": "具体动作、对白或情绪所需时间及节奏理由",
     "visual_description": "可拍摄的画面",
     "action": "人物动作",
@@ -46,7 +48,7 @@ description: 将已保存的脚本或剧本版本转换为待审核的结构化�
     "source_excerpt": "对应脚本片段",
     "source_shot_ids": [],
     "aspect_ratio": "16:9",
-    "video_model_id": "h3"
+    "video_model_id": "online-2.0"
   }],
   "duration_conflict": null
 }

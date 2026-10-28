@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "catalog_max_age_days": 7,
+  "models": [{"model_id": "deepseek-flash", "display_name": "DeepSeek Flash", "provider": "deepseek", "enabled": true, "capabilities": ["script", "screenplay"]}],
+  "thinking_labels": {"low": "快速", "high": "标准", "max": "深入"}
+}

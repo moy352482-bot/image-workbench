@@ -1,6 +1,5 @@
 """Real browser coverage for scoped video state and late pipeline responses."""
 import unittest
-from unittest.mock import patch
 from uuid import uuid4
 
 from playwright.sync_api import expect, sync_playwright
@@ -82,14 +81,14 @@ class VideoStateBrowserTests(unittest.TestCase):
         self.page.evaluate("id => window.IWVideo.selectProject(id)", pid)
         self.page.wait_for_function("id => window.IWVideo.snapshot().project?.project_id === id", arg=pid)
 
-    @patch.dict("os.environ", {"IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS": "1"})
     def test_online_only_switch_keeps_skill_and_saves_online_draft(self):
+        self.app.video_store.enabled_backends = ("online-2.0",)
         self.video()
         self.page.locator('[data-pipeline-step="video"]').click()
         expect(self.page.locator('#videoBackend')).to_have_value('online-2.0')
-        self.assertTrue(self.page.locator('#videoBackend option[value="h3"]').is_disabled())
+        expect(self.page.locator('#videoBackend option[value="h3"]')).to_have_count(0)
         expect(self.page.locator('#videoMode')).to_have_value('T2V')
-        expect(self.page.locator('#videoBackendHelp')).to_contain_text('H3 Skill')
+        expect(self.page.locator('#videoBackendHelp')).to_contain_text('SD2.0 Skill')
         self.page.locator('#videoShotName').fill('在线镜头')
         self.page.locator('#videoShotPrompt').fill('光线落在桌面')
         self.page.locator('#videoShotForm button[type="submit"]').click()

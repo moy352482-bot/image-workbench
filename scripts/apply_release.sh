@@ -46,6 +46,9 @@ with tarfile.open(archive, 'r:gz') as bundle:
                 or member.name in {'skills/image-generation-default/SKILL.md', 'skills/image-generation-default/styles.json',
                                    'skills/image-generation-default/references/sources.md'}
                 or member.name in {'config/script_models.json', 'config/script_pricing.json', 'config/script_routing.json', 'config/storyboard_pricing.json', 'config/h3_workflow.json'}
+                or member.name in {'config/deepseek/' + name for name in (
+                    'script_models.json', 'script_pricing.json', 'script_routing.json', 'storyboard_pricing.json')}
+                or member.name in {'skills/seedance-2-video/SKILL.md', 'skills/seedance-2-video/SOURCES.md'}
                 or member.name in {'skills/storyboard-planning/' + name for name in (
                     'SKILL.md', 'references/shot-design.md', 'references/continuity.md', 'references/SOURCES.json',
                     'NOTICE.txt', 'licenses/drama-skills.txt', 'licenses/vimax.txt', 'licenses/toonflow.txt', 'licenses/minimax-h3.txt')}

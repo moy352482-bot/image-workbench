@@ -168,6 +168,7 @@ class DirectScriptHTTPTests(unittest.TestCase):
 
     def setUp(self):
         web_fixtures.ScriptWebTests.setUp(self)
+        self.app.video_store.enabled_backends = ("h3", "online-2.0")  # Explicitly test the legacy request default.
         # The reusable HTTP fixture replaces ScriptService; reconnect its
         # independently composed storyboard stage without any real adapter.
         self.storyboards = self.app.storyboard_service

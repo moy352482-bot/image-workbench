@@ -39,8 +39,9 @@ from .media_validation import inspect_mp4
 
 
 class VideoStore:
-    def __init__(self, storage, identity=None):
+    def __init__(self, storage, identity=None, *, enabled_backends=("h3", "online-2.0")):
         self.storage = storage
+        self.enabled_backends = tuple(enabled_backends)
         self.identity = identity or IdentityStore(storage)
         self.files = storage.files.scope(".video")
         self.root = self.files.root
@@ -93,14 +94,20 @@ class VideoStore:
                 workers[backend] |= 0 <= time.time() - info.get("time", 0) <= 120
         return {"rates": dict(rates), "configured": True, "legacy_credits_per_second": legacy_rate,
                 "enabled_resolutions": self._enabled_resolutions(),
-                "local_h3_available": os.environ.get("IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS") != "1",
+                "local_h3_available": self._h3_enabled(),
+                "default_video_model_id": self.enabled_backends[0],
                 "worker_online": workers["h3"], "workers_online": workers, "modes": ["T2V", "I2V", "R2V"],
                 "durations": {"min": 4, "max": 15},
-                "video_models": [{"model_id": "h3", "display_name": "H3",
+                "video_models": [{"model_id": "h3", "display_name": "H3", "available": self._h3_enabled(),
                                   "supported_durations_ms": list(range(4000, 15001, 1000)),
                                   "min_duration_ms": 4000, "max_duration_ms": 15000, "duration_step_ms": 1000,
                                   "supported_durations": list(range(4, 16)), "min_duration": 4,
-                                  "max_duration": 15, "duration_step": 1}],
+                                  "max_duration": 15, "duration_step": 1},
+                                 {"model_id": "online-2.0", "display_name": "SD2.0 · Seedance 2.0", "available": True,
+                                  "supported_durations_ms": [5000, 10000, 15000], "min_duration_ms": 5000,
+                                  "max_duration_ms": 15000, "duration_step_ms": 5000,
+                                  "supported_durations": [5, 10, 15], "min_duration": 5,
+                                  "max_duration": 15, "duration_step": 5, "modes": ["T2V"]}],
                 "ratios": {key: {"width": value[0], "height": value[1]} for key, value in RATIOS.items()},
                 "resolutions": {resolution: {ratio: {"width": size[0], "height": size[1]} for ratio, size in ratios.items()}
                                 for resolution, ratios in RESOLUTIONS.items()},
@@ -110,6 +117,9 @@ class VideoStore:
     @staticmethod
     def _enabled_resolutions():
         return ["720p", "1080p"] if os.environ.get("IMAGE_WORKBENCH_ENABLE_1080P") == "1" else ["720p"]
+
+    def _h3_enabled(self):
+        return "h3" in self.enabled_backends and os.environ.get("IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS") != "1"
 
     @staticmethod
     def _validate_rates(rates):
@@ -453,6 +463,8 @@ class VideoStore:
                 if old.get("backend", "h3") != backend or any(old.get(key) != value for key, value in payload.items()):
                     raise ConflictError("分镜请求标识已用于不同内容")
             else:
+                if backend == "h3" and not self._h3_enabled():
+                    raise ConflictError("H3 已停止新任务，请选择 SD2.0")
                 self._write(path, {**payload, "created_at": _now()})
         return self.shot(account_id, workspace_id, pid, request_id)
 
@@ -546,7 +558,7 @@ class VideoStore:
         rate = config["rates"][shot["resolution"]] if supported else None
         blocked_reason = REBUILD_REASON if not supported else (
             DISABLED_RESOLUTION_REASON if shot["resolution"] not in config["enabled_resolutions"] else None)
-        if shot.get("backend", "h3") == "h3" and os.environ.get("IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS") == "1":
+        if shot.get("backend", "h3") == "h3" and not self._h3_enabled():
             blocked_reason = "旧版本机 H3 分镜不能再提交，请按原内容新建在线视频 2.0 分镜"
         base = f"/api/video/projects/{shot['project_id']}/shots/{shot['shot_id']}/output?workspace_id={wid}"
         completed = bool(job and job["status"] == "completed")
@@ -591,7 +603,7 @@ class VideoStore:
             job = self._current(pid, sid)
             if job and job["status"] in ACTIVE | {"completed"}:
                 return self.public_job(job)
-            if shot.get("backend", "h3") == "h3" and os.environ.get("IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS") == "1":
+            if shot.get("backend", "h3") == "h3" and not self._h3_enabled():
                 raise ConflictError("旧版本机 H3 分镜不能再提交，请按原内容新建在线视频 2.0 分镜")
             if shot["resolution"] not in self._enabled_resolutions():
                 raise ConflictError(DISABLED_RESOLUTION_REASON)
@@ -654,7 +666,7 @@ class VideoStore:
             return self._manifest(job)
 
     def complete_plan(self, job_id, worker_id, claim_id, plan):
-        from .h3_skill import H3SkillPlanner, PROMPT_FORMAT, TASK_FIELDS
+        from .seedance_skill import SeedanceSkillPlanner, PROMPT_FORMAT, TASK_FIELDS
         import json
         with self.lock():
             job = self._read(self._job_path(job_id))
@@ -667,7 +679,7 @@ class VideoStore:
                 raise ConflictError("任务不在提示词整理阶段")
             task = self._shot(job["project_id"], job["task_id"])
             request = {"inputs": {key: task[key] for key in (*TASK_FIELDS, "prompt")}, "prompt_format": PROMPT_FORMAT}
-            validated = H3SkillPlanner.validate(json.dumps(plan, ensure_ascii=False), request)
+            validated = SeedanceSkillPlanner.validate(json.dumps(plan, ensure_ascii=False), request)
             self.identity.require_reservation(job_id, job["project_id"], job["task_id"])
             job.update(status="queued", stage="generation", skill_plan=validated, planner_worker_id=worker_id,
                        planner_claim_id=claim_id, worker_id=None, claim_id=None, error=None)
