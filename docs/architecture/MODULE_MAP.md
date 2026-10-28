@@ -20,11 +20,10 @@
 | Workflow / workflows | `script_workflow` | 两阶段报价计划、脚本完成后的分镜触发、源版本和失败阶段关联、启动时补齐持久意图 |
 | Read model / foundation | `task_recovery` | 图片、脚本和视频的统一诊断响应；保留原生状态，不执行恢复或结算 |
 | Application + Provider / video | `video_store`, `h3_worker` | 视频项目/镜头/自有存储、报价、队列、ComfyUI 提交/对账与媒体验证 |
-| Application + Provider / qwen | `qwen_lab`, `qwen_worker` | 管理员 Qwen 实验任务、图像/ComfyUI 执行；不把实验能力宣称为已验证生产路由 |
 | Workflow / pipeline | `pipeline_service` | 图片、脚本和视频的绑定与引用；通过 `PipelineVideoPort` 和注入服务协作 |
 | Operations | `admin_operations` | 检查、发布包和运行信息；不同于业务核心 |
 | Presentation / contracts | `contracts/*` | HTTP 请求 Pydantic schema；现在脚本插件也复用该输入格式，仍不依赖业务服务 |
-| Presentation / http | `http_api/*`, `script_web`, `script_resource_web`, `storyboard_web`, `video_web`, `video_pipeline`, `qwen_web`, `admin_web` | 请求解析、鉴权上下文、错误、下载、后台调度；具体服务由装配注入 |
+| Presentation / http | `http_api/*`, `script_web`, `script_resource_web`, `storyboard_web`, `video_web`, `video_pipeline`, `admin_web` | 请求解析、鉴权上下文、错误、下载、后台调度；具体服务由装配注入 |
 | Presentation / accounts_http | `accounts_web` | 登录、会话、工作空间应用隔离；创建 scoped 图片应用 |
 | Composition / entrypoints | `composition`, `web`, `cli`, `__main__`, `__init__` | 装配与兼容导出；`web` 保留旧入口，不把业务重新塞进入口 |
 | Frontend | `web_static/*.js`, `web_templates/*.html` | 原生页面、工厂和事件；视频消费者使用副本及受上下文约束的命令，不能直接共享可变 state |

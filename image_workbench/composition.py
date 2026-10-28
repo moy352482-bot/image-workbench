@@ -14,8 +14,6 @@ from .video_store import VideoStore
 from .video_web import install_video
 from .video_pipeline import install_pipeline
 from .pipeline_service import PipelineService
-from .qwen_lab import QwenLabStore
-from .qwen_web import install_qwen
 from .storyboard_service import StoryboardService
 from .storyboard_web import install_storyboards
 from .plugin_api import PluginRegistry
@@ -39,7 +37,6 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     text_adapter = DeepSeekTextAdapter()
     application.script_service = ScriptService(application.storage, application.identity,
                                                registry=registry, adapter=text_adapter)
-    application.qwen_store = QwenLabStore(application.storage, application.identity)
     # Resolve text service per operation so tests/integrations can replace the
     # service without rebuilding routes. Identity and workspace scope stay intact.
     def scripts():
@@ -76,5 +73,4 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     application.script_workflow = ScriptStoryboardWorkflow(scripts, lambda: application.storyboard_service)
     install_storyboards(application.auth, application.storyboard_service, resume_pending=application.script_workflow.resume_pending)
     install_pipeline(application.auth, application.pipeline_service, application.video_store)
-    install_qwen(application.auth, application.qwen_store)
     return application

@@ -136,8 +136,19 @@ class ImageActionsBrowserTests(unittest.TestCase):
     def test_batch_stops_on_submission_failure_and_keeps_remaining_selection(self):
         self.root_page()
         tasks = [self.save(f"批量构图 {index + 1}") for index in range(3)]
-        self.page.route(f"**/api/tasks/{tasks[1]['task_id']}/run", lambda route: route.fulfill(
-            status=503, content_type="application/json", body=json.dumps({"detail": "暂时无法提交"})), times=1)
+        submissions = []
+
+        def fail_first_submission(route):
+            submissions.append(route.request.url)
+            if len(submissions) == 1:
+                route.fulfill(status=503, content_type="application/json",
+                              body=json.dumps({"detail": "暂时无法提交"}))
+            else:
+                route.continue_()
+
+        # Keep interception active while the error path reloads the task list.
+        # Removing the last route during fulfill can strand that GET in Chromium.
+        self.page.route(f"**/api/tasks/{tasks[1]['task_id']}/run", fail_first_submission)
         self.page.locator("#batchGenerateButton").click()
         expect(self.page.locator("#batchMessage")).to_contain_text("已确认提交 1 项；后续提交已暂停")
         expect(self.page.locator("#batchSelectionSummary")).to_have_text("已选 2 项 · 预计 80 积分")

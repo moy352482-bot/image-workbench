@@ -102,7 +102,7 @@ class AccountApplication:
 
     async def dispatch(self, scope, receive, send):
         path = scope["path"]
-        if path.startswith(("/api/worker/video/", "/api/worker/scripts/", "/api/worker/qwen/")):
+        if path.startswith(("/api/worker/video/", "/api/worker/scripts/")):
             if not self.remote_access:
                 await JSONResponse({"detail": "资源不存在"}, status_code=404)(scope, receive, send)
             else:
@@ -119,7 +119,7 @@ class AccountApplication:
             return
         session = scope.get("account_session")
         if not session:
-            response = RedirectResponse("/login", status_code=303) if path in {"/", "/admin", "/video", "/scripts", "/qwen-test"} else JSONResponse({"detail": "请先登录"}, status_code=401)
+            response = RedirectResponse("/login", status_code=303) if path in {"/", "/admin", "/video", "/scripts"} else JSONResponse({"detail": "请先登录"}, status_code=401)
             await response(scope, receive, send)
             return
         if path == "/admin" or path.startswith("/api/admin/"):
@@ -137,7 +137,7 @@ class AccountApplication:
             await JSONResponse({"detail": "工作空间不存在"}, status_code=404)(scope, receive, send)
             return
         scope["workspace_id"] = wid
-        if path in {"/video", "/scripts", "/qwen-test"} or path.startswith(("/api/video/", "/api/scripts/", "/api/storyboards", "/api/qwen/", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions")):
+        if path in {"/video", "/scripts"} or path.startswith(("/api/video/", "/api/scripts/", "/api/storyboards", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions")):
             await self.auth(scope, receive, send)
         else:
             with workspace_request():

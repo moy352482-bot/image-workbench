@@ -71,7 +71,6 @@
     state.account = await api('/api/auth/me');
     $('scriptAccountName').textContent = state.account.username;
     $('scriptAdminLink').hidden = !state.account.is_admin;
-    document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !state.account.is_admin; });
     wallet();
   }
   function creativeSupported() { return state.config?.capabilities?.creative_resources === true || Array.isArray(state.config?.styles); }

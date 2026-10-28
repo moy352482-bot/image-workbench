@@ -96,70 +96,6 @@
       },
       "status_code": null
     },
-    "GET /api/qwen/config": {
-      "parameters": {
-        "body": [],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "GET /api/qwen/jobs": {
-      "parameters": {
-        "body": [],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "GET /api/qwen/jobs/{jid}": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
-    "GET /api/qwen/jobs/{jid}/images/{name}": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": [
-          {
-            "default": false,
-            "name": "download",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ]
-      },
-      "status_code": null
-    },
     "GET /api/scripts/config": {
       "parameters": {
         "body": [],
@@ -366,29 +302,6 @@
       },
       "status_code": null
     },
-    "GET /api/worker/qwen/jobs/{jid}/inputs/{index}": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "index",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
     "GET /api/worker/video/jobs/{job_id}/assets/{asset_id}": {
       "parameters": {
         "body": [],
@@ -421,14 +334,6 @@
       "status_code": null
     },
     "GET /login": {
-      "parameters": {
-        "body": [],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "GET /qwen-test": {
       "parameters": {
         "body": [],
         "path": [],
@@ -771,30 +676,6 @@
         "path": [
           {
             "name": "main_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/qwen/jobs": {
-      "parameters": {
-        "body": [],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/qwen/jobs/{jid}/cancel": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
             "required": true,
             "schema": {
               "type": "string"
@@ -2086,229 +1967,6 @@
       },
       "status_code": null
     },
-    "POST /api/worker/qwen/claim": {
-      "parameters": {
-        "body": [
-          {
-            "name": "body",
-            "required": true,
-            "schema": {
-              "additionalProperties": false,
-              "properties": {
-                "message": {
-                  "default": "",
-                  "maxLength": 200,
-                  "title": "Message",
-                  "type": "string"
-                },
-                "ready": {
-                  "default": true,
-                  "title": "Ready",
-                  "type": "boolean"
-                },
-                "worker_id": {
-                  "pattern": "^[0-9a-f]{32}$",
-                  "title": "Worker Id",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "worker_id"
-              ],
-              "title": "Claim",
-              "type": "object"
-            }
-          }
-        ],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/worker/qwen/heartbeat": {
-      "parameters": {
-        "body": [
-          {
-            "name": "body",
-            "required": true,
-            "schema": {
-              "additionalProperties": false,
-              "properties": {
-                "message": {
-                  "default": "",
-                  "maxLength": 200,
-                  "title": "Message",
-                  "type": "string"
-                },
-                "ready": {
-                  "default": true,
-                  "title": "Ready",
-                  "type": "boolean"
-                },
-                "worker_id": {
-                  "pattern": "^[0-9a-f]{32}$",
-                  "title": "Worker Id",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "worker_id"
-              ],
-              "title": "Claim",
-              "type": "object"
-            }
-          }
-        ],
-        "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/worker/qwen/jobs/{jid}/complete": {
-      "parameters": {
-        "body": [
-          {
-            "name": "body",
-            "required": true,
-            "schema": {
-              "additionalProperties": false,
-              "properties": {
-                "elapsed_seconds": {
-                  "anyOf": [
-                    {
-                      "maximum": 86400,
-                      "minimum": 0,
-                      "type": "number"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "default": null,
-                  "title": "Elapsed Seconds"
-                },
-                "error": {
-                  "anyOf": [
-                    {
-                      "maxLength": 1000,
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "default": null,
-                  "title": "Error"
-                },
-                "sha256": {
-                  "anyOf": [
-                    {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "default": null,
-                  "title": "Sha256"
-                },
-                "status": {
-                  "enum": [
-                    "succeeded",
-                    "failed",
-                    "uncertain"
-                  ],
-                  "title": "Status",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "status"
-              ],
-              "title": "Complete",
-              "type": "object"
-            }
-          }
-        ],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/worker/qwen/jobs/{jid}/heartbeat": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
-    "POST /api/worker/qwen/jobs/{jid}/start": {
-      "parameters": {
-        "body": [
-          {
-            "name": "body",
-            "required": true,
-            "schema": {
-              "additionalProperties": false,
-              "properties": {
-                "attempt_id": {
-                  "pattern": "^[0-9a-f]{32}$",
-                  "title": "Attempt Id",
-                  "type": "string"
-                },
-                "prompt_id": {
-                  "anyOf": [
-                    {
-                      "pattern": "^[A-Za-z0-9-]{1,200}$",
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "default": null,
-                  "title": "Prompt Id"
-                }
-              },
-              "required": [
-                "attempt_id"
-              ],
-              "title": "Start",
-              "type": "object"
-            }
-          }
-        ],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "query": []
-      },
-      "status_code": null
-    },
     "POST /api/worker/scripts/claim": {
       "parameters": {
         "body": [
@@ -2718,22 +2376,6 @@
           }
         ],
         "path": [],
-        "query": []
-      },
-      "status_code": null
-    },
-    "PUT /api/worker/qwen/jobs/{jid}/output": {
-      "parameters": {
-        "body": [],
-        "path": [
-          {
-            "name": "jid",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "query": []
       },
       "status_code": null

@@ -13,10 +13,10 @@
 [执行契约](docs/execution_contract.md)；这些文档不代表生产服务的实时状态。
 
 - 完整检查：`.venv\Scripts\python.exe -X utf8 scripts\verify.py`。
-- 单功能检查：加 `--module images|projects|accounts|scripts|storyboards|video|qwen|admin|storage`。
+- 单功能检查：加 `--module images|projects|accounts|scripts|storyboards|video|admin|storage`。
   模块检查同时运行公共接口、请求边界及前端组件检查；发布前执行完整检查。
 - 新模块在 `architecture.json` 声明归属。业务模块不导入 HTTP 适配层，图片、
-  脚本、视频、Qwen 不通过彼此的私有实现共享工具。跨功能流程使用明确服务接口。
+  脚本、视频不通过彼此的私有实现共享工具。跨功能流程使用明确服务接口。
 - 全站服务由 `image_workbench/composition.py` 装配；`web.py` 保留兼容入口。
   页面安装函数接收服务，模型执行保留在已有持久队列和 Worker。
 - 变更不得隐式改变 URL、磁盘格式、Workspace 权限、积分事务、提交幂等或恢复规则。

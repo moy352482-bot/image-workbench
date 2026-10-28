@@ -167,17 +167,6 @@
         "projects"
       ]
     },
-    "qwen": {
-      "modules": [
-        "qwen_lab",
-        "qwen_worker"
-      ],
-      "may_import": [
-        "foundation",
-        "storage",
-        "qwen"
-      ]
-    },
     "workflows": {
       "modules": [
         "script_workflow"
@@ -213,7 +202,6 @@
         "http_api.*",
         "script_web",
         "video_web",
-        "qwen_web",
         "admin_web",
         "video_pipeline",
         "script_resource_web",
@@ -230,7 +218,6 @@
         "images",
         "scripts",
         "video",
-        "qwen",
         "pipeline",
         "operations",
         "http",

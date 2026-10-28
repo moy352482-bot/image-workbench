@@ -10,7 +10,6 @@
       const account = await api('/api/auth/me'); onAccountChanged(account);
       $('#accountName').textContent = `${account.username}${account.is_admin ? ' · 管理员' : ''}`;
       $('#adminLink').hidden = !account.is_admin;
-      document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !account.is_admin; });
       const credits = account.credits;
       $('#creditSummary').textContent = credits.is_unlimited ? '积分额度：无限' : `可用 ${credits.remaining_credit} 积分 · 冻结 ${credits.frozen_credit}`;
       const select = $('#workspaceSelect'); select.replaceChildren();

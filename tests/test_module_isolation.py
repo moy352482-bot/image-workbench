@@ -23,7 +23,6 @@ class ModuleIsolationTests(unittest.TestCase):
         cases = {
             "config": ["fastapi", "image_workbench.codex_backend", "image_workbench.accounts"],
             "script_service": ["fastapi", "image_workbench.workbench_state", "image_workbench.codex_backend", "image_workbench.h3_worker"],
-            "qwen_lab": ["fastapi", "image_workbench.workbench_state", "image_workbench.h3_worker"],
             "remote_queue": ["fastapi", "image_workbench.web"],
             "script_remote": ["fastapi", "image_workbench.script_web"],
         }

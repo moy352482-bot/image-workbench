@@ -61,7 +61,7 @@ flowchart TD
 | 脚本 Version | `script-versions.json` 与不可变 TXT Artifact；`ScriptService._archive` 验证二者对应关系 |
 | 分镜 Version | 独立 envelope / versions / pending_commit 与 JSON Artifact，带源脚本版本 |
 | 视频结果 | `VideoStore` 自有 `.video/outputs` 及作业元数据；分镜输出/引用转换再登记共享 Artifact；不是全部视频天然已有统一 Version |
-| 模型能力 | 图片 Protocol、脚本 `ScriptModelRegistry`、远程 Worker 上报目录、H3 配置、Qwen 配置各自拥有真实能力；没有跨媒体统一 Model Router |
+| 模型能力 | 图片 Protocol、脚本 `ScriptModelRegistry`、远程 Worker 上报目录、H3 配置各自拥有真实能力；没有跨媒体统一 Model Router |
 | 价格 | 图片 `accounts.CreditCostCalculator.calculate`；脚本 `config/script_pricing.json`；分镜独立 pricing；视频持久配置 rates。计价口径不同，结算账本共享 |
 
 ## 确定性执行与 AI 判断

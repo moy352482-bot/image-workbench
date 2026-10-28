@@ -133,7 +133,6 @@
     const online = backend === 'h3' ? c.worker_online : c.workers_online?.[backend] && c.workers_online?.['online-planner'];
     $('videoWorkerStatus').textContent = `${backend === 'h3' ? 'H3' : 'SD2.0'} 执行器${online ? '在线' : '离线 · 新任务排队'}`;
     $('videoAdminLink').hidden = !state.account.is_admin;
-    document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !state.account.is_admin; });
     const previous = $('videoResolution').value;
     $('videoResolution').replaceChildren();
     for (const resolution of enabled) {
