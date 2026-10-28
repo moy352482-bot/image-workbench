@@ -182,7 +182,7 @@ class VideoStateBrowserTests(unittest.TestCase):
         pending[0].fulfill(json=old)
         self.assertIsNone(self.page.evaluate("() => window.pendingRefresh"))
         self.assertEqual(len(self.page.evaluate("() => window.IWVideo.snapshot().project.assets")), 1)
-        expect(self.page.locator("#videoAssetCount")).to_have_text("1 张")
+        expect(self.page.locator("#videoAssetCount")).to_have_text("0 张")
 
     def test_late_shot_save_preserves_newer_form_edits(self):
         self.video()

@@ -28,7 +28,17 @@ class AssetTrayBrowserTests(unittest.TestCase):
     stop_server = asset_helpers.AssetBrowserTests.stop_server
     post = asset_helpers.AssetBrowserTests.post
     get = asset_helpers.AssetBrowserTests.get
-    video = asset_helpers.AssetBrowserTests.video
+    def video(self):
+        asset_helpers.AssetBrowserTests.video(self)
+        # Retained tray APIs/actions have compatibility coverage in this fixture.
+        # The normal workbench hides these panels; current UX is tested separately.
+        expect(self.page.locator('#assetTray')).to_be_hidden()
+        expect(self.page.locator('#videoAssetGrid')).to_be_hidden()
+        self.page.evaluate("""() => {
+            document.getElementById('assetTray').hidden = false;
+            document.getElementById('assetTray').open = true;
+            document.getElementById('videoAssetGrid').hidden = false;
+        }""")
     root_page = asset_helpers.AssetBrowserTests.root_page
     files = asset_helpers.AssetBrowserTests.files
     event = asset_helpers.AssetBrowserTests.event
@@ -198,7 +208,8 @@ class AssetTrayBrowserTests(unittest.TestCase):
         save.click()
         expect(self.page.locator("#videoNotice")).to_contain_text("首帧模式需要选择 1 张")
         self.assertEqual(self.get(f"/api/video/projects/{self.pid}")["shots"], [])
-        first.check()
+        self.menu(self.tray(blue["asset_id"]), "设为首帧")
+        expect(first).to_be_checked()
         save.click()
         expect(self.page.locator("#videoNotice")).to_contain_text("分镜已保存")
         shots = self.get(f"/api/video/projects/{self.pid}")["shots"]
@@ -211,7 +222,8 @@ class AssetTrayBrowserTests(unittest.TestCase):
         save.click()
         expect(self.page.locator("#videoNotice")).to_contain_text("首尾帧模式需要选择 2 张")
         self.assertEqual(len(self.get(f"/api/video/projects/{self.pid}")["shots"]), 1)
-        last.check()
+        self.menu(self.tray(red["asset_id"]), "设为尾帧")
+        expect(last).to_be_checked()
         mode.select_option("I2V")
         expect(self.page.locator("#videoReferenceChoices input:checked")).to_have_count(2)
         save.click()

@@ -162,7 +162,6 @@
   function renderAssets(project) {
     state.referenceOrder = state.referenceOrder.filter(id => project.assets.some(asset => asset.asset_id === id));
     const selected = new Set(state.referenceOrder);
-    $('videoAssetCount').textContent = `${project.assets.length} 张`;
     $('videoAssetGrid').replaceChildren();
     $('videoReferenceChoices').replaceChildren();
     for (const [index, asset] of project.assets.entries()) {
@@ -171,8 +170,9 @@
       figure.append(image, el('figcaption', '', `${index + 1}. ${asset.filename}`));
       if (window.IWAssetTray) figure.append(window.IWAssetTray.imageActions(asset));
       $('videoAssetGrid').append(figure);
-      const label = el('label', 'video-reference-choice');
-      const input = el('input'); input.type = 'checkbox'; input.value = asset.asset_id; input.checked = selected.has(asset.asset_id);
+      if (!selected.has(asset.asset_id)) continue;
+      const label = el('div', 'video-reference-choice');
+      const input = el('input'); input.type = 'checkbox'; input.value = asset.asset_id; input.checked = true; input.hidden = true;
       input.addEventListener('change', () => {
         state.referenceOrder = state.referenceOrder.filter(id => id !== asset.asset_id);
         if (input.checked) state.referenceOrder.push(asset.asset_id);
@@ -180,7 +180,10 @@
         referenceLabels();
       });
       const thumb = image.cloneNode(); thumb.alt = '';
-      label.append(input, thumb, el('span', '', asset.filename), el('b', 'video-reference-order', ''));
+      const remove = el('button', 'text-button', '移除'); remove.type = 'button';
+      remove.setAttribute('aria-label', `移除参考图 ${asset.filename}`);
+      remove.addEventListener('click', event => { event.preventDefault(); state.referenceOrder = state.referenceOrder.filter(id => id !== asset.asset_id); shotChanged(); renderAssets(state.project); });
+      label.append(input, thumb, el('span', '', asset.filename), el('b', 'video-reference-order', ''), remove);
       $('videoReferenceChoices').append(label);
     }
     if (!project.assets.length) $('videoAssetGrid').append(el('p', 'field-hint', '先添加角色、场景或首帧图片。'));
@@ -188,7 +191,7 @@
   }
   function updateMode() {
     const mode = $('videoMode').value;
-    $('videoReferenceHelp').textContent = mode === 'T2V' ? '文生视频仅使用本镜头的文字描述。' : mode === 'I2V' ? '选择 1 张图片作为首帧，视频从该画面开始。' : mode === 'FL2V' ? '选择 2 张图片：先勾选首帧，再勾选尾帧。取消后重新勾选可调整顺序。' : '选择 1–9 张参考图；按勾选顺序对应 Picture 1、Picture 2…取消后重新勾选可调整顺序。';
+    $('videoReferenceHelp').textContent = mode === 'T2V' ? '文生视频仅使用本镜头的文字描述。' : mode === 'I2V' ? '选择 1 张图片作为首帧，视频从该画面开始。' : mode === 'FL2V' ? '选择 2 张图片：先添加首帧，再添加尾帧。移除后重新添加可调整顺序。' : '选择 1–9 张参考图；按添加顺序对应 Picture 1、Picture 2…移除后重新添加可调整顺序。';
     for (const input of $('videoReferenceChoices').querySelectorAll('input')) input.disabled = mode === 'T2V';
     referenceLabels();
   }
@@ -213,7 +216,7 @@
   }
   function referenceLabels() {
     const mode = $('videoMode').value;
-    for (const label of $('videoReferenceChoices').querySelectorAll('label')) {
+    for (const label of $('videoReferenceChoices').querySelectorAll('.video-reference-choice')) {
       const index = state.referenceOrder.indexOf(label.querySelector('input').value);
       label.querySelector('.video-reference-order').textContent = mode === 'T2V' || index < 0 ? '' : mode === 'I2V' ? (index === 0 ? '首帧' : '多余参考图') : mode === 'FL2V' ? (['首帧', '尾帧'][index] || '多余参考图') : `Picture ${index + 1}`;
     }

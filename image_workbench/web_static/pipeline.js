@@ -158,18 +158,22 @@
   }
   window.IWStoryboard?.mountScript({ api, getContext: () => ({ video_project_id: p.id, subproject_id: p.data?.subproject_id, workspace_id: snapshot().account?.workspace_id, account_id: snapshot().account?.account_id }), invalidate: invalidateQuote, anchor: $('pipelineScriptPrice'), prefix: 'pipeline' });
   function refs(project) {
-    const signature = JSON.stringify(project.assets);
+    $('videoAssetCount').textContent = `${p.imageRefs.length} 张`;
+    const signature = JSON.stringify([project.assets, p.imageRefs]);
     if (p.refSignature === signature) return;
     p.refSignature = signature;
     p.imageRefs = p.imageRefs.filter(id => project.assets.some(a => a.asset_id === id));
     const container = $('pipelineImageReferences'); container.replaceChildren();
-    for (const asset of project.assets) {
-      const label = el('label', 'video-reference-choice'), input = el('input'); input.type = 'checkbox'; input.value = asset.asset_id; input.checked = p.imageRefs.includes(asset.asset_id);
+    for (const asset of project.assets.filter(asset => p.imageRefs.includes(asset.asset_id))) {
+      const label = el('div', 'video-reference-choice'), input = el('input'); input.type = 'checkbox'; input.value = asset.asset_id; input.checked = true; input.hidden = true;
       input.addEventListener('change', () => { p.imageRefs = p.imageRefs.filter(id => id !== asset.asset_id); if (input.checked) p.imageRefs.push(asset.asset_id); p.imageRequest = uuid(); });
       const image = el('img'); image.src = mediaURL(asset.url); image.alt = '';
-      label.append(input, image, el('span', '', asset.filename)); container.append(label);
+      const remove = el('button', 'text-button', '移除'); remove.type = 'button';
+      remove.setAttribute('aria-label', `移除参考图 ${asset.filename}`);
+      remove.addEventListener('click', event => { event.preventDefault(); p.imageRefs = p.imageRefs.filter(id => id !== asset.asset_id); p.imageRequest = uuid(); refs(project); });
+      label.append(input, image, el('span', '', asset.filename), remove); container.append(label);
     }
-    if (!project.assets.length) container.append(el('p', 'field-hint', '可直接文生图，也可以先上传参考文件。'));
+    if (!p.imageRefs.length) container.append(el('p', 'field-hint', '可直接文生图，也可以先上传参考文件。'));
   }
   function renderImages(data, id) {
     const context = pipelineContext();
@@ -186,7 +190,7 @@
         if (task.can_retry) request.retry_of = task.current_job?.job_id || task.last_execution_id;
         await api(`/api/tasks/${task.task_id}/run`, { method: 'POST', body: JSON.stringify(request) });
         if (!samePipeline(context)) return;
-        notice('图片已进入生成队列，成功后可加入项目参考图库。');
+        notice('图片已进入生成队列，成功后可用于本次任务。');
         await reload(); await refresh(context);
       }, false));
       if (task.error_summary) card.append(el('p', 'field-hint', task.error_summary));
@@ -197,8 +201,7 @@
         image.addEventListener('click', () => window.IWAssetActions.preview({...artifact,media_type:'image'}));
         block.append(image, action('加入参考图', async () => {
           if (!samePipeline(context)) return;
-          await api(`/api/video/projects/${id}/images/from-artifact`, { method: 'POST', body: JSON.stringify({ artifact_id: artifact.artifact_id }) });
-          if (samePipeline(context)) { notice('图片已加入项目参考图库；当前 SD2.0 通道仅支持文字输入。'); await refresh(context); }
+          await useImage(artifact, 'reference');
         }), download, imageActions(artifact)); card.append(block);
       }
       list.append(card);
@@ -299,7 +302,7 @@
   function assetContext() {
     const storyboard = currentStage === 'video' ? window.IWStoryboard?.assetTarget() : null;
     return { ...captureContext(), storyboard, imageRequest: p.imageRequest,
-      purpose: storyboard ? 'storyboard' : currentStage === 'image' ? (document.querySelector('[data-pipeline-pane="image:generate"]').hidden ? 'library' : 'reference') : currentStage === 'video' && !document.querySelector('[data-pipeline-pane="video:generate"]').hidden ? 'video' : null };
+      purpose: storyboard ? 'storyboard' : currentStage === 'image' ? 'reference' : currentStage === 'video' && !document.querySelector('[data-pipeline-pane="video:generate"]').hidden ? 'video' : null };
   }
   function sameAssetContext(context, id) { return isCurrent(context, id); }
   async function attachAssets(assets, purpose, context, id) {
@@ -331,8 +334,9 @@
       } else notice('图片已保存到原项目。当前页面的素材选择未改变。');
     }
   });
-  window.IWImageInput.bind({input:$('videoAssets'),zone:document.querySelector('[data-pipeline-pane="image:upload"]'),purpose:'library'});
+  window.IWImageInput.bind({input:$('videoAssets'),zone:document.querySelector('[data-pipeline-pane="image:upload"]'),purpose:'reference'});
   window.IWImageInput.bind({input:$('pipelineImageReferenceFiles'),zone:$('pipelineImageForm'),purpose:'reference'});
+  window.IWImageInput.bind({zone:$('pipelineImages'),purpose:'reference'});
   window.IWImageInput.bind({zone:$('videoShotForm'),purpose:'video'});
   $('pipelineChooseImages').addEventListener('click', async () => {
     try {
