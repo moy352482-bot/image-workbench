@@ -37,7 +37,8 @@
         "media_validation",
         "video_models",
         "managed_files",
-        "task_recovery"
+        "task_recovery",
+        "deepseek_text"
       ],
       "may_import": [
         "foundation"
@@ -73,6 +74,7 @@
       "modules": [
         "image_backend",
         "codex_backend",
+        "image_api_backend",
         "image_prompting"
       ],
       "may_import": [
@@ -136,7 +138,8 @@
         "script_remote",
         "script_remote_worker",
         "script_resources",
-        "script_engine"
+        "script_engine",
+        "script_api_models"
       ],
       "may_import": [
         "foundation",
@@ -151,7 +154,10 @@
       "modules": [
         "video_store",
         "h3_worker",
-        "h3_skill"
+        "online_video_worker",
+        "online_video_planner",
+        "h3_skill",
+        "seedance_skill"
       ],
       "may_import": [
         "foundation",
@@ -173,8 +179,14 @@
       ]
     },
     "workflows": {
-      "modules": ["script_workflow"],
-      "may_import": ["foundation", "scripts", "storyboards"]
+      "modules": [
+        "script_workflow"
+      ],
+      "may_import": [
+        "foundation",
+        "scripts",
+        "storyboards"
+      ]
     },
     "pipeline": {
       "modules": [
@@ -295,7 +307,10 @@
     "state_ports": {
       "IWVideo": {
         "owner": "web_static/video.js",
-        "consumers": ["web_static/pipeline.js", "web_static/storyboard.js"]
+        "consumers": [
+          "web_static/pipeline.js",
+          "web_static/storyboard.js"
+        ]
       }
     }
   }

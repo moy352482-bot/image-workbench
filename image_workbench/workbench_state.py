@@ -26,7 +26,7 @@ from .image_prompting import default_image_skill
 
 class WorkbenchState:
     def __init__(self, storage: StorageManager, *, backend="codex", execution_mode="local"):
-        if backend not in {"codex", "local"}:
+        if backend not in {"codex", "local", "image-api"}:
             raise ValueError("未知后端")
         self.storage, self.runner, self.backend = storage, TaskRunner(storage), backend
         self.execution_mode = execution_mode

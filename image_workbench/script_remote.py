@@ -15,8 +15,8 @@ from .contracts.script_queue import Capability, Claim, Start, Complete
 
 
 class RemoteScriptRegistry(ScriptModelRegistry):
-    def __init__(self, queue):
-        super().__init__()
+    def __init__(self, queue, *, config_root=None):
+        super().__init__(config_root)
         self.queue = queue
 
     def models(self):
@@ -31,7 +31,7 @@ class RemoteScriptRegistry(ScriptModelRegistry):
                               for mid, efforts in entries.items()]}
         values = ScriptModelRegistry(self.root, catalog=catalog).models()
         for value in values:
-            value["availability_source"] = "remote_codex_worker"
+            value["availability_source"] = "remote_text_worker"
             if not value["available"]:
                 value["unavailable_reason"] = "脚本执行器离线或未提供此模型"
         return values
@@ -55,6 +55,8 @@ class ScriptRemoteQueue:
     def claim(self, wid, models):
         _validate_id(wid)
         allowed = {m["model_id"] for m in self.service.registry.configs()[0]["models"]}
+        # Existing Codex workers can still reconcile accepted jobs after the API cutover.
+        allowed.update(m["model_id"] for m in ScriptModelRegistry().configs()[0]["models"])
         if any(m["model_id"] not in allowed or not m["efforts"] or any(e not in {"low", "medium", "high", "xhigh", "max", "ultra"} for e in m["efforts"]) for m in models):
             raise ValueError("脚本执行器能力声明无效")
         with FileLock(self.storage.files.path(".workbench", "script-remote.lock"), timeout=30):

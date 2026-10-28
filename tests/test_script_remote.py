@@ -14,6 +14,7 @@ from image_workbench import StorageConfig, StorageManager
 from image_workbench.accounts import digest
 from image_workbench.remote_access import RemoteAccess
 from image_workbench.script_models import ScriptModelRegistry
+from image_workbench.script_remote import RemoteScriptRegistry
 from image_workbench.script_remote_worker import ScriptRemoteWorker
 from image_workbench.storage import _now
 from image_workbench.web import create_app
@@ -29,7 +30,11 @@ class RemoteScriptTests(unittest.TestCase):
         self.storage = StorageManager(StorageConfig(data_root=self.root / "server"))
         self.token = "s" * 40
         self.app = create_app(self.storage, backend="codex", remote_access=RemoteAccess("https://scripts.example", self.token))
+        # Explicit legacy catalog exercises recovery of accepted Codex jobs.
+        self.app.script_service.registry = RemoteScriptRegistry(self.app.script_queue)
+        self.app.script_service.router.registry = self.app.script_service.registry
         self.identity = self.app.identity
+        self.app.video_store.enabled_backends = ("h3", "online-2.0")  # Exercise legacy accepted work and clients.
         with self.identity.transaction() as db:
             self.aid, self.wid = self.identity._account(db, "remote_writer", None)
         self.user = self.client()

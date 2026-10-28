@@ -239,7 +239,9 @@ class AssetStoryboardBrowserTests(unittest.TestCase):
         self.assertNotEqual(source["version_id"], latest["version_id"])
         self.open_stage("script")
         panel = self.page.locator("#pipelineScriptForm .storyboard-panel")
-        expect(panel.locator('select[name="mode"]')).to_have_value("mock")
+        expect(panel.locator('select[name="mode"]')).to_have_value("api")
+        panel.locator("summary").click()
+        panel.locator('select[name="mode"]').select_option("mock")
         started = time.perf_counter()
         with self.page.expect_response(lambda response: response.request.method == "POST"
                                        and response.url.endswith("/api/storyboards/quote")) as quote:

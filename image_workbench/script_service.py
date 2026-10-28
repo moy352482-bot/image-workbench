@@ -13,7 +13,7 @@ from .workspace_scope import WorkspaceProjects
 from .domain_errors import ConflictError
 from .script_models import ScriptModelRegistry, DemandRouter, signature
 from .script_templates import ScriptTemplateLoader, build_prompt, validate_generated_text
-from .script_adapter import CodexTextAdapter, ScriptGenerationError
+from .script_adapter import CodexTextAdapter
 from .script_resources import ScriptResourceStore, roles
 from .script_engine import resolve_resources, resource_summary, creative_snapshot, check_structure
 from .task_recovery import recovery_projection
@@ -279,6 +279,8 @@ class ScriptService:
                    "example_references": [{k: v for k, v in item.items() if k != "text"} for item in template["example_references"]],
                    "resource_references": resource_summary(template), "creative_snapshot": creative_snapshot(template),
                    "generation_prompt": prompt, "demand_spec": quote["demand_spec"], "route_reason": quote["reason"]}
+            if quote["model_id"] == "deepseek-flash":
+                job["source"] = "deepseek"
             if req.get("storyboard_options"):
                 job.update(storyboard_quote=quote["storyboard_quote"], storyboard_confirmed=True)
             job = self.identity.reserve(job, {"account_id": account_id, "workspace_id": workspace_id}, quote["price"])

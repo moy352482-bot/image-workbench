@@ -198,7 +198,7 @@
         block.append(image, action('加入参考图', async () => {
           if (!samePipeline(context)) return;
           await api(`/api/video/projects/${id}/images/from-artifact`, { method: 'POST', body: JSON.stringify({ artifact_id: artifact.artifact_id }) });
-          if (samePipeline(context)) { notice('图片已加入项目参考图库，可用于 H3 视频生成。'); await refresh(context); }
+          if (samePipeline(context)) { notice('图片已加入项目参考图库；当前 SD2.0 通道仅支持文字输入。'); await refresh(context); }
         }), download, imageActions(artifact)); card.append(block);
       }
       list.append(card);
@@ -268,7 +268,7 @@
     $('pipelineImageTasks').replaceChildren(); $('pipelineScriptTasks').replaceChildren();
     for (const stage of stages) taskIndicator(stage, []);
   }
-  document.addEventListener('video-project-cleared', () => resetProject());
+  document.addEventListener('video-project-cleared', event => resetProject(event.detail?.preserveDraft));
   function loadScriptConfig() { const context = captureContext(); api('/api/scripts/config').then(config => { if (!isCurrent(context)) return; p.config = config; models(); }).catch(error => { if (isCurrent(context)) notice(error.message, true); }); }
   document.addEventListener('video-ready', () => { initialProjectView = false; loadScriptConfig(); });
   document.addEventListener('video-project-view', event => {

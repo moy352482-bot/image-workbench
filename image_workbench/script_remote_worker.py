@@ -12,7 +12,7 @@ import httpx
 from .config import StorageConfig
 from .locking import FileLock
 from .remote_access import validate_origin
-from .script_adapter import CodexTextAdapter, ScriptGenerationError
+from .script_adapter import CodexTextAdapter
 from .script_models import ScriptModelRegistry
 from .script_templates import validate_generated_text
 from .storage import StorageManager, _validate_id
@@ -87,13 +87,13 @@ class ScriptRemoteWorker:
                         text = validate_generated_text(raw)
                     except ValueError:
                         journal.update(phase="result", result={"status": "failed", "attempt_id": journal["attempt_id"],
-                                       "error": "Codex 返回的正文格式无效，积分已退回"})
+                                       "error": "模型返回的正文格式无效，积分已退回"})
                         self._save(journal)
                     else:
                         self._result(journal, text)
             else:
                 journal.update(phase="uncertain", result={"status": "uncertain", "attempt_id": journal["attempt_id"],
-                               "error": "执行进程中断，请核实原任务；不会自动重新调用 Codex"})
+                               "error": "执行进程中断，请核实原任务；不会自动重新调用文本模型"})
                 self._save(journal)
             return
         if journal["phase"] == "ready":
@@ -116,7 +116,7 @@ class ScriptRemoteWorker:
             uncertain = bool(getattr(exc, "uncertain", False) or (phase == "persist" and (work / "completed.json").exists()))
             journal.update(phase="uncertain" if uncertain else "result", result={
                 "status": "uncertain" if uncertain else "failed", "attempt_id": journal["attempt_id"],
-                "error": "正文已保留或执行状态待确认，请恢复原任务" if uncertain else "Codex 脚本生成未完成，积分已退回"})
+                "error": "正文已保留或执行状态待确认，请恢复原任务" if uncertain else "文本模型生成未完成，积分已退回"})
             self._save(journal)
 
     def run_once(self):
@@ -204,7 +204,10 @@ def main():
     parser.add_argument("--confirm-stopped", help="仅在人工核实原执行已停止后，解除指定任务的冻结")
     args = parser.parse_args()
     config = json.loads(args.config.read_text(encoding="utf-8-sig"))
-    worker = ScriptRemoteWorker(config["server"], config["worker_token"], Path(config["cache_root"]) / "script-worker")
+    from .deepseek_text import DeepSeekTextAdapter
+    from .script_api_models import DeepSeekModelRegistry
+    worker = ScriptRemoteWorker(config["server"], config["worker_token"], Path(config["cache_root"]) / "script-worker",
+                                adapter=DeepSeekTextAdapter(), registry=DeepSeekModelRegistry())
     try:
         if args.confirm_stopped:
             worker.confirm_stopped(args.confirm_stopped)

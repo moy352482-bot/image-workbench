@@ -137,6 +137,15 @@ class H3SkillTests(unittest.TestCase):
             self.assertEqual(self.worker(planner=self.planner()).run_once(), "failed")
         self.assertEqual(self.comfy.posts, 0)
 
+    def test_reference_heading_indentation_does_not_reject_a_valid_plan(self):
+        shot, job = self.submit(mode="R2V", references=1)
+        body = official_prompt(shot).replace("detailed_description:", "  detailed_description:")
+        with self.process({"prompt": body}) as process:
+            self.assertEqual(self.worker(planner=self.planner()).run_once(), "completed")
+            self.assertEqual(process.call_count, 1)
+        self.assertEqual(self.journal(job)["skill_plan"]["prompt"], body)
+        self.assertEqual(self.comfy.posts, 1)
+
     def test_invalid_plan_never_submits_video_and_releases_reservation(self):
         cases = ({"duration": 15}, {"mode": "R2V"}, {"resolution": "1080p"}, {"width": 1920},
                  {"aspect_ratio": "portrait"}, {"reference_ids": ["other"]},

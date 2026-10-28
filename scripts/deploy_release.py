@@ -59,6 +59,11 @@ def runtime_files(root):
         paths.extend(root / "skills" / "h3-video-workflow" / name for name in (
             "SKILL.md", "references/base-en.txt", "references/ref-en.txt", "references/SOURCES.json", "LICENSE", "NOTICE"))
         paths.append(root / "config" / "h3_workflow.json")
+    if (root / "image_workbench" / "deepseek_text.py").is_file():
+        paths.extend(root / "config" / "deepseek" / name for name in (
+            "script_models.json", "script_pricing.json", "script_routing.json", "storyboard_pricing.json"))
+    if (root / "image_workbench" / "seedance_skill.py").is_file():
+        paths.extend(root / "skills" / "seedance-2-video" / name for name in ("SKILL.md", "SOURCES.md"))
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):

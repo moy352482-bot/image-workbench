@@ -75,14 +75,14 @@ class ImageTimerBrowserTests(unittest.TestCase):
         self.assertTrue(self.page.evaluate("window.originalTiming === document.querySelector('.detail-progress')"))
         with self.page.expect_request(lambda request: request.url.endswith(self.path)):
             self.page.clock.run_for(1000)
-        self.page.wait_for_function("window.heldTimerRequests === 1")
+        self.page.wait_for_function("() => window.heldTimerRequests === 1")
         self.page.clock.run_for(1000)
         expect(self.timer).to_have_text("生成中 · 已运行 14 秒")
         self.assertEqual(len(pending), 1, "a slow response must not stop local seconds")
         with self.page.expect_event("requestfailed", predicate=lambda request: request.url.endswith(self.path)):
             pending[0].abort()
 
-    def test_late_poll_cannot_restart_a_finished_timer(self):
+    def test_late_poll_cannot_restart_a_finished_timer_after_manual_refresh(self):
         pending = []
 
         def respond(route):
@@ -93,10 +93,16 @@ class ImageTimerBrowserTests(unittest.TestCase):
 
         self.show(self.task(), respond)
         self.detail["delay"] = True
-        for count in (1, 2):
-            with self.page.expect_request(lambda request: request.url.endswith(self.path)):
-                self.page.clock.run_for(3000)
-            self.page.wait_for_function("count => window.heldTimerRequests === count", arg=count)
+        with self.page.expect_request(lambda request: request.url.endswith(self.path)):
+            self.page.clock.run_for(3000)
+        self.page.wait_for_function("() => window.heldTimerRequests === 1")
+        self.page.clock.run_for(3000)
+        self.assertEqual(len(pending), 1, "automatic polls must not overlap a slow request")
+        # A user refresh can supersede an in-flight poll even though timed polls
+        # are serialized. Its final result must survive the older response.
+        with self.page.expect_request(lambda request: request.url.endswith(self.path)):
+            self.page.locator("#refreshButton").click()
+        self.page.wait_for_function("() => window.heldTimerRequests === 2")
         finished = {**self.detail, "status": "failed", "execution_seconds": 15.2}
         pending[1].fulfill(json=finished)
         expect(self.timer).to_have_text("执行失败 · 本次执行耗时 15 秒")

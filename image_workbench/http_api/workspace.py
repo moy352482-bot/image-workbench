@@ -41,7 +41,8 @@ def create_workspace_app(storage: StorageManager | None = None, *, backend="code
                                     "workbench-styles.js", "workbench-styles.css",
                                     "asset-input.css", "asset-input.js", "asset-actions.js"))
         return templates.TemplateResponse(request=request, name="index.html",
-                                          context={"asset_version": str(revision), "remote_mode": state.execution_mode == "remote"},
+                                          context={"asset_version": str(revision), "remote_mode": state.execution_mode == "remote",
+                                                   "image_api_mode": state.backend == "image-api"},
                                           headers={"Cache-Control": "no-store"})
 
     @app.get("/api/config")

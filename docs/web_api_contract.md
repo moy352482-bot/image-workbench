@@ -65,3 +65,20 @@ uncertain 不提供重新生成动作；视频的原执行对账/最终回传由
 查询先核验 Workspace，随后只读已有记录；不补齐 outbox、不结算、不启动模型。旧详情接口的兼容行为保留；
 图片详情、脚本任务和视频 current_job 额外包含相同的 recovery 投影。
 
+
+## 在线视频执行器
+
+创建视频分镜可选 `backend`，默认为兼容旧客户端的 `h3`；`online-2.0` 当前只接受 `T2V`、无参考图、720p、5/10/15 秒。网站积分沿用 720p 每秒报价。供应方输出按所选画幅缩放至网站交付尺寸。视频执行器领取可选 `backend`，缺省 `h3`；不同 backend 分别领取和占用队列。视频配置的 `workers_online` 分别显示执行器心跳，原 `worker_online` 保留为 H3 状态。
+
+在线视频新增可选领取阶段 `stage=planning`，只由提示词执行器领取新任务；完成后调用 `/api/worker/video/jobs/{job_id}/plan`，服务端校验并保存计划，将同一任务交回 2.0 生成队列。重复提交相同计划幂等。缺省阶段为 `generation`，保留旧客户端语义。`local_h3_available` 为 false 时不接受新的本机 H3 分镜提交，旧记录和已受理任务仍可读取、恢复。
+
+
+## DeepSeek 与单一视频入口（2026-10-28）
+
+脚本 config 对新网站提供 DeepSeek Flash（low/high/max），三个强度均为零积分；系统推荐固定 high，不额外调用需求分类模型。旧模板的模型默认值不能覆盖当前固定路由。生成、改写、模板/案例引用、上传/下载和版本 URL 不变。
+
+分镜 mode 新增 api；旧 codex 值保留为兼容别名，实际调用装配的文本 Provider。mock 仍是显式离线规则。video_model_id 新增 online-2.0；旧 h3 值和请求默认值保留供历史客户端识别，但当前生产配置拒绝新的 H3 规划/生成。新 UI 显式传 online-2.0。配置保留 H3 时长信息用于历史记录，available=false；UI 只列出可用的视频模型。default_video_model_id 表明当前新任务默认模型。
+
+视频 UI 仅列 SD2.0，API backend 仍叫 online-2.0；不改变历史磁盘标识。旧 H3 的相同请求回放保持幂等，既有已受理任务继续恢复。新 H3 分镜或新生成返回明确冲突。新增 api/online-2.0 枚举只扩大请求可解析集合，未删除旧值或改变原有字段默认值。
+
+本分支同步已有 image-api 后端：worker claim backend 的匹配范围由 codex|local 扩展为 codex|local|image-api，两个旧值保持有效。HTTP 契约只更新这一已验证的 pattern 扩展；枚举扩展通过保留所有旧值的兼容检查验证。

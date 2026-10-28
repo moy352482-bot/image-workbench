@@ -9,16 +9,16 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ["test_architecture", "test_quality_guard", "test_module_isolation", "test_http_contract", "test_frontend_modules", "test_request_boundaries"]
 SUITES = {
-    "images": ["test_web", "test_worker", "test_workbench_state", "test_remote", "test_runner", "test_task_timing", "test_image_timer_browser", "test_scheduling", "test_asset_inputs", "test_asset_browser", "test_asset_e2e_browser", "test_image_prompting", "test_image_styles_browser", "test_deploy_release", "test_task_recovery"],
+    "images": ["test_web", "test_worker", "test_workbench_state", "test_remote", "test_runner", "test_task_timing", "test_scheduling", "test_asset_inputs", "test_asset_browser", "test_asset_e2e_browser", "test_image_prompting", "test_image_styles_browser", "test_image_actions_browser", "test_image_timer_browser", "test_deploy_release", "test_task_recovery", "test_image_api_backend"],
     "projects": ["test_project_web", "test_project_manager", "test_project_cli", "test_request_metadata_cache"],
     "accounts": ["test_accounts", "test_registration", "test_capacity", "test_script_limits"],
-    "scripts": ["test_script_web", "test_script_service", "test_script_storage", "test_script_models",
+    "scripts": ["test_deepseek_text", "test_api_creative_flow", "test_script_web", "test_script_service", "test_script_storage", "test_script_models",
                 "test_script_templates", "test_script_remote", "test_script_adapter", "test_script_recovery", "test_video_pipeline",
                 "test_script_creative_core", "test_script_creative_http", "test_script_direct_submit", "test_script_generation_browser",
                 "test_plugins", "test_script_workflow", "test_task_recovery"],
-    "storyboards": ["test_storyboard_http", "test_storyboard_planner", "test_storyboard_recovery", "test_storyboard_followup",
+    "storyboards": ["test_api_creative_flow", "test_storyboard_http", "test_storyboard_planner", "test_storyboard_recovery", "test_storyboard_followup",
                    "test_video_pipeline", "test_script_web", "test_asset_storyboard_browser", "test_script_workflow"],
-    "video": ["test_video", "test_h3_worker", "test_h3_skill", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser", "test_task_recovery", "test_video_state_browser"],
+    "video": ["test_deepseek_text", "test_api_creative_flow", "test_video", "test_h3_worker", "test_online_video_worker", "test_online_video_planner", "test_h3_skill", "test_video_pipeline", "test_pipeline_service", "test_asset_tray", "test_asset_tray_browser", "test_task_recovery", "test_video_state_browser"],
     "qwen": ["test_qwen"],
     "admin": ["test_admin", "test_deploy_release", "test_backup_workbench", "test_verification"],
     "storage": ["test_storage", "test_script_storage", "test_project_manager", "test_request_metadata_cache", "test_atomic_replace", "test_managed_files"],

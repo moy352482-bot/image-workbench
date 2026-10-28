@@ -84,7 +84,7 @@ class H3SkillPlanner:
         # Old frozen requests keep their original output contract during recovery.
         if request.get("prompt_format") == PROMPT_FORMAT:
             sections = REFERENCE_SECTIONS if plan["mode"] == "R2V" else BASE_SECTIONS
-            pattern = r"^(" + "|".join(dict.fromkeys((*BASE_SECTIONS, *REFERENCE_SECTIONS))) + r"):"
+            pattern = r"^[ \t]*(" + "|".join(dict.fromkeys((*BASE_SECTIONS, *REFERENCE_SECTIONS))) + r"):"
             headings = list(re.finditer(pattern, plan["prompt"], re.MULTILINE))
             if tuple(match[1] for match in headings) != sections:
                 raise ValueError("H3 提示词缺少官方字段或字段顺序不正确")

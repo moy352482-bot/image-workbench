@@ -29,6 +29,7 @@ class StoryboardHTTPTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.storage = StorageManager(StorageConfig(data_root=self.root / "data"))
         self.app = create_app(self.storage, backend="local")
+        self.app.video_store.enabled_backends = ("h3", "online-2.0")  # Legacy queue compatibility fixture.
         self.identity = self.app.identity
         with self.identity.transaction() as db:
             self.aid, self.wid = self.identity._account(db, "storyboard_alice", None)

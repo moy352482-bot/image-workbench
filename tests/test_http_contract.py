@@ -10,6 +10,9 @@ def assert_schema_compatible(expected, actual, path="schema"):
     if isinstance(expected, dict):
         if not isinstance(actual, dict):
             raise AssertionError(f"{path}: schema type changed")
+        if "const" in expected and "enum" in actual and expected["const"] in actual["enum"]:
+            actual = {k: v for k, v in actual.items() if k != "enum"}
+            actual["const"] = expected["const"]
         # Only properties/definitions can grow without changing old requests.
         new_keys = set(actual) - set(expected) - {"properties", "$defs", "required"}
         if new_keys:
@@ -19,6 +22,8 @@ def assert_schema_compatible(expected, actual, path="schema"):
             raise AssertionError(f"{path}: required fields changed: {old_required} -> {new_required}")
         for key, value in expected.items():
             if key == "required":
+                continue
+            if key == "enum" and set(value).issubset(actual.get("enum", [])):
                 continue
             if key not in actual:
                 raise AssertionError(f"{path}.{key}: removed")
@@ -63,3 +68,11 @@ class HttpContractTests(unittest.TestCase):
             assert_schema_compatible(old, {**old, "properties": {"prompt": {"type": "string", "maxLength": 5}}})
         with self.assertRaisesRegex(AssertionError, "removed"):
             assert_schema_compatible(old, {**old, "properties": {}})
+
+    def test_enum_widening_preserves_all_old_inputs_but_narrowing_fails(self):
+        assert_schema_compatible({"type": "string", "const": "h3"}, {"type": "string", "enum": ["h3", "online-2.0"]})
+        assert_schema_compatible({"enum": ["mock", "codex"]}, {"enum": ["mock", "codex", "api"]})
+        with self.assertRaises(AssertionError):
+            assert_schema_compatible({"enum": ["mock", "codex"]}, {"enum": ["mock", "api"]})
+        with self.assertRaises(AssertionError):
+            assert_schema_compatible({"const": "h3"}, {"enum": ["online-2.0"]})

@@ -1,0 +1,27 @@
+[Unit]
+Description=Image Workbench image API worker
+After=network-online.target image-workbench.service
+Wants=network-online.target image-workbench.service
+PartOf=image-workbench.service
+
+[Service]
+Type=simple
+User=image-workbench
+Group=image-workbench
+WorkingDirectory=/opt/image-workbench/current
+EnvironmentFile=/etc/image-workbench.env
+Environment=PYTHONUNBUFFERED=1
+Environment=IMAGE_WORKBENCH_IMAGE_API_CONFIG=/etc/image-workbench-image-api.json
+ExecStart=/opt/image-workbench/current/.venv/bin/python -m image_workbench remote-worker --server ${IMAGE_WORKBENCH_PUBLIC_ORIGIN} --cache-root /var/lib/image-workbench-image-api --backend image-api --timeout 600
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=630
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/image-workbench-image-api
+
+[Install]
+WantedBy=multi-user.target
