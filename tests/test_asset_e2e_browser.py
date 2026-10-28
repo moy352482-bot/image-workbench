@@ -127,19 +127,21 @@ class AssetEndToEndBrowserTests(unittest.TestCase):
         self.assertEqual(stored.sha256, hashlib.sha256(png("red")).hexdigest())
         self.assertEqual(self.storage.get_artifact_path(stored.artifact_id).read_bytes(), png("red"))
         self.assertEqual(self.client.get(asset["url"]).content, png("red"))
-        card = self.page.locator(f'#assetTrayGrid [data-artifact-id="{stored.artifact_id}"]')
+        card = self.page.locator(f'#pipelineImageReferences input[value="{stored.artifact_id}"]').locator("..")
         expect(card).to_be_visible()
         self.evidence["paste_timing"] = self.page.evaluate("""() => ({
             preview_ms:window.assetTiming.preview_ms,
             registered_and_visible_ms:performance.now()-window.assetTiming.start
         })""")
         self.assertIsNotNone(self.evidence["paste_timing"]["preview_ms"])
-        # Exercise the shared action menu, not only paste's automatic selection.
-        self.page.locator(f'#pipelineImageReferences input[value="{stored.artifact_id}"]').uncheck()
+        # Remove and re-add through the current task, keeping the same stored asset.
+        card.get_by_role("button", name="移除参考图 red.png", exact=True).click()
+        expect(card).to_have_count(0)
         reference_started = time.perf_counter()
-        self.menu(card, "设为参考图")
+        self.assertTrue(self.event(colors=("red",)))
+        self.idle()
         expect(self.page.locator(f'#pipelineImageReferences input[value="{stored.artifact_id}"]')).to_be_checked()
-        self.evidence["tray_reference_ms"] = round((time.perf_counter() - reference_started) * 1000, 2)
+        self.evidence["direct_reference_ms"] = round((time.perf_counter() - reference_started) * 1000, 2)
         self.page.locator("#pipelineImagePrompt").fill(prompt)
         with self.page.expect_response(lambda response: response.request.method == "POST"
                                        and response.url.endswith(f"/api/video/projects/{self.pid}/images")) as saved:
