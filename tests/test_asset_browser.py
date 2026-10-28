@@ -56,6 +56,7 @@ class AssetBrowserTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.storage = StorageManager(StorageConfig(data_root=self.root / "data"))
         self.app = create_app(self.storage, backend="local")
+        self.app.video_store.enabled_backends = ("h3", "online-2.0")  # Exercise legacy accepted work and clients.
         identity = self.app.identity
         with identity.transaction() as db:
             self.aid, self.wid = identity._account(db, "asset_browser", None)

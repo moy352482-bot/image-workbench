@@ -22,6 +22,7 @@ class BackendRequest:
     timeout_seconds: float
     max_image_bytes: int
     performance: PerformanceTrace | None = field(default=None, compare=False, repr=False)
+    aspect_ratio: str = "auto"
 
 
 @dataclass(frozen=True)

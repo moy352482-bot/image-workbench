@@ -1,0 +1,5 @@
+{
+  "base_url": "https://your-domain.com",
+  "api_key": "REPLACE_WITH_IMAGE_API_KEY",
+  "model": "gpt-image-2"
+}

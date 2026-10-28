@@ -303,7 +303,7 @@ class TaskRunner:
                 request = BackendRequest(
                     execution_id, execution_task, work, tuple(reference_paths), edit_image,
                     stdout, stderr, timeout_seconds, self.storage.config.max_image_bytes,
-                    performance,
+                    performance, aspect_ratio=(options or {}).get("aspect_ratio", "auto"),
                 )
                 self.storage.files.write_json(work / "request.json", {
                     "schema_version": 1, "execution_id": execution_id, "task": asdict(execution_task),

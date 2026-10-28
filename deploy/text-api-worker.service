@@ -1,0 +1,18 @@
+[Unit]
+Description=Image Workbench DeepSeek text worker
+After=network-online.target image-workbench.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=image-workbench
+Group=image-workbench
+WorkingDirectory=/opt/image-workbench/current
+Environment=IMAGE_WORKBENCH_TEXT_API_CONFIG=/etc/image-workbench-deepseek.json
+ExecStart=/opt/image-workbench/current/.venv/bin/python -m image_workbench.script_remote_worker --config /etc/image-workbench-text-worker.json
+Restart=always
+RestartSec=10
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

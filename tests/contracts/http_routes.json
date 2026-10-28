@@ -3599,7 +3599,7 @@
               "additionalProperties": false,
               "properties": {
                 "backend": {
-                  "pattern": "^(codex|local)$",
+                  "pattern": "^(codex|local|image-api)$",
                   "title": "Backend",
                   "type": "string"
                 },

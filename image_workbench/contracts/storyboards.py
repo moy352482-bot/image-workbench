@@ -10,7 +10,7 @@ class Body(BaseModel):
 
 
 class PlanningOptions(Body):
-    mode: Literal["mock", "codex"] = "mock"
+    mode: Literal["mock", "codex", "api"] = "mock"
     selection_mode: Literal["recommended", "manual"] = "recommended"
     model_id: str | None = Field(default=None, max_length=100)
     thinking_level: str | None = Field(default=None, max_length=100)
@@ -21,7 +21,7 @@ class PlanningOptions(Body):
     scenes: str = Field(default="", max_length=12000)
     requirements: str = Field(default="", max_length=12000)
     reference_artifact_ids: list[str] = Field(default_factory=list, max_length=9)
-    video_model_id: Literal["h3"] = "h3"
+    video_model_id: Literal["h3", "online-2.0"] = "h3"
     video_project_id: str | None = Field(default=None, pattern=ID)
 
 

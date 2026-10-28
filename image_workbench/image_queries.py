@@ -77,9 +77,10 @@ class ImageQueries:
             result["workspace_id"] = self.state.identity.ownership(main["main_project_id"])["workspace_id"]
             if result["credit_status"] == "credit_insufficient":
                 result.update(status="credit_insufficient", status_label="积分不足")
+        valid_options = not options or (options["state"] == "ready" and not options.get("asset_library"))
+        result["can_generate"] = status == "draft" and valid_options
         if not detail:
             return result
-        valid_options = not options or (options["state"] == "ready" and not options.get("asset_library"))
         result.update(
             image_prompt=(options or {}).get("image_prompt"),
             inputs=[self.artifact_dto(item, catalog=catalog) for item in inputs], outputs=[self.artifact_dto(item, catalog=catalog) for item in outputs],
@@ -87,7 +88,6 @@ class ImageQueries:
             aspect_ratio=options["aspect_ratio"] if options else "auto",
             current_job={key: job[key] for key in ("job_id", "status", "created_at", "started_at", "finished_at")} if job else None,
             last_execution_id=latest.execution_id if latest else None,
-            can_generate=status == "draft" and valid_options,
             can_retry=status == "failed" and valid_options,
             can_restore=status == "failed" and bool(latest and latest.candidates),
             error_summary=("本次执行已中断，不会自动重试或提交新的生成请求。" if confirmed_interruption else

@@ -125,6 +125,9 @@ class DemandRouter:
         if request.get("selection_mode", "recommended") == "manual":
             choice = self.registry.resolve(request.get("model_id"), request.get("thinking_level"), request["generation_type"])
             return choice, "使用用户明确选择", None
+        fixed = _json(self.registry.root / "script_routing.json").get("fixed_model")
+        if fixed:
+            return self.registry.resolve(*fixed, request["generation_type"]), "使用 DeepSeek Flash 与预设创作 Skill", None
         if template.get("default_model_id") and template.get("default_thinking_level"):
             choice = self.registry.resolve(template["default_model_id"], template["default_thinking_level"], request["generation_type"])
             return choice, "使用模板默认模型与思考强度", None

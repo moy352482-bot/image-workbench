@@ -1,0 +1,1 @@
+{"server": "https://your-workbench.example", "worker_token": "MATCH_SERVER_WORKER_TOKEN", "cache_root": "/var/lib/image-workbench-text-api"}

@@ -16,6 +16,7 @@ class VideoStateBrowserTests(unittest.TestCase):
     video = fixtures.AssetBrowserTests.video
     event = fixtures.AssetBrowserTests.event
     idle = fixtures.AssetBrowserTests.idle
+    files = fixtures.AssetBrowserTests.files
 
     @classmethod
     def setUpClass(cls):
@@ -37,9 +38,82 @@ class VideoStateBrowserTests(unittest.TestCase):
         self.post(f"/api/video/projects/{pid}/pipeline", json={})
         return pid
 
+    def test_deleted_current_project_clears_and_file_picker_and_drop_start_new_work(self):
+        self.video()
+        self.page.locator("#pipelineImagePrompt").fill("保留尚未提交的图片需求")
+        self.page.locator("#videoShotPrompt").evaluate("input => { input.value = '保留尚未提交的镜头描述'; }")
+        mid = self.link["main_project_id"]
+        response = self.client.delete(f"/api/project-actions/{mid}")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.page.locator("#videoRefresh").click()
+        self.page.wait_for_function("() => window.IWVideo.snapshot().project === null")
+        expect(self.page.locator("#videoNotice")).to_contain_text("回收站")
+        expect(self.page.locator("#pipelineImagePrompt")).to_have_value("保留尚未提交的图片需求")
+        expect(self.page.locator("#videoShotPrompt")).to_have_value("保留尚未提交的镜头描述")
+        self.page.locator('[data-pipeline-tab="image"][data-mode="upload"]').click()
+        expect(self.page.locator('[data-pipeline-pane="image:upload"]')).to_be_visible()
+        self.page.locator("#videoAssets").set_input_files(self.files("red"))
+        self.idle()
+        expect(self.page.locator("#videoAssetGrid img")).to_have_count(1)
+        self.assertTrue(self.event("drop", ("blue",), '[data-pipeline-pane="image:upload"]'))
+        self.idle()
+        expect(self.page.locator("#videoAssetGrid img")).to_have_count(2)
+        self.page.wait_for_function("() => [...document.querySelectorAll('#videoAssetGrid img')].every(img => img.complete && img.naturalWidth > 0)")
+        new_pid = self.page.evaluate("() => window.IWVideo.snapshot().project.project_id")
+        self.assertNotEqual(new_pid, self.pid)
+        self.assertEqual(self.app.identity.wallet(self.aid)["remaining_credit"], 200)
+
+    def test_deleted_project_is_not_auto_selected_and_restored_images_load(self):
+        asset = self.post(f"/api/video/projects/{self.pid}/assets", files=[
+            ("files", ("original.png", png(), "image/png"))])["assets"][0]
+        mid = self.link["main_project_id"]
+        self.assertEqual(self.client.delete(f"/api/project-actions/{mid}").status_code, 200)
+        self.page.goto(self.origin + "/video?project=" + self.pid, wait_until="networkidle")
+        self.assertIsNone(self.page.evaluate("() => window.IWVideo.snapshot().project"))
+        expect(self.page.locator("#videoProjectList .video-project-button")).to_have_count(0)
+        self.post(f"/api/project-actions/{mid}/restore", json={})
+        self.page.reload(wait_until="networkidle")
+        expect(self.page.locator("#videoAssetGrid img")).to_have_count(1)
+        self.page.wait_for_function("() => document.querySelector('#videoAssetGrid img')?.naturalWidth > 0")
+        self.assertEqual(self.page.evaluate("() => window.IWVideo.snapshot().project.assets[0].asset_id"), asset["asset_id"])
+
     def select(self, pid):
         self.page.evaluate("id => window.IWVideo.selectProject(id)", pid)
         self.page.wait_for_function("id => window.IWVideo.snapshot().project?.project_id === id", arg=pid)
+
+    def test_online_only_switch_keeps_skill_and_saves_online_draft(self):
+        self.app.video_store.enabled_backends = ("online-2.0",)
+        self.video()
+        self.page.locator('[data-pipeline-step="video"]').click()
+        expect(self.page.locator('#videoBackend')).to_have_value('online-2.0')
+        expect(self.page.locator('#videoBackend option[value="h3"]')).to_have_count(0)
+        expect(self.page.locator('#videoMode')).to_have_value('T2V')
+        expect(self.page.locator('#videoBackendHelp')).to_contain_text('SD2.0 Skill')
+        self.page.locator('#videoShotName').fill('在线镜头')
+        self.page.locator('#videoShotPrompt').fill('光线落在桌面')
+        self.page.locator('#videoShotForm button[type="submit"]').click()
+        expect(self.page.locator('#videoNotice')).to_contain_text('分镜已保存')
+        shot = self.get(f"/api/video/projects/{self.pid}")['shots'][-1]
+        self.assertEqual((shot['backend'], shot['mode']), ('online-2.0', 'T2V'))
+
+    def test_online_backend_saves_text_draft_and_preserves_h3_references(self):
+        self.post(f"/api/video/projects/{self.pid}/assets", files=[("files", ("red.png", png(), "image/png"))])
+        self.video()
+        self.page.locator('[data-pipeline-step="video"]').click()
+        self.page.locator('#videoMode').select_option('I2V')
+        self.page.locator('#videoReferenceChoices input').first.check()
+        self.page.locator('#videoBackend').select_option('online-2.0')
+        expect(self.page.locator('#videoMode')).to_have_value('T2V')
+        expect(self.page.locator('#videoMode')).to_be_disabled()
+        self.page.locator('#videoShotName').fill('在线测试草稿')
+        self.page.locator('#videoShotPrompt').fill('红色纸片缓慢旋转')
+        self.page.locator('#videoShotForm button[type="submit"]').click()
+        expect(self.page.locator('#videoNotice')).to_contain_text('分镜已保存')
+        shot = self.get(f"/api/video/projects/{self.pid}")['shots'][-1]
+        self.assertEqual((shot['backend'], shot['mode'], shot['reference_ids']), ('online-2.0', 'T2V', []))
+        self.page.locator('#videoBackend').select_option('h3')
+        expect(self.page.locator('#videoMode')).to_have_value('I2V')
+        self.assertTrue(self.page.locator('#videoReferenceChoices input').first.is_checked())
 
     def test_snapshots_and_events_cannot_mutate_state_and_reference_order_is_owned(self):
         assets = self.post(f"/api/video/projects/{self.pid}/assets", files=[

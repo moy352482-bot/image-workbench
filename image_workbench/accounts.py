@@ -35,7 +35,7 @@ class CreditInsufficient(ValueError):
 
 class CreditCostCalculator:
     # 政策由服务端维护；模型名来自服务端配置，不能由客户端提交价格。
-    policies = {"codex": (40, 60), "local": (40, 60)}
+    policies = {"codex": (40, 60), "local": (40, 60), "image-api": (40, 60)}
 
     @classmethod
     def calculate(cls, operation, model, image_count=1, reference_count=0):
