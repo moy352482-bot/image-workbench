@@ -63,7 +63,7 @@ class PipelineTests(unittest.TestCase):
     def test_page_has_three_generate_upload_steps_and_visible_reference_input(self):
         page = self.alice.get("/video")
         self.assertEqual(page.status_code, 200)
-        for value in ("pipelineImages", "pipelineScripts", "pipelineVideos", "pipelineImageReferenceFiles", "pipelineScriptUpload", "pipelineVideoUpload", "上传参考图", "生成参考图", "生成脚本", "H3 生成视频"):
+        for value in ("pipelineImages", "pipelineScripts", "pipelineVideos", "pipelineImageReferenceFiles", "pipelineScriptUpload", "pipelineVideoUpload", "上传参考图", "生成参考图", "生成脚本", "生成视频", "本机 H3", "在线视频 2.0"):
             self.assertIn(value, page.text)
         self.assertNotIn('id="videoProjectDetail" hidden', page.text)
         self.assertNotIn('data-pipeline-pane="image:upload" hidden', page.text)

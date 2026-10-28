@@ -1,5 +1,6 @@
 """Real browser coverage for scoped video state and late pipeline responses."""
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 from playwright.sync_api import expect, sync_playwright
@@ -80,6 +81,40 @@ class VideoStateBrowserTests(unittest.TestCase):
     def select(self, pid):
         self.page.evaluate("id => window.IWVideo.selectProject(id)", pid)
         self.page.wait_for_function("id => window.IWVideo.snapshot().project?.project_id === id", arg=pid)
+
+    @patch.dict("os.environ", {"IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS": "1"})
+    def test_online_only_switch_keeps_skill_and_saves_online_draft(self):
+        self.video()
+        self.page.locator('[data-pipeline-step="video"]').click()
+        expect(self.page.locator('#videoBackend')).to_have_value('online-2.0')
+        self.assertTrue(self.page.locator('#videoBackend option[value="h3"]').is_disabled())
+        expect(self.page.locator('#videoMode')).to_have_value('T2V')
+        expect(self.page.locator('#videoBackendHelp')).to_contain_text('H3 Skill')
+        self.page.locator('#videoShotName').fill('在线镜头')
+        self.page.locator('#videoShotPrompt').fill('光线落在桌面')
+        self.page.locator('#videoShotForm button[type="submit"]').click()
+        expect(self.page.locator('#videoNotice')).to_contain_text('分镜已保存')
+        shot = self.get(f"/api/video/projects/{self.pid}")['shots'][-1]
+        self.assertEqual((shot['backend'], shot['mode']), ('online-2.0', 'T2V'))
+
+    def test_online_backend_saves_text_draft_and_preserves_h3_references(self):
+        self.post(f"/api/video/projects/{self.pid}/assets", files=[("files", ("red.png", png(), "image/png"))])
+        self.video()
+        self.page.locator('[data-pipeline-step="video"]').click()
+        self.page.locator('#videoMode').select_option('I2V')
+        self.page.locator('#videoReferenceChoices input').first.check()
+        self.page.locator('#videoBackend').select_option('online-2.0')
+        expect(self.page.locator('#videoMode')).to_have_value('T2V')
+        expect(self.page.locator('#videoMode')).to_be_disabled()
+        self.page.locator('#videoShotName').fill('在线测试草稿')
+        self.page.locator('#videoShotPrompt').fill('红色纸片缓慢旋转')
+        self.page.locator('#videoShotForm button[type="submit"]').click()
+        expect(self.page.locator('#videoNotice')).to_contain_text('分镜已保存')
+        shot = self.get(f"/api/video/projects/{self.pid}")['shots'][-1]
+        self.assertEqual((shot['backend'], shot['mode'], shot['reference_ids']), ('online-2.0', 'T2V', []))
+        self.page.locator('#videoBackend').select_option('h3')
+        expect(self.page.locator('#videoMode')).to_have_value('I2V')
+        self.assertTrue(self.page.locator('#videoReferenceChoices input').first.is_checked())
 
     def test_snapshots_and_events_cannot_mutate_state_and_reference_order_is_owned(self):
         assets = self.post(f"/api/video/projects/{self.pid}/assets", files=[

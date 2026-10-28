@@ -34,6 +34,7 @@ class Shot(Body):
     aspect_ratio: Literal["landscape", "portrait", "square"]
     reference_ids: list[str] = Field(default_factory=list, max_length=9)
     resolution: Literal["720p", "1080p"] = "720p"
+    backend: Literal["h3", "online-2.0"] = "h3"
 
 
 class Run(Body):
@@ -45,6 +46,12 @@ class Run(Body):
 
 class Claim(Body):
     worker_id: str = Field(pattern=ID)
+    backend: Literal["h3", "online-2.0"] = "h3"
+    stage: Literal["generation", "planning"] = "generation"
+
+
+class Plan(Body):
+    plan: dict
 
 
 class Start(Body):
@@ -152,7 +159,12 @@ def install_video(app, store, pipeline=None):
 
     @app.post("/api/worker/video/claim")
     def claim(body: Claim):
-        return {"job": store.claim(body.worker_id)}
+        return {"job": store.claim(body.worker_id) if body.backend == "h3" and body.stage == "generation"
+                else store.claim(body.worker_id, body.backend, body.stage)}
+
+    @app.post("/api/worker/video/jobs/{job_id}/plan")
+    def plan(job_id: str, body: Plan, request: Request):
+        return store.complete_plan(job_id, *worker(request), body.plan)
 
     @app.post("/api/worker/video/jobs/{job_id}/start")
     def start(job_id: str, body: Start, request: Request):

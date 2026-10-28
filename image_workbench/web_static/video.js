@@ -28,6 +28,7 @@
   function shotChanged() { state.shotRevision++; state.shotRequest = uuid(); }
   function setReferences(ids, {context = captureContext(), mode = $('videoMode').value} = {}) {
     if (!isCurrent(context, context.id, true)) return false;
+    if ($('videoBackend').value === 'online-2.0' && (ids.length || mode !== 'T2V')) throw new Error('在线视频 2.0 暂不支持参考图，请切换到本机 H3');
     const order = [...new Set(ids)];
     if (!state.project || order.some(id => !state.project.assets.some(asset => asset.asset_id === id))) throw new Error('参考图片不属于当前项目，请刷新后重新选择');
     if (!Object.hasOwn(modes, mode) || order.length > (mode === 'I2V' ? 1 : mode === 'FL2V' ? 2 : 9)) throw new Error('参考图片数量不符合当前模式');
@@ -106,7 +107,7 @@
   function resolutionView() {
     const resolution = $('videoResolution').value;
     const rate = rateFor(resolution);
-    $('videoFixedPrice').textContent = rate ? `${resolution} · ${rate} 积分 / 秒 · 平台预设价格` : '正在读取预设价格';
+    $('videoFixedPrice').textContent = rate ? `${resolution} · ${rate} 积分 / 秒 · 平台预设价格${$('videoBackend').value === 'online-2.0' ? ' · 在线输出按所选尺寸缩放' : ''}` : '正在读取预设价格';
     for (const option of $('videoRatio').options) {
       const size = state.config?.resolutions?.[resolution]?.[option.value];
       option.textContent = `${ratioNames[option.value]}${size ? ` · ${size.width} × ${size.height}` : ''}`;
@@ -122,7 +123,13 @@
   function configView() {
     const c = state.config;
     const enabled = enabledResolutions();
-    $('videoWorkerStatus').textContent = c.worker_online ? 'H3 执行器在线' : 'H3 执行器离线 · 新任务排队';
+    const h3Option = $('videoBackend').querySelector('option[value="h3"]');
+    h3Option.disabled = c.local_h3_available === false;
+    h3Option.hidden = c.local_h3_available === false;
+    if (h3Option.disabled && $('videoBackend').value === 'h3') { $('videoBackend').value = 'online-2.0'; updateBackend(); }
+    const backend = $('videoBackend').value;
+    const online = backend === 'h3' ? c.worker_online : c.workers_online?.[backend] && c.workers_online?.['online-planner'];
+    $('videoWorkerStatus').textContent = `${backend === 'h3' ? 'H3' : '在线视频 2.0'} 执行器${online ? '在线' : '离线 · 新任务排队'}`;
     $('videoAdminLink').hidden = !state.account.is_admin;
     document.querySelectorAll('.qwen-test-link').forEach(link => { link.hidden = !state.account.is_admin; });
     const previous = $('videoResolution').value;
@@ -130,6 +137,7 @@
     for (const resolution of enabled) {
       const option = el('option', '', resolution);
       option.value = resolution;
+      option.disabled = backend === 'online-2.0' && resolution !== '720p';
       $('videoResolution').append(option);
     }
     $('videoResolution').value = enabled.includes(previous) ? previous : enabled[0] || '';
@@ -183,6 +191,25 @@
     for (const input of $('videoReferenceChoices').querySelectorAll('input')) input.disabled = mode === 'T2V';
     referenceLabels();
   }
+  function updateBackend() {
+    if (state.config?.local_h3_available === false) $('videoBackend').value = 'online-2.0';
+    const online = $('videoBackend').value === 'online-2.0';
+    if (online) {
+      $('videoMode').dataset.previous = $('videoMode').value;
+      $('videoMode').value = 'T2V';
+      $('videoResolution').value = '720p';
+      if (![5, 10, 15].includes(Number($('videoDuration').value))) $('videoDuration').value = '5';
+    } else if ($('videoMode').dataset.previous) {
+      $('videoMode').value = $('videoMode').dataset.previous;
+      delete $('videoMode').dataset.previous;
+    }
+    $('videoMode').disabled = online;
+    for (const option of $('videoResolution').options) option.disabled = online && option.value !== '720p';
+    $('videoBackendHelp').textContent = online ? '保留 H3 Skill 整理提示词，使用在线视频 2.0 生成；支持文生视频，时长 5、10 或 15 秒。参考图暂未开放。' : '本机 H3 支持参考图、首帧和首尾帧。';
+    const isOnline = online ? state.config?.workers_online?.['online-2.0'] && state.config?.workers_online?.['online-planner'] : state.config?.worker_online;
+    $('videoWorkerStatus').textContent = `${online ? '在线视频 2.0' : 'H3'} 执行器${isOnline ? '在线' : '离线 · 新任务排队'}`;
+    updateMode(); resolutionView(); shotChanged();
+  }
   function referenceLabels() {
     const mode = $('videoMode').value;
     for (const label of $('videoReferenceChoices').querySelectorAll('label')) {
@@ -209,7 +236,7 @@
       const cost = job?.credit_cost ?? expected;
       const size = Number.isInteger(shot.width) && Number.isInteger(shot.height) ? ` · ${shot.width} × ${shot.height}` : '';
       const displayMode = shot.mode === 'I2V' && shot.reference_ids?.length === 2 ? 'FL2V' : shot.mode;
-      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${modes[displayMode] || displayMode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
+      const meta = shot.source === 'upload' ? '用户上传 · MP4 · 0 积分' : `${shot.backend === 'online-2.0' ? '在线视频 2.0 · ' : 'H3 · '}${modes[displayMode] || displayMode} · ${resolution || '旧版分镜'}${size} · ${shot.duration} 秒 · ${(shot.reference_ids || []).length} 张参考图${cost != null ? ` · ${cost} 积分` : resolution ? ' · 待设置价格' : ''}`;
       copy.append(heading, el('p', 'video-shot-meta', meta), el('p', 'video-shot-prompt', shot.prompt));
       if (status === 'failed' || status === 'uncertain') copy.append(el('p', 'field-hint', status === 'uncertain' ? '原任务结果尚未确认，积分仍冻结。请联系管理员核对执行器；不会自动重复生成。' : `本次未完成，冻结积分已退回。${requiresRebuild || blockedReason ? '' : '可检查素材后重新提交。'}`));
       const actions = el('div', 'video-shot-actions');
@@ -228,7 +255,9 @@
             if (status === 'failed') body.retry_of = job.job_id;
             await api(`/api/video/projects/${project.project_id}/shots/${shot.shot_id}/run`, { method: 'POST', body: JSON.stringify(body) });
             if (!isCurrent(context)) return;
-            notice(`镜头已排队，已冻结 ${expected} 积分。${state.config.worker_online ? '' : '执行器上线后会继续处理。'}`);
+            const workers = state.config.workers_online;
+            const online = shot.backend === 'online-2.0' ? workers?.['online-2.0'] && workers?.['online-planner'] : state.config.worker_online;
+            notice(`镜头已排队，已冻结 ${expected} 积分。${online ? '' : '执行器上线后会继续处理。'}`);
             await refresh(context);
           }));
           actions.append(button);
@@ -237,7 +266,7 @@
       if (shot.download_url) {
         const link = el('a', 'secondary-button', '下载 MP4'); link.href = mediaURL(shot.download_url); actions.append(link);
       }
-      if (status === 'queued') actions.append(el('span', 'field-hint', '等待本机算力 · 不会重复提交'));
+      if (status === 'queued') actions.append(el('span', 'field-hint', '等待执行器 · 不会重复提交'));
       if (shot.output_url && window.IWAssetTray) actions.append(window.IWAssetTray.videoActions({artifact_id:shot.artifact_id || shot.output?.artifact_id,media_type:'video',shot_id:shot.shot_id,filename:shot.name,url:mediaURL(shot.output_url),download_url:mediaURL(shot.download_url)}));
       if (shot.bound_clip) { const preview=el('button','text-button','预览绑定视频'); preview.type='button'; preview.addEventListener('click',()=>window.IWAssetActions.preview({...shot.bound_clip,media_type:'video',filename:shot.name})); actions.append(preview); }
       copy.append(actions);
@@ -270,7 +299,7 @@
       const project = await api(`/api/video/projects/${id}`);
       if (state.selectingProject !== selection || state.switchingWorkspace || selection.workspace !== state.account?.workspace_id) return;
       state.selectingProject = null;
-      if (!preserveDraft) { $('videoShotForm').reset(); shotChanged(); }
+      if (!preserveDraft) { $('videoShotForm').reset(); updateBackend(); }
       state.referenceOrder = []; $('videoReferenceChoices').replaceChildren();
       projectView(project, true, preserveDraft); resolutionView();
       const url = new URL(location.href); url.searchParams.set('project', id); history.replaceState(null, '', url);
@@ -327,7 +356,7 @@
   function clearProject(preserveDraft = false) {
     state.draftRevision = (state.draftRevision || 0) + 1; state.selectingProject = null; state.project = null; state.projectSignature = '';
     state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; shotChanged();
-    if (!preserveDraft) $('videoShotForm').reset();
+    if (!preserveDraft) { $('videoShotForm').reset(); updateBackend(); }
     $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
     renderAssets({ assets: [] }); renderShots({ shots: [] });
     document.dispatchEvent(new CustomEvent('video-project-cleared', {detail: {preserveDraft}})); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
@@ -342,16 +371,18 @@
       const context = captureContext();
       const mode = $('videoMode').value;
       const refs = mode === 'T2V' ? [] : [...state.referenceOrder];
+      if ($('videoBackend').value === 'online-2.0' && ![5, 10, 15].includes(Number($('videoDuration').value))) throw new Error('在线视频 2.0 的时长请选择 5、10 或 15 秒');
       if (mode === 'I2V' && refs.length !== 1) throw new Error('首帧模式需要选择 1 张参考图');
       if (mode === 'FL2V' && refs.length !== 2) throw new Error('首尾帧模式需要选择 2 张参考图，依次为首帧和尾帧');
       if (mode === 'R2V' && (refs.length < 1 || refs.length > 9)) throw new Error('参考素材模式需要选择 1–9 张参考图');
-      await api(`/api/video/projects/${id}/shots`, { method: 'POST', body: JSON.stringify({ request_id: state.shotRequest, name: $('videoShotName').value.trim(), prompt: $('videoShotPrompt').value.trim(), mode: mode === 'FL2V' ? 'I2V' : mode, duration: Number($('videoDuration').value), resolution: $('videoResolution').value, aspect_ratio: $('videoRatio').value, reference_ids: refs }) });
+      await api(`/api/video/projects/${id}/shots`, { method: 'POST', body: JSON.stringify({ request_id: state.shotRequest, name: $('videoShotName').value.trim(), prompt: $('videoShotPrompt').value.trim(), mode: mode === 'FL2V' ? 'I2V' : mode, duration: Number($('videoDuration').value), resolution: $('videoResolution').value, aspect_ratio: $('videoRatio').value, reference_ids: refs, backend: $('videoBackend').value }) });
       if (!isCurrent(context)) return;
       if (isCurrent(context, id, true)) { shotChanged(); $('videoShotName').value = ''; $('videoShotPrompt').value = ''; }
       await refresh(context); notice('分镜已保存。检查内容和积分后，点击对应镜头的“生成视频”。');
     });
   });
   $('videoMode').addEventListener('change', updateMode);
+  $('videoBackend').addEventListener('change', updateBackend);
   $('videoShotForm').addEventListener('input', shotChanged);
   $('videoShotForm').addEventListener('change', shotChanged);
   $('videoResolution').addEventListener('change', resolutionView);

@@ -152,6 +152,8 @@
       "modules": [
         "video_store",
         "h3_worker",
+        "online_video_worker",
+        "online_video_planner",
         "h3_skill"
       ],
       "may_import": [

@@ -79,6 +79,41 @@ class VideoTests(unittest.TestCase):
     def wallet(self):
         return self.identity.wallet(self.aid)
 
+    def test_online_backend_validation_and_independent_queue(self):
+        self.store.set_config(self.admin, {"720p": 2, "1080p": 4})
+        for extra in ({"duration": 6}, {"mode": "I2V"}, {"reference_ids": [uid()]}):
+            with self.assertRaises(ValueError):
+                self.shot(backend="online-2.0", **extra)
+        h3 = self.submit(self.shot())
+        online = self.submit(self.shot(backend="online-2.0"))
+        h3_worker, online_worker, planner = uid(), uid(), uid()
+        self.assertIsNone(self.store.claim(online_worker, "online-2.0"))
+        manifest = self.store.claim(planner, "online-2.0", "planning")
+        self.assertEqual(manifest["job_id"], online["job_id"])
+        task = manifest["task"]
+        keys = ("mode", "duration", "resolution", "aspect_ratio", "width", "height", "reference_ids")
+        plan = {"schema_version": 1, **{key: task[key] for key in keys},
+                "prompt": "integrated_multimodal_description: scene\noverall_soundscape: sound\nnon_diegetic_music: music"}
+        with self.assertRaises(ValueError):
+            self.store.complete_plan(online["job_id"], planner, manifest["claim_id"], {**plan, "duration": 10})
+        self.assertIsNone(self.store.claim(online_worker, "online-2.0"))
+        self.assertEqual(self.store.complete_plan(online["job_id"], planner, manifest["claim_id"], plan), {"ok": True})
+        online_manifest = self.store.claim(online_worker, "online-2.0")
+        self.assertEqual(online_manifest["job_id"], online["job_id"])
+        self.assertEqual(online_manifest["task"]["prompt"], plan["prompt"])
+        self.assertEqual(self.store.complete_plan(online["job_id"], planner, manifest["claim_id"], plan), {"ok": True})
+        self.assertEqual(self.store.claim(h3_worker)["job_id"], h3["job_id"])
+        self.assertEqual(self.wallet()["frozen_credit"], 20)
+        self.assertEqual(self.store.config()["workers_online"], {"h3": True, "online-2.0": True, "online-planner": True})
+
+    @patch.dict("os.environ", {"IMAGE_WORKBENCH_DISABLE_H3_SUBMISSIONS": "1"})
+    def test_disabled_local_h3_rejects_new_submission_without_reservation(self):
+        shot = self.shot()
+        self.assertIn("旧版本机 H3", shot["run_blocked_reason"])
+        with self.assertRaises(ConflictError):
+            self.submit(shot, expected_credit=200)
+        self.assertEqual(self.wallet()["frozen_credit"], 0)
+
     def test_default_tier_rates_admin_validation_quote_snapshot_and_idempotency(self):
         shot = self.shot()
         self.assertEqual(self.store.config()["rates"], {"720p": 40, "1080p": 80})
