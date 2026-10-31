@@ -47,6 +47,7 @@ HTTP 经 `WorkspaceProjects` 和 `WorkspaceStorage` 验证所属账号和空间�
 | 情况 | execution_status | credit_status |
 | --- | --- | --- |
 | 未提交 | waiting_credit | waiting_credit |
+| 迁移前历史任务无积分流水 | credit_unknown | credit_unknown |
 | 不足 | credit_insufficient | credit_insufficient |
 | 冻结排队 | credit_frozen | credit_frozen |
 | 开始或结果未知 | running | running |
@@ -55,7 +56,7 @@ HTTP 经 `WorkspaceProjects` 和 `WorkspaceStorage` 验证所属账号和空间�
 
 不足返回 HTTP 402 和预计/剩余积分，不创建执行作业、不启动模型。中断结果未知时保留冻结，显示“状态待确认”；通过既有人工确认停止流程确认失败后退款。恢复归档失败也退款，显式重试才重新冻结。
 
-任务 DTO 的 `estimated_credit` 是按当前策略计算的下一次执行报价；已有预约另返回 `reserved_credit`，为账本保存的本次实际冻结/扣除/退款金额。后续政策改变不会改写已冻结或历史结算金额，界面分别展示本次金额与可能不同的重试报价。
+任务 DTO 的 `estimated_credit` 是按当前策略计算的下一次执行报价；已有预约另返回 `reserved_credit`，为账本保存的本次实际冻结/扣除/退款金额。后续政策改变不会改写已冻结或历史结算金额，界面分别展示本次金额与可能不同的重试报价。迁移前已有执行记录或产物、但没有冻结/结算预约的历史任务返回 `credit_unknown`，界面显示“待确认”，不把当前报价当作历史账单；后续显式重试仍按新报价冻结。已结算预约优先于之后的余额不足拒绝记录，退款事实不会因重试被拒而消失。
 
 ## 登录
 

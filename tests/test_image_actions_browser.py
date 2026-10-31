@@ -65,7 +65,7 @@ class ImageActionsBrowserTests(unittest.TestCase):
         self.page.locator("#promptInput").fill(text)
         self.page.locator("#ratioSelect").select_option(ratio)
         self.page.locator("#imageStyleSelect").select_option(style)
-        task = self.save_root_task()
+        task = self.save_root_task(generate=False)
         expect(self.page.locator("#saveTaskButton")).to_be_enabled()
         return task
 
@@ -78,9 +78,9 @@ class ImageActionsBrowserTests(unittest.TestCase):
         self.page.locator("#ratioSelect").select_option("2:3")
         self.page.locator("#imageStyleSelect").select_option("commercial-product")
         with self.page.expect_response(lambda response: response.request.method == "POST" and response.url.endswith("/run")) as submitted:
-            self.page.locator("#generateTaskButton").evaluate("button => { button.click(); button.click(); }")
+            self.page.locator("#saveTaskButton").evaluate("button => { button.click(); button.click(); }")
         self.assertEqual(submitted.value.status, 200)
-        expect(self.page.locator("#generateTaskButton")).to_be_enabled()
+        expect(self.page.locator("#saveTaskButton")).to_be_enabled()
         tasks = self.get(f"/api/subprojects/{self.link['subproject_id']}/tasks")["tasks"]
         self.assertEqual(len(tasks), 1)
         self.assertEqual(len(self.app.state.workbench.list_jobs()), 1)
@@ -173,9 +173,9 @@ class ImageActionsBrowserTests(unittest.TestCase):
         # Keep interception enabled while the UI immediately reloads the task list.
         # Removing the last route during abort can strand that GET in Chromium.
         self.page.route("**/api/tasks/*/run", fail_first_submission)
-        self.page.locator("#generateTaskButton").click()
+        self.page.locator("#saveTaskButton").click()
         expect(self.page.locator("#formMessage")).to_contain_text("任务已保存，生成提交未确认")
-        expect(self.page.locator("#promptInput")).to_have_value("")
+        expect(self.page.locator("#promptInput")).to_have_value("直接生成一个木屋")
         self.assertEqual(self.app.state.workbench.list_jobs(), [])
         self.page.get_by_role("button", name="开始生成", exact=True).click()
         expect(self.page.locator("#resultState")).to_have_text("等待执行")
@@ -197,7 +197,7 @@ class ImageActionsBrowserTests(unittest.TestCase):
         self.root_page()
         self.page.locator("#promptInput").fill("迟到列表不能覆盖新任务")
         self.page.route("**/api/tasks/*/run", lambda route: route.abort(), times=1)
-        self.page.locator("#generateTaskButton").click()
+        self.page.locator("#saveTaskButton").click()
         expect(self.page.get_by_role("button", name="开始生成", exact=True)).to_be_visible()
         delayed[0].fulfill(status=200, content_type="application/json", body='{"tasks":[]}')
         self.page.wait_for_timeout(200)
@@ -208,7 +208,7 @@ class ImageActionsBrowserTests(unittest.TestCase):
         self.root_page()
         task = self.save("中世纪普通民众的生活场景", "3:2", "retro-film")
         self.policy_rejected = True
-        self.page.get_by_role("button", name="开始生成", exact=True).click()
+        self.page.locator("#batchGenerateButton").click()
         expect(self.page.locator("#resultState")).to_have_text("等待执行")
         self.worker.serve(once=True)
         expect(self.page.locator("#taskDetails")).to_contain_text("内容审核拒绝", timeout=10000)
@@ -228,8 +228,8 @@ class ImageActionsBrowserTests(unittest.TestCase):
         self.save("移动端第一张")
         self.save("移动端第二张")
         self.page.set_viewport_size({"width": 390, "height": 844})
-        save = self.page.locator("#saveTaskButton").bounding_box()
-        generate = self.page.locator("#generateTaskButton").bounding_box()
+        save = self.page.locator("#saveDraftTaskButton").bounding_box()
+        generate = self.page.locator("#saveTaskButton").bounding_box()
         self.assertLess(abs(save["y"] - generate["y"]), 2)
         self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth - innerWidth"), 1)
         self.page.screenshot(path=str(SCREENSHOTS / "mobile.png"), full_page=True)

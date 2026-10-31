@@ -64,6 +64,19 @@ def runtime_files(root):
             "script_models.json", "script_pricing.json", "script_routing.json", "storyboard_pricing.json"))
     if (root / "image_workbench" / "seedance_skill.py").is_file():
         paths.extend(root / "skills" / "seedance-2-video" / name for name in ("SKILL.md", "SOURCES.md"))
+    if (root / "image_workbench" / "prompt_enhancement.py").is_file():
+        paths.append(root / "config" / "prompt_enhancement.json")
+        prompts = root / "skills" / "prompt-enhancement" / "skills"
+        styles = root / "skills" / "image-asset-generation" / "styles"
+        for directory, label in ((prompts, "提示词 Skill"), (styles, "图片风格")):
+            files = [path for path in sorted(directory.rglob("*.json"))
+                     if path.is_file() and not path.name.startswith(".")]
+            if not files:
+                raise ValueError(f"{label}定义缺失")
+            for path in files:
+                if path.is_symlink():
+                    raise ValueError(f"{label}目录不允许符号链接")
+                paths.append(path)
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):

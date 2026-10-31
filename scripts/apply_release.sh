@@ -54,6 +54,9 @@ with tarfile.open(archive, 'r:gz') as bundle:
                     'NOTICE.txt', 'licenses/drama-skills.txt', 'licenses/vimax.txt', 'licenses/toonflow.txt', 'licenses/minimax-h3.txt')}
                 or member.name in {'skills/h3-video-workflow/' + name for name in (
                     'SKILL.md', 'references/base-en.txt', 'references/ref-en.txt', 'references/SOURCES.json', 'LICENSE', 'NOTICE')}
+                or member.name == 'config/prompt_enhancement.json'
+                or (path.parts[:3] == ('skills', 'prompt-enhancement', 'skills') and path.suffix == '.json')
+                or (path.parts[:3] == ('skills', 'image-asset-generation', 'styles') and path.suffix == '.json')
                 or (path.parts[:2] == ('skills', 'video-script-generation') and path.suffix in {'.json', '.txt', '.md'}))):
             raise ValueError('Unexpected release member')
         seen.add(member.name)
@@ -72,7 +75,7 @@ python3 -m venv "$release/.venv"
 "$release/.venv/bin/python" -m pip install --disable-pip-version-check -r "$release/requirements-web.txt"
 (
     cd "$release"
-    "$release/.venv/bin/python" -c 'import json; from pathlib import Path; from image_workbench.cli import main; from image_workbench.web import create_app; from image_workbench.script_templates import ScriptTemplateLoader; from image_workbench.script_models import ScriptModelRegistry; from image_workbench.storyboard_planner import build_prompt; from image_workbench.image_prompting import default_image_skill; loader=ScriptTemplateLoader(); assert loader.list_templates(); assert all(loader.load_skill(kind)["instructions"] for kind in ("script", "screenplay")); ScriptModelRegistry().configs(); assert build_prompt({"text": "release smoke", "artifact_id": "smoke", "version_id": "v1"}, {}, {}); assert isinstance(json.loads(Path("config/storyboard_pricing.json").read_text())["models"], dict); assert default_image_skill().catalog()["styles"]; assert default_image_skill().compile("release smoke")["compiled_prompt"]'
+    "$release/.venv/bin/python" -c 'import json; from pathlib import Path; from image_workbench.cli import main; from image_workbench.web import create_app; from image_workbench.script_templates import ScriptTemplateLoader; from image_workbench.script_models import ScriptModelRegistry; from image_workbench.storyboard_planner import build_prompt; from image_workbench.image_prompting import default_image_skill; from image_workbench.prompt_enhancement import PromptEnhancementService; loader=ScriptTemplateLoader(); assert loader.list_templates(); assert all(loader.load_skill(kind)["instructions"] for kind in ("script", "screenplay")); ScriptModelRegistry().configs(); assert build_prompt({"text": "release smoke", "artifact_id": "smoke", "version_id": "v1"}, {}, {}); assert isinstance(json.loads(Path("config/storyboard_pricing.json").read_text())["models"], dict); assert PromptEnhancementService.from_config().skills.list(); assert default_image_skill().catalog()["styles"]; assert default_image_skill().compile("release smoke")["compiled_prompt"]'
 )
 
 health() {

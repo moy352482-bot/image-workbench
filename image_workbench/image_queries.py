@@ -71,7 +71,11 @@ class ImageQueries:
                   "preview_artifact": self.artifact_dto(outputs[0], catalog=catalog) if outputs else None}
         result.update(_execution_timing(status, latest, job))
         if self.state.identity:
-            result.update(self.state.identity.task_credit(task_id))
+            credit = self.state.identity.task_credit(task_id)
+            if credit["credit_status"] == "waiting_credit" and (latest or outputs or job):
+                # 迁移前已执行但没有冻结/结算流水的任务不能显示成“未提交/预计消耗”。
+                credit = {**credit, "credit_status": "credit_unknown", "execution_status": "credit_unknown"}
+            result.update(credit)
             # 下一次执行的报价与已有预约的冻结/结算金额分开；复用本次已校验的输入。
             result["estimated_credit"] = CreditCostCalculator.calculate(task.operation, self.state.backend, 1, len(inputs) + bool(task.base_artifact_id))
             result["workspace_id"] = self.state.identity.ownership(main["main_project_id"])["workspace_id"]
@@ -86,6 +90,8 @@ class ImageQueries:
             inputs=[self.artifact_dto(item, catalog=catalog) for item in inputs], outputs=[self.artifact_dto(item, catalog=catalog) for item in outputs],
             base_image=self.artifact_dto(self.state.storage.get_artifact(task.base_artifact_id), catalog=catalog) if task.base_artifact_id else None,
             aspect_ratio=options["aspect_ratio"] if options else "auto",
+            original_prompt=(options.get("original_prompt") if options else None),
+            prompt_source=(options.get("prompt_source") if options else None),
             current_job={key: job[key] for key in ("job_id", "status", "created_at", "started_at", "finished_at")} if job else None,
             last_execution_id=latest.execution_id if latest else None,
             can_retry=status == "failed" and valid_options,

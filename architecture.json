@@ -38,7 +38,8 @@
         "video_models",
         "managed_files",
         "task_recovery",
-        "deepseek_text"
+        "deepseek_text",
+        "deepseek_flash"
       ],
       "may_import": [
         "foundation"
@@ -187,6 +188,17 @@
         "assets"
       ]
     },
+    "prompt_enhancement": {
+      "modules": [
+        "prompt_enhancement",
+        "prompt_enhancement_skills"
+      ],
+      "may_import": [
+        "foundation",
+        "contracts",
+        "prompt_enhancement"
+      ]
+    },
     "operations": {
       "modules": [
         "admin_operations"
@@ -220,6 +232,7 @@
         "video",
         "pipeline",
         "operations",
+        "prompt_enhancement",
         "http",
         "storyboards",
         "assets"
@@ -286,7 +299,9 @@
     "template": "web_templates/index.html",
     "components": {
       "WorkbenchFormat": "web_static/workbench-format.js",
+      "WorkbenchEstimate": "web_static/workbench-estimate.js",
       "WorkbenchApi": "web_static/workbench-api.js",
+      "WorkbenchPromptEnhancement": "web_static/workbench-prompt-enhancement.js",
       "WorkbenchPreview": "web_static/workbench-preview.js",
       "WorkbenchAccounts": "web_static/workbench-accounts.js",
       "WorkbenchStyles": "web_static/workbench-styles.js"

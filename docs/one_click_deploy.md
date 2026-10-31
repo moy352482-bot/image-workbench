@@ -73,5 +73,6 @@ Copy-Item -LiteralPath .\deploy\server.example.json -Destination .\deploy\server
 这会实际运行本地检查并生成 `.deploy/版本号/release.tar.gz`，不连接服务器。该目录还保存检查输出 `checks.txt` 和文件校验清单 `manifest.json`。
 
 发布包包含 `image_workbench/` 程序与网页资源、两个运行依赖清单、版本清单，以及脚本、分镜、H3 的运行配置和对应 Skill、模板、案例及许可来源文件。`skills/image-generation-default/` 的默认图片规则、风格目录和来源说明也随包上传，8 张风格预览图位于网页静态资源目录。不会上传其他配置、本机 `data/`、账号登录缓存、SSH 私钥、`.venv/`、本机任务缓存、报告或服务器配置文件。服务器在切换版本前检查脚本模板、分镜规则、模型配置和默认图片 Skill 可加载。
+提示词强化还随包发布 `config/prompt_enhancement.json`、提示词 Skill 与图片风格 JSON，切换前检查可加载。
 
 部署脚本的打包边界、输入校验、检查失败拦截和代码变动拦截已经自动验证；健康检查失败回退在 WSL/Linux 中使用模拟 systemd 验证。腾讯云首次发布已验证真实 systemd、依赖安装、当前版本切换、登录入口和公网 HTTPS。真实服务回退尚未人为制造故障演练。

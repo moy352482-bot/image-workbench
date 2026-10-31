@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "skill_id": "consistency",
+  "version": 1,
+  "name": "人物与产品一致性",
+  "description": "在多参考图、同一人物或同一产品需求中锁定身份与结构，避免参考内容串入新画面。",
+  "task_types": ["generate", "reference_generate", "edit"],
+  "modes": ["standard", "creative"],
+  "priority": 30,
+  "selection": {
+    "keywords": ["同一个人", "一致", "保持一致", "角色", "人物", "产品", "同款", "identity", "consistent", "same person"],
+    "reference_roles": ["identity", "face", "full_body", "clothing", "product", "logo"],
+    "style_ids": []
+  },
+  "rules": {
+    "preserve": [
+      "逐张说明参考图承担的身份、脸、服装、产品、logo 或构图角色。",
+      "锁定参考图中的身份与结构，不用文字猜测替代参考。",
+      "多张参考冲突时以用户指定的主参考为准，不融合成第三个人或第三种产品。"
+    ],
+    "forbid_additions": [
+      "不得从参考图继承品牌、文字、水印、背景或无关人物，除非用户明确要求。",
+      "不得新增用户未要求的角色或产品。",
+      "不得改变固定颜色、形状、材质和标识。"
+    ],
+    "structure": ["身份或产品基线", "参考图片角色", "固定属性", "允许变化的镜头属性", "一致性约束", "负向约束"],
+    "standard": [
+      "只补充足以稳定身份或产品结构的描述，不改变原始需求范围。",
+      "明确哪些属性来自参考、哪些属性允许随镜头变化。"
+    ],
+    "creative": [
+      "可以在光线、构图和氛围上创作，但身份、结构、固定颜色和标识必须服从参考。",
+      "创意处理不得制造新的身份特征或产品版本。"
+    ],
+    "edit_plan_required": false,
+    "style_default": null
+  },
+  "output_requirements": [
+    "每一张参考图片都要有独立的角色和用途说明。",
+    "enhanced_prompt 要区分固定身份属性与允许变化的镜头属性。",
+    "added_details 不得包含从参考图擅自继承的品牌、文字或人物。"
+  ]
+}

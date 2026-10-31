@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "provider": "deepseek_flash",
+  "skills_root": "skills/prompt-enhancement/skills",
+  "styles_root": "skills/image-asset-generation/styles",
+  "limits": {
+    "max_input_chars": 4000,
+    "max_output_chars": 12000,
+    "max_references": 8,
+    "max_calls_per_request": 1,
+    "llm_timeout_seconds": 20,
+    "max_output_tokens": 1200,
+    "idempotency_cache_size": 256,
+    "max_real_calls_per_hour": 60,
+    "max_real_calls_per_day": 300
+  },
+  "pricing": {
+    "input_per_million": null,
+    "output_per_million": null,
+    "currency": "USD"
+  }
+}

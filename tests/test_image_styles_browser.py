@@ -81,7 +81,7 @@ class ImageStylesBrowserTests(unittest.TestCase):
         self.root_page()
         self.page.locator("#promptInput").fill('蓝色纸盒，仅写“蓝盒”')
         self.page.locator("#imageStyleSelect").select_option("commercial-product")
-        task = self.save_root_task()
+        task = self.save_root_task(generate=False)
         self.assertEqual(task["image_prompt"]["style_id"], "commercial-product")
         self.assertEqual(task["image_prompt"]["source_prompt"], '蓝色纸盒，仅写“蓝盒”')
         self.assertEqual(task["input_count"], 0)
@@ -90,7 +90,7 @@ class ImageStylesBrowserTests(unittest.TestCase):
         self.page.locator(".prompt-skill-details summary").click()
         expect(self.page.locator(".prompt-skill-details pre")).to_contain_text("image-generation-default")
         with self.page.expect_response(lambda response: response.request.method == "POST" and response.url.endswith(f"/api/tasks/{task['task_id']}/run")) as submitted:
-            self.page.get_by_role("button", name="开始演练", exact=True).click()
+            self.page.locator("#batchGenerateButton").click()
         self.assertEqual(submitted.value.status, 200)
         fixture = self.root / "preview-test.png"
         fixture.write_bytes(png("blue"))

@@ -5,7 +5,7 @@
 
 | 维护层 / 当前分组 | 主要实现 | 实际职责 / 公开协作面 |
 | --- | --- | --- |
-| Core / foundation | `models`, `config`, `locking`, `atomic_files`, `domain_errors`, `timing`, `performance`, `scheduling`, `capacity`, `registration`, `remote_access`, `codex_runtime`, `codex_observer`, `image_status`, `media_validation`, `video_models` | 基础记录、锁、校验和状态工具；其中 Codex 运行环境与视频能力是专门共享工具，不是纯领域实体 |
+| Core / foundation | `models`, `config`, `locking`, `atomic_files`, `domain_errors`, `timing`, `performance`, `scheduling`, `capacity`, `registration`, `remote_access`, `codex_runtime`, `codex_observer`, `deepseek_flash`, `image_status`, `media_validation`, `video_models` | 基础记录、锁、校验和状态工具；其中 Codex 运行环境、DeepSeek Flash 客户端与视频能力是专门共享工具，不是纯领域实体 |
 | Core / storage | `storage.StorageManager`、`managed_files.ManagedFiles` | Task/Artifact 登记、索引和来源链；公开文件端口维护限定目录、路径校验和原子 JSON 写；旧私有工具仅作兼容代理 |
 | Core / identity | `accounts.IdentityStore` | 身份、空间、SQLite 钱包与 reservation/outbox；积分不是各插件自行记账 |
 | Core + Application / projects | `project_manager`, `workspace_scope`, `account_migration` | catalog、迁移、逻辑归属和权限门面；忙碌判断仍依赖图片 TaskRunner |
@@ -20,6 +20,7 @@
 | Workflow / workflows | `script_workflow` | 两阶段报价计划、脚本完成后的分镜触发、源版本和失败阶段关联、启动时补齐持久意图 |
 | Read model / foundation | `task_recovery` | 图片、脚本和视频的统一诊断响应；保留原生状态，不执行恢复或结算 |
 | Application + Provider / video | `video_store`, `h3_worker` | 视频项目/镜头/自有存储、报价、队列、ComfyUI 提交/对账与媒体验证 |
+| Application + Skill 数据 / prompt | `prompt_enhancement`, `prompt_enhancement_skills` | 请求分类、Skill/Style 选择、Prompt 编译、单次文本强化、JSON 校验与有界回退；不生成图片、不记账、不写文件 |
 | Workflow / pipeline | `pipeline_service` | 图片、脚本和视频的绑定与引用；通过 `PipelineVideoPort` 和注入服务协作 |
 | Operations | `admin_operations` | 检查、发布包和运行信息；不同于业务核心 |
 | Presentation / contracts | `contracts/*` | HTTP 请求 Pydantic schema；现在脚本插件也复用该输入格式，仍不依赖业务服务 |

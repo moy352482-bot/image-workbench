@@ -24,6 +24,27 @@ from .image_references import task_input_artifacts
 from .image_prompting import default_image_skill
 
 
+PROMPT_SOURCE_KEYS = ("kind", "enhancement_id", "skill_id", "skill_version", "mode", "task_type")
+
+
+def _prompt_source(value):
+    """Normalize optional enhancement provenance stored with task options."""
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != set(PROMPT_SOURCE_KEYS) or value.get("kind") != "prompt_enhancement":
+        raise ValueError("提示词来源格式错误")
+    _validate_id(value["enhancement_id"])
+    skill_id = value["skill_id"]
+    if not isinstance(skill_id, str) or not skill_id or len(skill_id) > 120:
+        raise ValueError("提示词来源格式错误")
+    version = value["skill_version"]
+    if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+        raise ValueError("提示词来源格式错误")
+    if value["mode"] not in {"standard", "creative"} or value["task_type"] not in {"generate", "edit", "reference_generate"}:
+        raise ValueError("提示词来源格式错误")
+    return {key: value[key] for key in PROMPT_SOURCE_KEYS}
+
+
 class WorkbenchState:
     def __init__(self, storage: StorageManager, *, backend="codex", execution_mode="local"):
         if backend not in {"codex", "local", "image-api"}:
@@ -166,11 +187,17 @@ class WorkbenchState:
             return existing
 
     def create_task(self, project_id, *, request_id, operation, prompt, aspect_ratio="auto", base_artifact_id=None, inputs=(),
-                    subproject_id=None, name=None, description="", reference_artifact_ids=(), style_id=None):
+                    subproject_id=None, name=None, description="", reference_artifact_ids=(), style_id=None,
+                    original_prompt=None, prompt_source=None):
         _validate_id(request_id)
         _text(prompt, "提示词")
         if len(prompt) > 12000:
             raise ValueError("提示词最多12000字符")
+        if original_prompt is not None:
+            _text(original_prompt, "原始提示词")
+            if len(original_prompt) > 12000:
+                raise ValueError("原始提示词最多12000字符")
+        prompt_source = _prompt_source(prompt_source)
         if operation not in {"generate", "edit"} or aspect_ratio not in {"auto", "1:1", "3:2", "2:3"}:
             raise ValueError("无效模式或比例")
         if len(inputs) + len(reference_artifact_ids) > 8:
@@ -204,6 +231,10 @@ class WorkbenchState:
             parts.append(list(reference_artifact_ids))
         if style_id:
             parts.append({"style_id": style_id})
+        if original_prompt is not None:
+            parts.append(original_prompt)
+        if prompt_source is not None:
+            parts.append(prompt_source)
         fingerprint = hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()
         with self.control_lock():
             previous = self.task_options(project_id, request_id)
@@ -219,7 +250,8 @@ class WorkbenchState:
             )
             options = {"schema_version": 1, "project_id": project_id, "task_id": request_id,
                        "fingerprint": fingerprint, "aspect_ratio": aspect_ratio, "state": "preparing", "created_at": _now(),
-                       "reference_artifact_ids": list(reference_artifact_ids), "image_prompt": image_prompt}
+                       "reference_artifact_ids": list(reference_artifact_ids),
+                       "image_prompt": image_prompt, "original_prompt": original_prompt, "prompt_source": prompt_source}
             path = self._task_file("tasks", project_id, request_id, create=True)
             self.storage.files.write_json(path, options)
             try:

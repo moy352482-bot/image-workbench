@@ -137,7 +137,7 @@ class AccountApplication:
             await JSONResponse({"detail": "工作空间不存在"}, status_code=404)(scope, receive, send)
             return
         scope["workspace_id"] = wid
-        if path in {"/video", "/scripts"} or path.startswith(("/api/video/", "/api/scripts/", "/api/storyboards", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions")):
+        if path in {"/video", "/scripts"} or path.startswith(("/api/video/", "/api/scripts/", "/api/storyboards", "/api/auth/", "/api/workspaces", "/api/credits", "/api/project-actions", "/api/prompt-enhancements")):
             await self.auth(scope, receive, send)
         else:
             with workspace_request():

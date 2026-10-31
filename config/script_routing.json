@@ -13,7 +13,7 @@
     "long_duration_seconds": 600
   },
   "deepseek_flash": {
-    "enabled": false,
+    "enabled": true,
     "endpoint_env": "SCRIPT_DEEPSEEK_ENDPOINT",
     "model_env": "SCRIPT_DEEPSEEK_MODEL",
     "api_key_env": "SCRIPT_DEEPSEEK_API_KEY",

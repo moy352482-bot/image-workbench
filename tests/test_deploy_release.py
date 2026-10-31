@@ -138,6 +138,41 @@ class DeployTests(unittest.TestCase):
         self.assertIn("config/storyboard_pricing.json", manifest["files"])
         self.assertNotIn("skills/storyboard-planning/private.json", manifest["files"])
 
+    def test_prompt_enhancement_runtime_requires_and_packages_skills_and_styles(self):
+        (self.root / "image_workbench/prompt_enhancement.py").write_text("# prompt runtime")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        config = self.root / "config/prompt_enhancement.json"
+        config.parent.mkdir()
+        config.write_text('{"provider": "mock"}')
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        skill = self.root / "skills/prompt-enhancement/skills/image-generation.json"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("{}")
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+        styles = self.root / "skills/image-asset-generation/styles"
+        (styles / "minimal").mkdir(parents=True)
+        (styles / "index.json").write_text('{"styles": []}')
+        (styles / "minimal/style.json").write_text("{}")
+        (skill.parent / "notes.txt").write_text("must not upload")
+        (styles / "minimal/private.txt").write_text("must not upload")
+        (self.root / "config/private.json").write_text("must not upload")
+        archive, manifest = deploy.package(self.root, self.root, "20261031T000000Z-12345678")
+        self.assertIn("config/prompt_enhancement.json", manifest["files"])
+        self.assertIn("skills/prompt-enhancement/skills/image-generation.json", manifest["files"])
+        self.assertIn("skills/image-asset-generation/styles/index.json", manifest["files"])
+        self.assertIn("skills/image-asset-generation/styles/minimal/style.json", manifest["files"])
+        self.assertNotIn("skills/prompt-enhancement/skills/notes.txt", manifest["files"])
+        self.assertNotIn("skills/image-asset-generation/styles/minimal/private.txt", manifest["files"])
+        self.assertNotIn("config/private.json", manifest["files"])
+        with tarfile.open(archive) as bundle:
+            self.assertNotIn("skills/prompt-enhancement/skills/notes.txt", bundle.getnames())
+        config.unlink()
+        with self.assertRaises(ValueError):
+            deploy.runtime_files(self.root)
+
     def test_host_user_port_and_key_validation(self):
         path = self.root / "server.json"
         path.write_text(json.dumps(self.config))
@@ -241,8 +276,19 @@ class LinuxReleaseTests(unittest.TestCase):
             previews = source / "image_workbench" / "web_static" / "image-styles"
             previews.mkdir(parents=True)
             (previews / "sample.png").write_bytes(b"preview fixture")
+            (source / "image_workbench" / "prompt_enhancement.py").write_text("# fixture")
             for name in ("requirements.txt", "requirements-web.txt"):
                 (source / name).write_text("")
+            prompt = source / "config" / "prompt_enhancement.json"
+            prompt.parent.mkdir()
+            prompt.write_text('{"provider": "mock"}')
+            skill = source / "skills" / "prompt-enhancement" / "skills" / "image-generation.json"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("{}")
+            style = source / "skills" / "image-asset-generation" / "styles" / "minimal" / "style.json"
+            style.parent.mkdir(parents=True)
+            style.write_text("{}")
+            (style.parent.parent / "index.json").write_text('{"styles": []}')
             rid = "20261013T000000Z-12345678"
             archive, _ = deploy.package(source, root, rid)
             server = root / "app"

@@ -1485,6 +1485,42 @@
       },
       "status_code": null
     },
+    "POST /api/video/projects/{pid}/bind-subproject": {
+      "parameters": {
+        "body": [
+          {
+            "name": "body",
+            "required": true,
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "subproject_id": {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "title": "Subproject Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "subproject_id"
+              ],
+              "title": "SubprojectChoice",
+              "type": "object"
+            }
+          }
+        ],
+        "path": [
+          {
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "query": []
+      },
+      "status_code": null
+    },
     "POST /api/video/projects/{pid}/assets": {
       "parameters": {
         "body": [],

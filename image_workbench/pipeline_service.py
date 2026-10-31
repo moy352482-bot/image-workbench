@@ -51,7 +51,10 @@ class PipelineService:
         _, _, records = state.project_views(link["main_project_id"])
         images = [state.logical_task_view(j["task_id"]) for j in records if j["subproject_id"] == link["subproject_id"]]
         scripts = self.scripts().list_tasks(aid, wid, link["subproject_id"])
-        return {**link, "image_tasks": images, "script_tasks": scripts, "active_script_task_id": project.get("script_task_id")}
+        main = state.projects.get_main_project(link["main_project_id"])
+        sub = state.projects.get_subproject(link["subproject_id"])
+        return {**link, "main_project_name": main.name, "subproject_name": sub.name,
+                "image_tasks": images, "script_tasks": scripts, "active_script_task_id": project.get("script_task_id")}
 
     def use_script(self, aid, wid, pid, tid):
         _, state, link = self.binding(aid, wid, pid)
@@ -86,15 +89,39 @@ class PipelineService:
     def from_subproject(self, aid, wid, sid):
         state = self.image_state(aid, wid)
         sub = state.projects.get_subproject(sid)
+        main = state.projects.get_main_project(sub.main_project_id)
         for item in self.videos.projects(aid, wid):
             project = self.videos.pipeline_project(aid, wid, item["project_id"])
             if project.get("pipeline", {}).get("subproject_id") == sid:
-                return {**self.videos.project(aid, wid, item["project_id"]), **project["pipeline"]}
+                return {**self.videos.project(aid, wid, item["project_id"]), **project["pipeline"],
+                        "main_project_name": main.name, "subproject_name": sub.name}
         pid = uuid5(NAMESPACE_URL, "image-workbench:video-subproject:" + sid).hex
         self.videos.create_project(aid, wid, pid, sub.name)
         link = {"main_project_id": sub.main_project_id, "subproject_id": sid}
         self.videos.bind_subproject(aid, wid, pid, link)
-        return {**self.videos.project(aid, wid, pid), **link}
+        return {**self.videos.project(aid, wid, pid), **link,
+                "main_project_name": main.name, "subproject_name": sub.name}
+
+    def bind_existing(self, aid, wid, pid, sid):
+        """Explicitly adopt a standalone video project into a shared subproject."""
+        project = self.videos.pipeline_project(aid, wid, pid)
+        state = self.image_state(aid, wid)
+        sub = state.projects.get_subproject(sid)
+        existing = project.get("pipeline")
+        if existing:
+            if existing.get("subproject_id") == sid:
+                main = state.projects.get_main_project(sub.main_project_id)
+                return {**self.videos.project(aid, wid, pid), **existing,
+                        "main_project_name": main.name, "subproject_name": sub.name}
+            raise ConflictError("视频项目已关联其他子项目")
+        for item in self.videos.projects(aid, wid):
+            if item["project_id"] != pid and item.get("pipeline", {}).get("subproject_id") == sid:
+                raise ConflictError("该子项目已有视频项目")
+        link = {"main_project_id": sub.main_project_id, "subproject_id": sid}
+        self.videos.bind_subproject(aid, wid, pid, link)
+        main = state.projects.get_main_project(sub.main_project_id)
+        return {**self.videos.project(aid, wid, pid), **link,
+                "main_project_name": main.name, "subproject_name": sub.name}
 
     def _tray_candidates(self, aid, wid, pid):
         project, state, link = self.binding(aid, wid, pid)

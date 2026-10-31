@@ -59,7 +59,7 @@
         <section id="workspaceGrid" class="workspace-grid" aria-label="图片工作台">
           <div class="editor-column">
             <section class="panel editor-panel">
-              <div class="panel-heading"><div><span class="step-label">01 <span>·</span> 新建任务</span><h2>描述你想要的画面</h2></div><span class="saved-hint"><span class="saved-dot"></span>自由选择生成时机</span></div>
+              <div class="panel-heading"><div><span class="step-label">01 <span>·</span> 新建任务</span><h2>描述你想要的画面</h2></div><span class="saved-hint"><span class="saved-dot"></span><span id="saveModeHint">点击后立即生成</span></span></div>
               <form id="taskForm" novalidate>
                 <div class="field-label-row"><label class="field-label" for="promptInput">创作需求</label><span id="promptCount" class="field-hint">0 / 4000</span></div>
                 <textarea id="promptInput" name="prompt" maxlength="4000" placeholder="例如：一间被晨光照亮的极简咖啡馆，木质桌面上放着一杯拿铁，柔和胶片质感……" required></textarea>
@@ -69,12 +69,40 @@
                   <p id="imageStyleSummary" class="image-style-summary">生成时自动整理画面要求，保留你指定的内容、文字和参考约束。</p>
                   <button id="undoStyleExample" class="text-button" type="button" hidden>撤销刚才的案例填入</button>
                 </div>
+                <div id="promptEnhancement" class="prompt-enhancement">
+                  <div class="prompt-enhancement-head">
+                    <div>
+                      <span class="field-label">AI 强化提示词 <span class="optional">可选</span></span>
+                      <p class="prompt-enhancement-hint">在不改变你原始需求的前提下补充画面细节；强化不会生成图片，也不会扣费。</p>
+                    </div>
+                    <div class="prompt-enhancement-controls">
+                      <div class="segmented" role="group" aria-label="强化方式">
+                        <label><input type="radio" name="prompt-enhance-mode" value="standard" checked><span>标准强化</span></label>
+                        <label><input type="radio" name="prompt-enhance-mode" value="creative"><span>创意强化</span></label>
+                      </div>
+                      <button id="promptEnhanceButton" class="secondary-button" type="button">AI 强化</button>
+                    </div>
+                  </div>
+                  <div id="promptEnhancementResult" class="prompt-enhancement-result" hidden>
+                    <div class="prompt-enhancement-status-row"><span id="promptEnhancementStatus" class="prompt-enhancement-status" role="status"></span><button id="promptEnhancementClose" class="text-button" type="button">收起</button></div>
+                    <div class="prompt-compare">
+                      <div><span class="field-label">原始需求</span><p id="promptEnhancementOriginal" class="prompt-original"></p></div>
+                      <div><label class="field-label" for="promptEnhancementOutput">强化结果（可编辑）</label><textarea id="promptEnhancementOutput" maxlength="12000"></textarea></div>
+                    </div>
+                    <p id="promptEnhancementMeta" class="prompt-enhancement-meta"></p>
+                    <div class="prompt-enhancement-footer">
+                      <button id="promptEnhancementApply" class="secondary-button" type="button">使用强化版</button>
+                      <button id="promptEnhancementRestore" class="text-button" type="button">恢复原文</button>
+                      <button id="promptEnhancementRetry" class="text-button" type="button">重新强化</button>
+                    </div>
+                  </div>
+                </div>
                 <div class="form-row">
                   <fieldset class="operation-picker"><legend class="field-label">任务类型</legend><div class="segmented"><label><input type="radio" name="operation" value="generate" checked><span>生成图片</span></label><label><input type="radio" name="operation" value="edit"><span>修改图片</span></label></div></fieldset>
                   <div class="ratio-picker"><label class="field-label" for="ratioSelect">画面比例</label><select id="ratioSelect" name="aspect_ratio"><option value="auto">自动选择</option><option value="1:1">1:1 方形</option><option value="3:2">3:2 横向</option><option value="2:3">2:3 纵向</option></select></div>
                 </div>
                 <p class="ratio-note">{{ '图片 API 按所选比例请求尺寸；自动选择由模型决定。' if image_api_mode else '比例通过提示词约束，实际尺寸以产物为准。' }}</p>
-                <p id="editHelp" class="edit-help" hidden>可从项目历史选择图片，点击“基于此图继续修改”；也可以直接添加参考图片。</p>
+                <p id="editHelp" class="edit-help" hidden>可从项目历史选择任务，在结果预览中点击“修改图片”设为基底；也可以直接添加参考图片。</p>
                 <div id="baseImagePanel" class="base-image-panel" hidden><div class="field-label">基底图片</div><div id="baseImagePreview" class="base-image-preview"></div><button id="clearBaseImage" class="text-button" type="button">移除基底图片</button></div>
                 <div id="referenceUploadPanel" class="upload-panel">
                   <div class="field-label-row"><span class="field-label">参考图片 <span class="optional">可选 · 最多 8 张</span></span><span id="uploadSizeHint" class="field-hint">PNG、JPG、WEBP</span></div>
@@ -82,8 +110,8 @@
                   <p class="asset-input-help">可在此粘贴图片（Ctrl+V / Cmd+V）或拖拽上传。</p><button type="button" id="chooseProjectImages" class="text-button">选择项目已有图片</button><div id="filePreviewList" class="file-preview-list"></div>
                 </div>
                 <div class="form-footer task-create-footer">
-                  <p class="create-action-hint">保存不消耗积分；直接生成会保存任务并提交执行。</p>
-                  <div class="task-create-actions"><button id="saveTaskButton" class="secondary-button" type="submit">保存任务</button><button id="generateTaskButton" class="primary-button" type="submit">直接生成</button></div>
+                  <p class="create-action-hint">保存不消耗积分；开始生成会保存任务并提交执行。</p>
+                  <div class="task-create-actions"><button id="saveTaskButton" class="primary-button" type="submit">开始生成</button><button id="saveDraftTaskButton" class="secondary-button" type="submit">保存任务</button></div>
                   <span id="formMessage" class="form-message" role="status"></span>
                 </div>
               </form>
@@ -102,8 +130,8 @@
 
           <aside class="result-column">
             <section class="panel result-panel">
-              <div class="panel-heading result-heading"><div><span class="step-label">03 <span>·</span> 结果预览</span><h2>图片结果</h2></div><span id="resultState" class="status-pill status-neutral">等待选择</span></div>
-              <div id="resultContent" class="result-content"><div class="result-empty-art" aria-hidden="true"><div class="sun"></div><div class="horizon horizon-back"></div><div class="horizon horizon-front"></div><div class="sparkle s-one">✦</div><div class="sparkle s-two">✧</div><div class="empty-caption"><span>你的画布</span><i></i><span>从一个想法开始</span></div></div><div class="result-empty-copy"><strong>图片会在这里呈现</strong><span>选择一项任务查看预览、执行状态与历史版本。</span></div></div>
+              <div class="panel-heading result-heading"><div><span class="step-label">03 <span>·</span> 结果预览</span><h2>图片预览</h2></div><span id="resultState" class="status-pill status-neutral">等待选择</span></div>
+              <div id="resultContent" class="result-content"><div class="result-empty-art" aria-hidden="true"><div class="sun"></div><div class="horizon horizon-back"></div><div class="horizon horizon-front"></div><div class="sparkle s-one">✦</div><div class="sparkle s-two">✧</div><div class="empty-caption"><span>你的画布</span><i></i><span>从一个想法开始</span></div></div><div class="result-empty-copy"><strong>图片会在这里呈现</strong><span>选择一项任务，在这里查看图片预览。</span></div></div>
               <div id="taskDetails" class="task-details" hidden></div>
             </section>
           </aside>
@@ -143,7 +171,9 @@
   <script src="/static/image-comparison.js?v={{ asset_version }}" defer></script>
   <script src="/static/asset-input.js?v={{ asset_version }}" defer></script><script src="/static/asset-actions.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-format.js?v={{ asset_version }}" defer></script>
+  <script src="/static/workbench-estimate.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-api.js?v={{ asset_version }}" defer></script>
+  <script src="/static/workbench-prompt-enhancement.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-preview.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-accounts.js?v={{ asset_version }}" defer></script>
   <script src="/static/workbench-styles.js?v={{ asset_version }}" defer></script>

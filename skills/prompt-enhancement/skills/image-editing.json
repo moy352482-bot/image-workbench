@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "skill_id": "image-editing",
+  "version": 1,
+  "name": "图片修改",
+  "description": "把精确改图需求整理成有明确修改对象、保留对象和禁止改变项的提示词。",
+  "task_types": ["edit"],
+  "modes": ["standard", "creative"],
+  "priority": 40,
+  "selection": {
+    "keywords": ["修改", "改成", "去掉", "移除", "替换", "保留", "局部", "编辑", "edit", "remove", "replace"],
+    "reference_roles": ["edit_target", "base"],
+    "style_ids": []
+  },
+  "rules": {
+    "preserve": [
+      "逐项记录修改对象、保留对象和不允许改变的属性。",
+      "未列入修改对象的区域保持原样，不顺便重绘、美化或改变构图。",
+      "用户要求保留的身份、数量、颜色、文字、品牌和画幅优先于任何风格建议。"
+    ],
+    "forbid_additions": [
+      "不得新增用户未要求的物体、人物、文字、logo 或装饰。",
+      "不得把局部修改扩大成整图重绘。",
+      "不得改变基底图片中未授权修改的主体身份或产品结构。"
+    ],
+    "structure": ["修改对象", "保留对象", "不允许改变的属性", "参考图片角色", "画幅继承", "修改后的画面描述", "负向约束"],
+    "standard": [
+      "只执行用户明确要求的修改，不主动扩展修改范围。",
+      "在 edit_plan 中明确写出每一项修改和保留要求。"
+    ],
+    "creative": [
+      "可以在允许改变的区域内补充表现细节，但不得越过修改对象和保留对象。",
+      "创意处理不能改变未授权区域的内容。"
+    ],
+    "edit_plan_required": true,
+    "style_default": null
+  },
+  "output_requirements": [
+    "edit_plan 必须非空，并完整记录 change_targets、preserve_targets、forbidden_changes、reference_roles 和 inherit_aspect_ratio。",
+    "每一张参考图片都要在 reference_roles 中单独说明角色和用途。",
+    "enhanced_prompt 必须描述修改后的最终画面，同时明确未修改区域保持原样。"
+  ]
+}
