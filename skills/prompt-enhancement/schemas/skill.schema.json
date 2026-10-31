@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://image-workbench.invalid/skills/prompt-enhancement/schemas/skill.schema.json",
+  "title": "Prompt Enhancement Skill v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "skill_id", "version", "name", "description", "task_types", "modes", "priority", "selection", "rules", "output_requirements"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "skill_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "version": {"type": "integer", "minimum": 1},
+    "name": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "task_types": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"enum": ["generate", "reference_generate", "edit"]}
+    },
+    "modes": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"enum": ["standard", "creative"]}
+    },
+    "priority": {"type": "integer"},
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["keywords", "reference_roles", "style_ids"],
+      "properties": {
+        "keywords": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "reference_roles": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "style_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preserve", "forbid_additions", "structure", "standard", "creative", "edit_plan_required", "style_default"],
+      "properties": {
+        "preserve": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "forbid_additions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "structure": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "standard": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "creative": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "edit_plan_required": {"type": "boolean"},
+        "style_default": {"type": ["string", "null"]}
+      }
+    },
+    "output_requirements": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

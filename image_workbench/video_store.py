@@ -195,7 +195,8 @@ class VideoStore:
                 continue
             value = self._optional(directory / "project.json")
             if value and (value.get("account_id"), value.get("workspace_id")) == (account_id, workspace_id):
-                result.append({key: value[key] for key in ("project_id", "name", "script", "created_at")})
+                result.append({**{key: value[key] for key in ("project_id", "name", "script", "created_at")},
+                               "pipeline": dict(value.get("pipeline") or {})})
         return sorted(result, key=lambda p: (p["created_at"], p["project_id"]), reverse=True)
 
     def _asset(self, pid, aid):
@@ -247,6 +248,13 @@ class VideoStore:
             project = self._project(account_id, workspace_id, pid)
             if project.get("pipeline") and project["pipeline"] != link:
                 raise ConflictError("视频项目已有其他子项目关联")
+            if link.get("subproject_id"):
+                for directory in self._path("projects").iterdir():
+                    if directory.name == pid:
+                        continue
+                    other = self._optional(directory / "project.json")
+                    if other and (other.get("pipeline") or {}).get("subproject_id") == link["subproject_id"]:
+                        raise ConflictError("该子项目已有视频项目")
             project["pipeline"] = link
             self._write(self._project_path(pid), project)
 
@@ -419,7 +427,15 @@ class VideoStore:
                 _validate_id(storyboard_binding.get(field))
             payload.update(storyboard_binding)
         with self.lock():
-            self._project(account_id, workspace_id, pid)
+            project = self._project(account_id, workspace_id, pid)
+            link = project.get("pipeline") or {}
+            if storyboard_binding is None and link.get("subproject_id"):
+                # Manual shots inherit the selected project; this is the only place
+                # that stamps ownership, so old shots stay readable unchanged.
+                payload["main_project_id"] = link.get("main_project_id")
+                payload["subproject_id"] = link["subproject_id"]
+            elif storyboard_binding is not None and link.get("subproject_id") == payload.get("subproject_id"):
+                payload.setdefault("main_project_id", link.get("main_project_id"))
             for directory in self._path("projects").iterdir():
                 if directory.name != pid and self.files.check(directory / "shots" / (request_id + ".json")).exists():
                     raise ConflictError("分镜标识已使用，请创建新的请求标识")
@@ -428,6 +444,11 @@ class VideoStore:
             path = self._path("projects", pid, "shots", request_id + ".json")
             old = self._optional(path)
             if old:
+                if not old.get("subproject_id") and payload.get("subproject_id"):
+                    # Adopt an existing shot into the newly selected subproject.
+                    old = {**old, "main_project_id": payload.get("main_project_id"),
+                           "subproject_id": payload["subproject_id"]}
+                    self._write(path, old)
                 if any(old.get(key) != value for key, value in payload.items()):
                     raise ConflictError("分镜请求标识已用于不同内容")
             else:
@@ -471,7 +492,8 @@ class VideoStore:
             return None
         keys = ("job_id", "project_id", "task_id", "status", "credit_status", "credit_cost", "credits_per_second",
                 "resolution", "duration", "created_at", "started_at", "finished_at", "updated_at", "error",
-                "storyboard_id", "storyboard_version", "storyboard_shot_id", "output_artifact_id", "video_version")
+                "storyboard_id", "storyboard_version", "storyboard_shot_id", "main_project_id", "subproject_id",
+                "output_task_id", "output_artifact_id", "video_version")
         return {**{key: job[key] for key in keys if key in job}, "recovery": VideoStore._recovery(job, job["task_id"])}
 
     @staticmethod
@@ -539,12 +561,15 @@ class VideoStore:
 
     def project(self, account_id, workspace_id, pid):
         value = self._project(account_id, workspace_id, pid)
+        link = dict(value.get("pipeline") or {})
         with self.lock():
             jobs = self._jobs()
             shots = [self._shot_view(self._shot(pid, p.stem), workspace_id, jobs)
                      for p in self._path("projects", pid, "shots").glob("*.json")]
         return {**{k: value[k] for k in ("project_id", "name", "script", "created_at")},
-                "assets": self.assets(account_id, workspace_id, pid), "shots": sorted(shots, key=lambda s: (s["created_at"], s["shot_id"]))}
+                "main_project_id": link.get("main_project_id"), "subproject_id": link.get("subproject_id"),
+                "pipeline": link, "assets": self.assets(account_id, workspace_id, pid),
+                "shots": sorted(shots, key=lambda s: (s["created_at"], s["shot_id"]))}
 
     def submit(self, account_id, workspace_id, pid, sid, *, request_id, confirm_generation, expected_credit, retry_of=None):
         _validate_id(request_id)
@@ -553,7 +578,7 @@ class VideoStore:
         if type(expected_credit) is not int or expected_credit < 1:
             raise ValueError("请确认本次视频积分报价")
         with self.lock():
-            self._project(account_id, workspace_id, pid)
+            project = self._project(account_id, workspace_id, pid)
             shot = self._shot(pid, sid)
             if shot.get("source") == "upload":
                 raise ConflictError("已上传的视频无需生成，请创建新分镜")
@@ -586,6 +611,15 @@ class VideoStore:
             if shot.get("storyboard_id"):
                 job.update({key: shot[key] for key in ("storyboard_id", "storyboard_version", "storyboard_shot_id",
                             "storyboard_artifact_id", "shot_fingerprint", "storage_project_id", "subproject_id")})
+            link = project.get("pipeline") or {}
+            subproject_id = shot.get("subproject_id") or link.get("subproject_id")
+            if subproject_id:
+                job["subproject_id"] = subproject_id
+                job["main_project_id"] = shot.get("main_project_id") or (
+                    link.get("main_project_id") if link.get("subproject_id") == subproject_id else None)
+                if not job["main_project_id"]:
+                    from .project_manager import ProjectManager
+                    job["main_project_id"] = ProjectManager(self.storage).get_subproject(subproject_id).main_project_id
             job = self.identity.reserve(job, {"account_id": account_id, "workspace_id": workspace_id}, cost)
             self._save_job(job)
             return self.public_job(job)
@@ -724,26 +758,36 @@ class VideoStore:
                 if not job.get("attempt_id") or not job.get("output") or sha256 != job["output"]["sha256"]:
                     raise ValueError("视频输出尚未上传或校验值不匹配")
                 self._verify_file(self._path("outputs", job_id + ".mp4"), job["output"])
-                if job.get("storyboard_id"):
-                    self._register_storyboard_output(job)
+                if job.get("subproject_id"):
+                    self._register_output(job)
             job.update(status=target, error=error, finished_at=_now() if target in {"completed", "failed"} else None)
             self._save_job(job)
             self._beat(worker_id)
             return self.public_job(job)
 
-    def _register_storyboard_output(self, job):
+    def _register_output(self, job):
         """Archive through StorageManager before settling a successful video job."""
         from .workspace_scope import WorkspaceProjects
         projects = WorkspaceProjects(self.storage, self.identity, job["account_id"], job["workspace_id"])
-        tid = uuid5(NAMESPACE_URL, "storyboard-video-task:" + job["job_id"]).hex
-        artifact_id = uuid5(NAMESPACE_URL, "storyboard-video-artifact:" + job["job_id"]).hex
-        task = projects.create_task(job["subproject_id"], "video", "分镜视频结果",
-                                    job["storyboard_artifact_id"], task_id=tid)
-        data = self._path("outputs", job["job_id"] + ".mp4").read_bytes()
-        artifact = self.storage.register_output_document(task.project_id, tid, data, artifact_id=artifact_id, format="MP4", source_path=self._path("outputs", job["job_id"] + ".mp4"))
-        job.update(output_artifact_id=artifact.artifact_id, video_version={"version": 1, "artifact_id": artifact.artifact_id,
-                   "storyboard_id": job["storyboard_id"], "storyboard_version": job["storyboard_version"],
-                   "shot_id": job["storyboard_shot_id"], "created_at": artifact.created_at})
+        storyboard = bool(job.get("storyboard_id"))
+        prefix = "storyboard-video" if storyboard else "video"
+        tid = uuid5(NAMESPACE_URL, prefix + "-task:" + job["job_id"]).hex
+        artifact_id = uuid5(NAMESPACE_URL, prefix + "-artifact:" + job["job_id"]).hex
+        if storyboard:
+            task = projects.create_task(job["subproject_id"], "video", "分镜视频结果",
+                                        job["storyboard_artifact_id"], task_id=tid)
+        else:
+            task = projects.create_task(job["subproject_id"], "video", "视频结果", task_id=tid)
+        source = self._path("outputs", job["job_id"] + ".mp4")
+        artifact = self.storage.register_output_document(
+            task.project_id, tid, source.read_bytes(), artifact_id=artifact_id,
+            format="MP4", source_path=source)
+        job.update(output_artifact_id=artifact.artifact_id, output_task_id=task.task_id,
+                   video_version={"version": 1, "artifact_id": artifact.artifact_id,
+                                  "storyboard_id": job.get("storyboard_id"),
+                                  "storyboard_version": job.get("storyboard_version"),
+                                  "shot_id": job.get("storyboard_shot_id") or job["task_id"],
+                                  "created_at": artifact.created_at})
 
     def reference_output(self, account_id, workspace_id, pid, sid):
         """Return a real Artifact for an existing immutable clip, without copying it."""
@@ -805,7 +849,8 @@ class VideoStore:
         inspect_mp4(data)
         digest = hashlib.sha256(data).hexdigest()
         with self.lock():
-            self._project(account_id, workspace_id, pid)
+            project = self._project(account_id, workspace_id, pid)
+            link = project.get("pipeline") or {}
             path = self._path("projects", pid, "shots", request_id + ".json")
             old = self._optional(path)
             if old:
@@ -815,5 +860,10 @@ class VideoStore:
                 self._bytes(self._path("projects", pid, "shots", request_id + ".mp4"), data)
                 self._write(path, {"project_id": pid, "shot_id": request_id, "name": name, "prompt": "用户上传视频",
                     "mode": "upload", "source": "upload", "duration": None, "reference_ids": [], "created_at": _now(),
+                    "main_project_id": link.get("main_project_id"), "subproject_id": link.get("subproject_id"),
                     "output": {"sha256": digest, "size_bytes": len(data)}})
+        if link.get("subproject_id"):
+            # Uploaded clips are real outputs too; archive them in the same
+            # subproject so they are visible to both workbenches.
+            self.reference_output(account_id, workspace_id, pid, request_id)
         return self.shot(account_id, workspace_id, pid, request_id)

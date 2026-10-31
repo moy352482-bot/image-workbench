@@ -1,5 +1,6 @@
 import hashlib
 import io
+import json
 from pathlib import Path
 import tempfile
 import threading
@@ -72,6 +73,31 @@ class WebTests(unittest.TestCase):
         self.assertEqual(len(self.storage.list_tasks(self.pid)), 1)
         self.assertEqual(self.state.runner.list_executions(self.pid, tid), [])
         self.assertEqual(self.state.list_jobs(), [])
+
+    def test_task_source_metadata_is_optional_preserved_and_idempotent(self):
+        source = {"kind": "prompt_enhancement", "enhancement_id": "e" * 32,
+                  "skill_id": "image-generation", "skill_version": 1,
+                  "mode": "standard", "task_type": "generate"}
+        data = {"request_id": uuid4().hex, "operation": "generate", "prompt": "强化后的提示词",
+                "original_prompt": "一只猫", "prompt_source": json.dumps(source, ensure_ascii=False)}
+        response = self.post(f"/api/projects/{self.pid}/tasks", data=data)
+        self.assertEqual(response.status_code, 200, response.text)
+        task = response.json()
+        self.assertEqual(task["original_prompt"], "一只猫")
+        self.assertEqual(task["prompt_source"], source)
+        options = self.state.task_options(self.pid, task["task_id"])
+        self.assertEqual(options["original_prompt"], "一只猫")
+        self.assertEqual(options["prompt_source"], source)
+        self.assertEqual(self.post(f"/api/projects/{self.pid}/tasks", data=data).json(), task)
+        self.assertEqual(self.post(f"/api/projects/{self.pid}/tasks", data={**data, "original_prompt": "另一只猫"}).status_code, 409)
+        self.assertEqual(self.post(f"/api/projects/{self.pid}/tasks",
+                                   data={**data, "request_id": uuid4().hex, "prompt_source": "not-json"}).status_code, 400)
+        self.assertEqual(self.post(f"/api/projects/{self.pid}/tasks",
+                                   data={**data, "request_id": uuid4().hex,
+                                         "prompt_source": json.dumps({**source, "mode": "extreme"})}).status_code, 400)
+        legacy = self.task()
+        self.assertIsNone(legacy["original_prompt"])
+        self.assertIsNone(legacy["prompt_source"])
 
     def test_multipart_png_jpeg_webp_content_and_saved_input_integrity(self):
         uploads = []
@@ -181,8 +207,13 @@ class WebTests(unittest.TestCase):
     def test_changed_image_is_not_served_or_approved(self):
         detail = self.execute(self.task())
         artifact = detail["outputs"][0]
-        self.storage.get_artifact_path(artifact["artifact_id"]).write_bytes(b"tampered image")
-        self.assertEqual(self.client.get(artifact["url"]).status_code, 400)
+        path = self.storage.get_artifact_path(artifact["artifact_id"])
+        tampered = bytearray(path.read_bytes())
+        tampered[0] ^= 0xFF
+        path.write_bytes(bytes(tampered))
+        response = self.client.get(artifact["url"])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "文件校验未通过，请刷新后重试。")
         self.assertEqual(self.post(artifact["url"] + "/approve", json={}).status_code, 400)
 
     def test_existing_registered_output_is_reviewable_without_a_runner_record(self):

@@ -6,9 +6,11 @@
   const state = {
     config: null, csrf: '', projects: [], subprojects: [], tasks: [], projectId: '', subprojectId: '', taskId: '', detail: null,
     overview: null, files: [], referenceArtifacts: [], baseArtifact: null, polling: 0, busy: false, selectionVersion: 0, projectsLoadVersion: 0,
-    account: null, showArchived: false,
+    account: null, showArchived: false, selectedOutputId: '',
   };
   const storageKeys = { project: 'image-workbench.project', subproject: 'image-workbench.subproject', task: 'image-workbench.task', pendingSave: 'image-workbench.pending-task-request', pendingProject: 'image-workbench.pending-project-request' };
+  // 已结束的任务直接看实际耗时或错误，不再显示历史预估。
+  const completedStatuses = new Set(['awaiting_review', 'approved', 'failed', 'uncertain', 'credit_insufficient']);
   const ui = {
     projectList: $('#projectList'), projectName: $('#activeProjectName'), heading: $('#pageHeading'),
     taskList: $('#taskList'), taskCount: $('#taskCount'), prompt: $('#promptInput'), promptCount: $('#promptCount'),
@@ -23,7 +25,7 @@
     taskEditDialog: $('#taskEditDialog'), moveTaskDialog: $('#moveTaskDialog'),
   };
 
-  const { formatDate, formatBytes, formatSeconds, executionDuration, executionTimingText, statusText, artifactLabel, statusClass, modeName } = window.WorkbenchFormat;
+  const { formatDate, formatBytes, formatSeconds, executionDuration, statusText, statusClass, creditStateText, creditAmountText, modeName } = window.WorkbenchFormat;
   const { closeImagePreviews, openLightbox } = window.WorkbenchPreview.create({ query: $, dialog: ui.imageDialog });
   const api = window.WorkbenchApi.create({
     getWorkspaceId: () => state.account?.workspace_id || (/^[0-9a-f]{32}$/.test(requestedParams.get('workspace_id') || '') ? requestedParams.get('workspace_id') : null),
@@ -51,6 +53,26 @@
     ui.toastRegion.append(node);
     window.setTimeout(() => node.remove(), 4200);
   }
+  // Prompt enhancement only edits the textarea; generation stays on the form's
+  // existing submit button and the existing result panel is untouched.
+  const promptEnhancement = window.WorkbenchPromptEnhancement.create({
+    query: $,
+    requestId,
+    notify: toast,
+    enhance: payload => api('/api/prompt-enhancements', { method: 'POST', body: JSON.stringify(payload) }),
+    getContext: () => ({
+      prompt: ui.prompt.value,
+      operation: getOperation(),
+      ratio: ui.ratio.value,
+      baseArtifact: state.baseArtifact,
+      referenceArtifacts: state.referenceArtifacts,
+    }),
+    onApply: text => {
+      ui.prompt.value = text;
+      ui.prompt.dispatchEvent(new Event('input'));
+      ui.prompt.focus();
+    },
+  });
   function setBusy(value) {
     state.busy = value;
     ui.saveButton.disabled = value || !state.subprojectId || Boolean(state.config?.project_migration_required);
@@ -65,6 +87,7 @@
     ui.refUpload.hidden = false;
     ui.basePreview.replaceChildren();
     localStorage.removeItem(storageKeys.pendingSave);
+    promptEnhancement.reset();
     renderFiles();
     updateEditHelp();
   }
@@ -293,7 +316,7 @@
       empty.className = 'list-empty';
       appendText(empty, 'span', 'empty-orbit', '✳');
       appendText(empty, 'strong', '', '还没有任务');
-      appendText(empty, 'span', '', state.projectId ? '保存一个任务后，它会出现在这里。' : '先创建一个项目，再开始创作。');
+      appendText(empty, 'span', '', state.projectId ? '提交任务后，它会出现在这里。' : '先创建一个项目，再开始创作。');
       ui.taskList.append(empty);
       return;
     }
@@ -337,12 +360,14 @@
     closeImagePreviews();
     state.taskId = taskId;
     state.detail = null;
+    state.selectedOutputId = '';
     saveLocalSelection();
     renderTasks();
     await loadTaskDetail(taskId, false);
   }
   function showNoTask() {
     stopPolling();
+    state.selectedOutputId = '';
     ui.details.hidden = true;
     ui.resultContent.hidden = false;
     ui.resultState.className = 'status-pill status-neutral';
@@ -355,6 +380,9 @@
     try {
       const detail = await api(`/api/tasks/${encodeURIComponent(taskId)}`);
       if (state.taskId !== taskId || state.selectionVersion !== version) return;
+      const previousOutputs = Array.isArray(state.detail?.outputs) ? state.detail.outputs.length : 0;
+      const nextOutputs = Array.isArray(detail.outputs) ? detail.outputs.length : 0;
+      if (nextOutputs > previousOutputs) state.selectedOutputId = '';
       state.detail = detail;
       state.tasks = state.tasks.map(task => task.task_id === taskId ? { ...task, ...detail } : task);
       saveLocalSelection();
@@ -382,42 +410,261 @@
     ui.resultState.textContent = statusText(status, detail.status_label);
   }
   function renderDetail(detail) {
+    const outputs = Array.isArray(detail.outputs) ? detail.outputs : [];
+    if (state.selectedOutputId && !outputs.some(item => item.artifact_id === state.selectedOutputId)) {
+      state.selectedOutputId = '';
+    }
+    const selected = outputs.find(item => item.artifact_id === state.selectedOutputId) || outputs[outputs.length - 1] || null;
+    if (selected) state.selectedOutputId = selected.artifact_id;
     ui.resultContent.hidden = true;
     ui.details.hidden = false;
     ui.details.replaceChildren();
     setResultStatus(detail);
-    const banner = document.createElement('div');
-    banner.className = 'detail-banner';
-    const idLine = appendText(banner, 'div', 'task-id', '');
-    appendText(idLine, 'span', '', `任务 ID  ${detail.task_id || ''}`);
-    const copy = appendText(idLine, 'button', 'copy-button', '复制');
-    copy.type = 'button';
-    copy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(detail.task_id || ''); toast('任务 ID 已复制'); }
-      catch (error) { toast('无法访问剪贴板，请手动选择任务 ID。', true); }
-    });
-    appendText(banner, 'span', 'task-date', formatDate(detail.created_at));
-    ui.details.append(banner);
-    const taskTools = document.createElement('div'); taskTools.className = 'task-controls';
-    const editInfo = appendText(taskTools, 'button', 'secondary-button', '编辑名称与描述'); editInfo.type = 'button'; editInfo.addEventListener('click', () => openTaskEdit(detail));
-    const moveInfo = appendText(taskTools, 'button', 'secondary-button', '移动到子项目'); moveInfo.type = 'button'; moveInfo.addEventListener('click', () => openMoveTask(detail));
-    ui.details.append(taskTools);
-    if (detail.execution_backend === 'local') {
-      appendText(ui.details, 'div', 'practice-notice', '这是演练使用的固定测试图片，未调用 Codex，也未按提示词生成。');
+    const estimate = renderEstimate(detail);
+    if (estimate) ui.details.append(estimate);
+    ui.details.append(renderGenerationSteps(detail, outputs));
+
+    const body = document.createElement('div');
+    body.className = 'result-preview';
+    body.append(selected ? renderPreviewCard(detail, selected, outputs) : renderAwaitingResult(detail));
+    ui.details.append(body);
+
+    if (detail.error_summary) {
+      appendText(ui.details, 'div', 'detail-error result-error', detail.error_summary);
     }
-    if (typeof detail.estimated_credit === 'number') {
-      const labels = {waiting_credit:'执行前冻结', credit_insufficient:'积分不足', credit_frozen:'已冻结', running:'执行中，积分已冻结', completed:'已扣除', refunded:'失败已退回'};
-      const amount = typeof detail.reserved_credit === 'number' ? detail.reserved_credit : detail.estimated_credit;
-      appendText(ui.details, 'div', 'credit-task-note', `本次 ${amount} 积分 · ${labels[detail.credit_status] || ''}`);
-      if ((detail.can_generate || detail.can_retry || detail.can_restore) && amount !== detail.estimated_credit) {
-        appendText(ui.details, 'div', 'credit-task-note', `再次执行预计 ${detail.estimated_credit} 积分，提交时冻结。`);
+    const controls = renderExecutionControls(detail);
+    if (controls) ui.details.append(controls);
+    const credit = renderCredit(detail);
+    if (credit) ui.details.append(credit);
+  }
+  function renderEstimate(detail) {
+    if (!window.WorkbenchEstimate || completedStatuses.has(detail.status)) return null;
+    const estimate = window.WorkbenchEstimate.estimateGenerationTime({
+      detail, tasks: state.tasks, backend: state.config.backend,
+    });
+    const box = document.createElement('div');
+    box.className = 'generation-estimate';
+    box.dataset.samples = String(estimate.sampleCount || 0);
+    if (estimate.basis) box.dataset.basis = estimate.basis;
+    box.setAttribute('aria-label', `预计生成时间：${estimate.text}。${estimate.source}`);
+    appendText(box, 'span', 'generation-estimate-label', '预计生成时间：');
+    appendText(box, 'span', 'generation-estimate-value', estimate.text);
+    appendText(box, 'span', 'generation-estimate-source', estimate.source);
+    return box;
+  }
+  function generationStepStates(detail, outputs) {
+    const status = detail.status;
+    const hasOutput = Array.isArray(outputs) && outputs.length > 0;
+    const steps = [
+      { key: 'started', label: '开始生成', state: 'pending', note: '等待提交' },
+      { key: 'generating', label: '生成中', state: 'pending', note: '尚未开始' },
+      { key: 'generated', label: '已生成', state: 'pending', note: '等待结果' },
+    ];
+    if (status === 'credit_insufficient') {
+      steps[0] = { ...steps[0], state: 'error', note: '积分不足' };
+      return steps;
+    }
+    if (status === 'draft') return steps;
+    if (status === 'failed' && detail.failure_type === 'prepare_failed') {
+      steps[0] = { ...steps[0], state: 'error', note: '准备失败' };
+      return steps;
+    }
+    steps[0] = { ...steps[0], state: 'done', note: '已提交' };
+    if (status === 'queued') steps[1] = { ...steps[1], state: 'active', note: '等待执行' };
+    else if (status === 'generating') steps[1] = { ...steps[1], state: 'active', note: '正在生成' };
+    else if (status === 'checking') steps[1] = { ...steps[1], state: 'active', note: '检查产物' };
+    else if (status === 'failed' || status === 'uncertain') {
+      steps[1] = { ...steps[1], state: 'error', note: status === 'uncertain' ? '状态待确认' : '生成失败' };
+    } else if (status === 'awaiting_review' || status === 'approved') {
+      steps[1] = { ...steps[1], state: 'done', note: '生成完成' };
+      // 只有确实存在产物时才点亮“已生成”；异常读取时保持等待，避免虚报完成。
+      if (hasOutput) {
+        steps[2] = { ...steps[2], state: 'done', note: status === 'approved' ? '已通过审核' : '等待审核' };
+      } else {
+        steps[2] = { ...steps[2], note: '结果读取异常' };
       }
     }
-
+    return steps;
+  }
+  function renderGenerationSteps(detail, outputs) {
+    const list = document.createElement('ol');
+    list.className = 'generation-steps';
+    list.setAttribute('aria-label', '生成进度');
+    generationStepStates(detail, outputs).forEach((step, index) => {
+      const item = document.createElement('li');
+      item.className = `generation-step is-${step.state}`;
+      item.dataset.step = step.key;
+      item.dataset.state = step.state;
+      if (step.state === 'active') item.setAttribute('aria-current', 'step');
+      item.setAttribute('aria-label', `${step.label}：${step.note}`);
+      const dot = appendText(item, 'span', 'generation-step-dot',
+        step.state === 'done' ? '✓' : step.state === 'error' ? '!' : String(index + 1));
+      dot.setAttribute('aria-hidden', 'true');
+      const text = appendText(item, 'span', 'generation-step-text', '');
+      appendText(text, 'strong', '', step.label);
+      appendText(text, 'small', '', step.note);
+      list.append(item);
+    });
+    return list;
+  }
+  function renderAwaitingResult(detail) {
+    const box = document.createElement('div');
+    box.className = 'result-placeholder';
+    if (['queued', 'generating', 'checking'].includes(detail.status)) {
+      box.classList.add('result-loading');
+      const dot = appendText(box, 'span', 'result-loading-dot', '');
+      dot.setAttribute('aria-hidden', 'true');
+      appendText(box, 'strong', '', detail.status === 'queued' ? '已开始生成，正在等待执行' : '正在生成图片');
+      appendText(box, 'span', '', '完成后图片会自动显示在这里。');
+    } else if (detail.status === 'credit_insufficient') {
+      appendText(box, 'strong', '', '积分不足');
+      appendText(box, 'span', '', '当前积分不足，暂时无法开始生成。');
+    } else if (['failed', 'uncertain'].includes(detail.status)) {
+      appendText(box, 'strong', '', '这次没有生成图片');
+      appendText(box, 'span', '', detail.status === 'uncertain' ? '执行状态待确认，请刷新页面查看。' : '可以调整需求后重试，或恢复已归档的结果。');
+    } else {
+      appendText(box, 'strong', '', '尚未生成图片');
+      appendText(box, 'span', '', '该任务尚未开始生成；在左侧填写需求后点击“开始生成”即可。');
+    }
+    return box;
+  }
+  function renderVersionStrip(detail, outputs, selected) {
+    const strip = document.createElement('div');
+    strip.className = 'result-versions';
+    strip.setAttribute('aria-label', '结果版本');
+    for (const artifact of outputs) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'result-version';
+      button.setAttribute('aria-pressed', String(artifact.artifact_id === selected.artifact_id));
+      button.setAttribute('aria-label', `查看结果版本 ${artifact.artifact_id.slice(0, 8)}`);
+      button.append(safeImage(artifact, '历史结果缩略图'));
+      button.addEventListener('click', () => {
+        state.selectedOutputId = artifact.artifact_id;
+        renderDetail(state.detail || detail);
+      });
+      strip.append(button);
+    }
+    return strip;
+  }
+  async function sendArtifactToVideo(artifact, purpose, navigate = true) {
+    const project = await api('/api/video/projects/from-subproject', { method: 'POST', body: JSON.stringify({ subproject_id: artifact.subproject_id }) });
+    await api(`/api/video/projects/${project.project_id}/tray`, { method: 'POST', body: JSON.stringify({ artifact_id: artifact.artifact_id, media_type: 'image', action: 'add' }) });
+    if (!navigate) { toast('已加入当前子项目的素材暂存区。'); return; }
+    location.assign(`/video?${new URLSearchParams({ workspace_id: state.account.workspace_id, project: project.project_id, asset_id: artifact.artifact_id, asset_action: purpose })}#pipelineVideos`);
+  }
+  function resultMenuItems(detail, artifact, trigger) {
+    const items = [];
+    if (artifact.review_status !== 'approved') {
+      items.push({ label: '标记为通过审核', run: () => {
+        if (writesBlocked()) throw new Error('已有数据需要先完成项目层级迁移。');
+        return approveArtifact(artifact);
+      }});
+    }
+    if (detail.base_image && window.WorkbenchImageComparison) {
+      items.push({ label: '与基底对比', run: async () => {
+        closeImagePreviews();
+        try { await window.WorkbenchImageComparison.open(detail.base_image, artifact, { trigger }); }
+        catch (error) { toast('图片对比暂时不可用，请重新打开或下载原图查看。', true); }
+      }});
+    }
+    items.push({ label: '用于视频生成', run: () => sendArtifactToVideo(artifact, 'video') });
+    items.push({ label: '设为参考图', run: async () => {
+      const context = imageContext();
+      if (!context) throw new Error('请先打开一个子项目，再添加图片。');
+      await attachImages([artifact], 'reference', context);
+    }});
+    items.push({ label: '设为首帧', run: () => sendArtifactToVideo(artifact, 'first') });
+    items.push({ label: '设为尾帧', run: () => sendArtifactToVideo(artifact, 'last') });
+    items.push({ label: '加入素材暂存区', run: () => sendArtifactToVideo(artifact, 'video', false) });
+    return items;
+  }
+  function safeDownloadName(value, fallback) {
+    const name = String(value || '').split(/[\\/]/).pop().replace(/[^\w.\-]+/g, '-').replace(/^[.-]+/, '');
+    return name && name !== '..' ? name : fallback;
+  }
+  async function downloadArtifact(artifact, trigger) {
+    if (!artifact || !artifact.download_url) {
+      toast('当前没有可下载的原始图片。', true);
+      return;
+    }
+    trigger.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(artifact.download_url, { cache: 'no-store', credentials: 'same-origin' });
+      if (!response.ok) {
+        if (response.status === 401) throw new Error('登录状态已失效，请重新登录。');
+        let message = `服务返回 ${response.status}`;
+        try {
+          const payload = await response.json();
+          if (typeof payload.detail === 'string') message = payload.detail;
+        } catch (error) { /* Keep the status when the error body is not JSON. */ }
+        throw new Error(message);
+      }
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = /filename="?([^";]+)"?/i.exec(disposition);
+      const fallback = `image-${artifact.artifact_id}.${String(artifact.format || 'PNG').toLowerCase()}`;
+      const filename = safeDownloadName(match ? match[1].trim() : fallback, fallback);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.rel = 'noopener';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('原始图片已开始下载。');
+    } catch (error) {
+      const detail = error instanceof TypeError
+        ? '无法连接本地工作台，请确认服务仍在运行后重试。'
+        : (error.message || '请稍后重试。');
+      toast(`下载失败：${detail}`, true);
+    } finally {
+      trigger.removeAttribute('aria-busy');
+    }
+  }
+  function renderPreviewCard(detail, artifact, outputs) {
+    const card = document.createElement('article');
+    card.className = 'artifact-card';
+    card.dataset.artifactId = artifact.artifact_id;
+    card.dataset.sourceArtifactId = artifact.source_artifact_id || '';
+    const imageWrap = document.createElement('button');
+    imageWrap.type = 'button';
+    imageWrap.className = 'artifact-image-wrap';
+    imageWrap.setAttribute('aria-label', `查看结果大图，${artifact.width || '未知'} × ${artifact.height || '未知'}`);
+    imageWrap.append(safeImage(artifact, `任务结果图片，${artifact.width || ''} × ${artifact.height || ''}`));
+    imageWrap.addEventListener('click', () => openLightbox(artifact, imageWrap));
+    card.append(imageWrap);
+    if (outputs.length > 1) card.append(renderVersionStrip(detail, outputs, artifact));
+    const actions = document.createElement('div');
+    actions.className = 'artifact-actions result-actions';
+    const download = appendText(actions, 'a', 'primary-button', '下载图片');
+    download.setAttribute('download', '');
+    if (artifact.download_url) {
+      download.href = artifact.download_url;
+    } else {
+      download.setAttribute('role', 'link');
+      download.setAttribute('aria-disabled', 'true');
+      download.tabIndex = -1;
+    }
+    download.addEventListener('click', event => {
+      event.preventDefault();
+      downloadArtifact(artifact, download);
+    });
+    const modify = appendText(actions, 'button', 'secondary-button', '修改图片');
+    modify.type = 'button';
+    modify.addEventListener('click', () => startEditFromArtifact(artifact, detail));
+    actions.append(window.IWAssetActions.menu(resultMenuItems(detail, artifact, imageWrap), toast));
+    card.append(actions);
+    return card;
+  }
+  function renderExecutionControls(detail) {
     const controls = document.createElement('div');
-    controls.className = 'task-controls';
-    if (detail.can_generate || detail.can_retry) {
-      const run = appendText(controls, 'button', 'run-button', detail.can_retry ? (state.config.backend === 'local' ? '重新演练' : '重试生成') : (state.config.backend === 'local' ? '开始演练' : '开始生成'));
+    controls.className = 'task-controls result-controls';
+    // 生成统一从左侧“开始生成”发起；结果面板只保留失败后的重试和归档恢复。
+    if (detail.can_retry) {
+      const run = appendText(controls, 'button', 'primary-button result-run-button', state.config.backend === 'local' ? '重新演练' : '重试生成');
       run.type = 'button';
       run.disabled = state.busy || writesBlocked();
       run.addEventListener('click', () => runTask(detail));
@@ -428,164 +675,29 @@
       restore.disabled = state.busy || writesBlocked();
       restore.addEventListener('click', () => restoreTask(detail));
     }
-    if (controls.childElementCount) ui.details.append(controls);
-
-    const timingText = executionTimingText(detail);
-    if (timingText) {
-      const statusLine = document.createElement('div');
-      statusLine.className = 'detail-error';
-      statusLine.classList.add('detail-progress');
-      appendText(statusLine, 'span', '', timingText);
-      statusLine.title = detail.execution_timing_source === 'job_clock'
-        ? '从本次执行器开始到作业结束，不含排队；远端任务包含图片回传与登记。'
-        : '从本次执行开始计时，不含任务保存后的等待和排队时间。';
-      ui.details.append(statusLine);
-    }
-    if (detail.error_summary) appendText(ui.details, 'div', 'detail-error', detail.error_summary);
-
-    const outputs = Array.isArray(detail.outputs) ? detail.outputs : [];
-    if (outputs.length) {
-      const grid = document.createElement('div');
-      grid.className = 'result-grid';
-      for (const artifact of outputs) grid.append(renderArtifact(artifact, detail.base_image));
-      ui.details.append(grid);
-    } else if (!['queued', 'generating', 'checking'].includes(detail.status)) {
-      appendText(ui.details, 'div', 'result-empty-copy', '');
-      const hint = ui.details.lastElementChild;
-      appendText(hint, 'strong', '', detail.status === 'failed' ? '这次执行没有产出图片' : '还没有结果图片');
-      appendText(hint, 'span', '', detail.status === 'failed' ? '查看上方错误摘要，调整需求后可显式重试。' : '保存任务后，可在准备好时点击开始执行。');
-    }
-
-    const meta = document.createElement('div');
-    meta.className = 'detail-meta';
-    appendText(meta, 'span', '', `${detail.name || '未命名任务'} · ${modeName(detail.operation)} · ${detail.aspect_ratio || 'auto'}`);
-    appendText(meta, 'span', '', `${Number(detail.input_count) || 0} 张参考图 · ${outputs.length} 张结果`);
-    ui.details.append(meta);
-
-    if (detail.base_image) {
-      const section = makeSection('基底图片');
-      const chip = document.createElement('div');
-      chip.className = 'input-chip';
-      chip.append(safeImage(detail.base_image, '任务基底图片'));
-      appendText(chip, 'span', '', `${detail.base_image.width || '—'} × ${detail.base_image.height || '—'} · ${String(detail.base_image.format || '').toUpperCase()}`);
-      section.append(chip);
-      ui.details.append(section);
-    }
-    if (detail.prompt) {
-      const section = makeSection('创作需求');
-      appendText(section, 'div', 'prompt-preview', detail.prompt);
-      ui.details.append(section);
-    }
-    if (detail.description) {
-      const section = makeSection('任务描述');
-      appendText(section, 'div', 'prompt-preview', detail.description);
-      ui.details.append(section);
-    }
-    if (Array.isArray(detail.inputs) && detail.inputs.length) {
-      const section = makeSection('输入图片');
-      const chips = appendText(section, 'div', 'input-chip-list', '');
-      for (const artifact of detail.inputs) {
-        const chip = document.createElement('div');
-        chip.className = 'input-chip';
-        chip.append(safeImage(artifact, '输入图片预览'));
-        appendText(chip, 'span', '', `${String(artifact.format || '').toUpperCase()} · ${artifact.width || '—'} × ${artifact.height || '—'} · ${formatBytes(artifact.size_bytes)}`);
-        chips.append(chip);
-      }
-      ui.details.append(section);
-    }
-    if (detail.timings) {
-      const remoteArchive = String(detail.execution_backend || '').startsWith('remote-');
-      const section = makeSection(remoteArchive ? '服务端归档耗时' : '执行阶段耗时');
-      const timings = appendText(section, 'div', 'timing-grid', '');
-      const labels = remoteArchive
-        ? [['validate_seconds', '检查'], ['register_seconds', '登记'], ['total_seconds', '归档总耗时']]
-        : [['prepare_seconds', '准备'], [detail.timings.codex_seconds == null ? 'backend_seconds' : 'codex_seconds', detail.timings.codex_seconds == null ? '后端执行' : 'Codex 执行'], ['validate_seconds', '检查'], ['register_seconds', '登记'], ['total_seconds', '执行记录合计']];
-      for (const [key, label] of labels) {
-        const cell = appendText(timings, 'div', 'timing-item', '');
-        appendText(cell, 'span', '', label);
-        appendText(cell, 'strong', '', formatSeconds(detail.timings[key]));
-      }
-      ui.details.append(section);
-    }
-    if (Array.isArray(detail.executions) && detail.executions.length) {
-      const section = makeSection('执行记录');
-      const list = appendText(section, 'div', 'execution-list', '');
-      for (const execution of detail.executions) {
-        const row = appendText(list, 'div', 'execution-row', '');
-        appendText(row, 'span', '', `${statusText(execution.status)} · ${formatDate(execution.created_at)}`);
-        appendText(row, 'span', '', `${execution.failure_type || '执行记录'} · ${formatSeconds(execution.total_seconds)}`);
-      }
-      ui.details.append(section);
-    }
-    appendSourceVersions(detail);
+    return controls.childElementCount ? controls : null;
   }
-  function makeSection(title) {
-    const section = document.createElement('section');
-    section.className = 'detail-section';
-    appendText(section, 'h3', 'detail-section-title', title);
-    return section;
+  function renderCredit(detail) {
+    if (typeof detail.estimated_credit !== 'number') return null;
+    const estimated = detail.estimated_credit;
+    const reserved = typeof detail.reserved_credit === 'number' ? detail.reserved_credit : null;
+    const amount = reserved ?? estimated;
+    const amountText = creditAmountText(detail.credit_status, amount);
+    const note = document.createElement('div');
+    note.className = 'credit-task-note result-credit';
+    note.dataset.creditStatus = detail.credit_status || '';
+    note.dataset.creditAmount = amountText;
+    appendText(note, 'span', '', `本次任务积分：${amountText}`);
+    appendText(note, 'span', 'result-credit-state', ` · ${creditStateText(detail.credit_status, amount)}`);
+    if (detail.can_retry && reserved !== null && amount !== estimated) {
+      appendText(note, 'span', 'result-credit-next', `再次执行预计 ${estimated} 积分，提交时冻结`);
+    }
+    return note;
   }
-  function renderArtifact(artifact, baseArtifact) {
-    const card = document.createElement('article');
-    card.className = 'artifact-card';
-    const imageWrap = document.createElement('button');
-    imageWrap.type = 'button';
-    imageWrap.className = 'artifact-image-wrap';
-    imageWrap.setAttribute('aria-label', `查看结果大图，${artifact.width || '未知'} × ${artifact.height || '未知'}`);
-    imageWrap.append(safeImage(artifact, `任务结果图片，${artifact.width || ''} × ${artifact.height || ''}`));
-    appendText(imageWrap, 'span', 'artifact-kind', artifactLabel(artifact));
-    imageWrap.addEventListener('click', () => openLightbox(artifact, imageWrap));
-    card.append(imageWrap);
-    const info = appendText(card, 'div', 'artifact-info', '');
-    appendText(info, 'div', 'artifact-meta', `${artifact.width || '—'} × ${artifact.height || '—'} · ${String(artifact.format || '').toUpperCase()} · ${formatBytes(artifact.size_bytes)}`);
-    appendText(info, 'div', 'artifact-meta', `来源版本 · ${artifact.source_artifact_id || '原始输出'} · ${formatDate(artifact.created_at, true)}`);
-    const actions = appendText(info, 'div', 'artifact-actions', '');
-    const download = appendText(actions, 'a', 'secondary-button', '下载');
-    download.href = artifact.download_url;
-    download.setAttribute('download', '');
-    if (baseArtifact && window.WorkbenchImageComparison) {
-      const compare = appendText(actions, 'button', 'secondary-button compare-artifact', '与基底对比');
-      compare.type = 'button';
-      compare.addEventListener('click', async () => {
-        closeImagePreviews();
-        try { await window.WorkbenchImageComparison.open(baseArtifact, artifact, { trigger: compare }); }
-        catch (error) { toast('图片对比暂时不可用，请重新打开或下载原图查看。', true); }
-      });
-    }
-    if (artifact.review_status !== 'approved') {
-      const approve = appendText(actions, 'button', 'secondary-button approve-artifact', '确认通过');
-      approve.type = 'button';
-      approve.disabled = writesBlocked();
-      approve.addEventListener('click', () => approveArtifact(artifact));
-    }
-    const branch = appendText(actions, 'button', 'secondary-button', '基于此图继续修改');
-    branch.type = 'button';
-    branch.addEventListener('click', () => startEditFromArtifact(artifact));
-    const sendToVideo = async (purpose, navigate=true) => {
-      const project = await api('/api/video/projects/from-subproject',{method:'POST',body:JSON.stringify({subproject_id:artifact.subproject_id})});
-      await api(`/api/video/projects/${project.project_id}/tray`,{method:'POST',body:JSON.stringify({artifact_id:artifact.artifact_id,media_type:'image',action:'add'})});
-      if(navigate) location.assign(`/video?${new URLSearchParams({workspace_id:state.account.workspace_id,project:project.project_id,asset_id:artifact.artifact_id,asset_action:purpose})}#pipelineVideos`);
-      else toast('已加入当前子项目的素材暂存区。');
-    };
-    actions.append(window.IWAssetActions.menu([
-      {label:'继续修改',run:()=>startEditFromArtifact(artifact)},
-      {label:'用于视频生成',run:()=>sendToVideo('video')},
-      {label:'设为参考图',run:async()=>{ const context=imageContext(); if(context) await attachImages([artifact],'reference',context); }},
-      {label:'设为首帧',run:()=>sendToVideo('first')},{label:'设为尾帧',run:()=>sendToVideo('last')},
-      {label:'加入素材暂存区',run:()=>sendToVideo('video',false)},{label:'下载',href:artifact.download_url}
-    ],toast));
-    return card;
-  }
-  function appendSourceVersions(detail) {
-    const artifacts = [...(detail.outputs || []), ...(detail.inputs || [])];
-    const ids = new Set();
-    for (const artifact of artifacts) {
-      if (!artifact.source_artifact_id || ids.has(artifact.source_artifact_id)) continue;
-      ids.add(artifact.source_artifact_id);
-      const section = makeSection('来源版本');
-      appendText(section, 'div', 'prompt-preview', `来源图片 ID：${artifact.source_artifact_id}`);
-      ui.details.append(section);
-    }
+  async function submitRun(detail) {
+    const body = { request_id: requestId(), confirm_generation: true };
+    if (detail.can_retry) body.retry_of = (detail.current_job && detail.current_job.job_id) || detail.last_execution_id;
+    await api(`/api/tasks/${encodeURIComponent(detail.task_id)}/run`, { method: 'POST', body: JSON.stringify(body) });
   }
   async function runTask(detail) {
     if (writesBlocked()) { toast('已有数据需要先完成项目层级迁移。', true); return; }
@@ -593,15 +705,14 @@
     setBusy(true);
     setMessage('正在提交执行请求…');
     try {
-      const body = { request_id: requestId(), confirm_generation: true };
-      if (detail.can_retry) body.retry_of = (detail.current_job && detail.current_job.job_id) || detail.last_execution_id;
-      await api(`/api/tasks/${encodeURIComponent(detail.task_id)}/run`, { method: 'POST', body: JSON.stringify(body) });
+      await submitRun(detail);
       setMessage('已提交，正在读取执行状态。');
       toast(state.config.backend === 'local' ? '演练已开始，正在检查任务状态。' : '执行已提交，正在检查任务状态。');
       await loadTaskDetail(detail.task_id, false);
     } catch (error) {
       setMessage(error.message, true);
       toast(error.message, true);
+      await loadTaskDetail(detail.task_id, true);
     } finally { await refreshAccount(); setBusy(false); if (state.detail) renderDetail(state.detail); }
   }
   async function restoreTask(detail) {
@@ -625,9 +736,16 @@
       await loadTasks(state.taskId);
     } catch (error) { toast(error.message, true); }
   }
-  function startEditFromArtifact(artifact) {
-    const project = state.projects.find(item => (item.main_project_id || item.project_id) === artifact.main_project_id);
-    const subproject = (project?.subprojects || []).find(item => item.subproject_id === artifact.subproject_id);
+  function startEditFromArtifact(artifact, detail) {
+    if (state.busy) { toast('正在提交任务，请稍候。', true); return; }
+    let project = state.projects.find(item => (item.main_project_id || item.project_id) === artifact.main_project_id);
+    let subproject = (project?.subprojects || []).find(item => item.subproject_id === artifact.subproject_id);
+    if ((!project || !subproject) && artifact.main_project_id && artifact.subproject_id) {
+      // 归档筛选或项目刷新竞态时，仍按图片自身登记的项目绑定基底。
+      project = { main_project_id: artifact.main_project_id, project_id: artifact.main_project_id,
+        name: detail?.main_project_name || '当前主项目' };
+      subproject = { subproject_id: artifact.subproject_id, name: detail?.subproject_name || '当前子项目' };
+    }
     if (!project || !subproject) { toast('找不到这张图片所属的子项目。', true); return; }
     stopPolling();
     state.selectionVersion += 1;
@@ -658,7 +776,7 @@
     ui.refUpload.hidden = false;
     renderFiles();
     ui.prompt.focus();
-    setMessage('已选定基底图片。填写修改需求后保存为新任务。');
+    setMessage('已选定基底图片。填写修改需求后即可保存并开始生成。');
     const branchSelectionVersion = state.selectionVersion;
     loadTasks('').then(() => {
       if (branchSelectionVersion !== state.selectionVersion || state.subprojectId !== subproject.subproject_id) return;
@@ -809,7 +927,9 @@
   function updateEditHelp() { ui.editHelp.hidden = getOperation() !== 'edit' || Boolean(state.baseArtifact); }
   function fingerprint() {
     const fileSignature = state.files.map(file => `${file.name}:${file.size}:${file.lastModified}`).join('|');
-    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature, state.referenceArtifacts.map(a => a.artifact_id).join(',')].join('\n');
+    const source = promptEnhancement.snapshot();
+    const sourceSignature = source ? `${source.original_prompt}\n${source.prompt_source.enhancement_id}` : '';
+    return [state.projectId, state.subprojectId, ui.prompt.value, getOperation(), ui.ratio.value, state.baseArtifact ? state.baseArtifact.artifact_id : '', fileSignature, state.referenceArtifacts.map(a => a.artifact_id).join(','), sourceSignature].join('\n');
   }
   function persistentTaskRequestId() {
     const signature = fingerprint();
@@ -824,7 +944,7 @@
   async function saveTask(event) {
     event.preventDefault();
     if (state.busy || window.IWImageInput.uploading) return;
-    if (!state.subprojectId) { setMessage('请先打开一个子项目，再保存任务。', true); return; }
+    if (!state.subprojectId) { setMessage('请先打开一个子项目。', true); return; }
     if (state.config.project_migration_required) { setMessage('已有数据需要先完成项目层级迁移。', true); return; }
     const prompt = ui.prompt.value.trim();
     if (!prompt) { setMessage('请先写下你想要的画面。', true); ui.prompt.focus(); return; }
@@ -835,7 +955,7 @@
     const saveSubId = state.subprojectId;
     const saveVersion = state.selectionVersion;
     setBusy(true);
-    setMessage('正在保存任务…');
+    setMessage('正在提交任务并开始生成…');
     const form = new FormData();
     form.set('request_id', persistentTaskRequestId());
     form.set('operation', getOperation());
@@ -843,18 +963,49 @@
     form.set('aspect_ratio', ui.ratio.value);
     if (state.baseArtifact) form.set('base_artifact_id', state.baseArtifact.artifact_id);
     form.set('reference_artifact_ids', JSON.stringify(state.referenceArtifacts.map(a => a.artifact_id)));
+    const provenance = promptEnhancement.snapshot();
+    if (provenance) {
+      form.set('original_prompt', provenance.original_prompt);
+      form.set('prompt_source', JSON.stringify(provenance.prompt_source));
+    }
     for (const file of state.files) form.append('files', file, file.name);
     try {
-      const detail = await api(`/api/subprojects/${encodeURIComponent(saveSubId)}/tasks`, { method: 'POST', body: form });
-      if (saveVersion !== state.selectionVersion || saveMainId !== state.projectId || saveSubId !== state.subprojectId) {
+      let detail;
+      try {
+        detail = await api(`/api/subprojects/${encodeURIComponent(saveSubId)}/tasks`, { method: 'POST', body: form });
+      } catch (error) {
+        setMessage(`${error.message} 可再次提交以重试。`, true);
+        toast(error.message, true);
+        return;
+      }
+      const stale = saveVersion !== state.selectionVersion || saveMainId !== state.projectId || saveSubId !== state.subprojectId;
+      if (!stale) {
+        state.taskId = detail.task_id;
+        localStorage.setItem(storageKeys.task, detail.task_id);
+      }
+      let runError = null;
+      try {
+        await submitRun(detail);
+      } catch (error) {
+        runError = error;
+      }
+      if (stale) {
         localStorage.removeItem(storageKeys.pendingSave);
-        toast('任务已保存到原子项目。当前页面仍停留在你刚选择的子项目。');
+        setMessage(runError
+          ? `任务已提交到原子项目，但开始生成失败：${runError.message}。请在原项目中重试。`
+          : '任务已提交到原子项目并开始生成。当前页面仍停留在你刚选择的子项目。', Boolean(runError));
+        toast(runError ? `任务已提交，但开始生成失败：${runError.message}` : '任务已提交到原子项目并开始生成。', Boolean(runError));
+        return;
+      }
+      if (runError) {
+        // 保留表单与持久化请求 ID：再次点击会复用同一任务重试，不会重复创建或重复扣款。
+        setMessage(`任务已保存，但开始生成失败：${runError.message}。可直接再次点击“开始生成”重试。`, true);
+        toast(runError.message, true);
+        await loadTasks(detail.task_id);
         return;
       }
       localStorage.removeItem(storageKeys.pendingSave);
-      state.taskId = detail.task_id;
       state.baseArtifact = null;
-      localStorage.setItem(storageKeys.task, detail.task_id);
       ui.basePanel.hidden = true;
       ui.refUpload.hidden = false;
       state.files = []; state.referenceArtifacts = [];
@@ -862,12 +1013,10 @@
       renderFiles();
       ui.prompt.value = '';
       ui.prompt.dispatchEvent(new Event('input'));
-      setMessage('任务已保存。开始执行需要你单独点击按钮。');
-      toast('任务已保存为草稿。');
+      promptEnhancement.reset();
+      setMessage('已开始生成，结果会自动更新。');
+      toast('已开始生成，结果会自动更新。');
       await loadTasks(detail.task_id);
-    } catch (error) {
-      setMessage(`${error.message} 可再次保存以重试。`, true);
-      toast(error.message, true);
     } finally {
       setBusy(false);
       if (state.detail && state.detail.task_id === state.taskId) renderDetail(state.detail);

@@ -12,14 +12,14 @@ detail/list/download/recover 和手动版本入口继续按原权限与恢复合
 - `GET /api/projects` → `{projects:[{project_id,name,created_at}]}`。
 - `POST /api/projects`，JSON `{request_id,name}` → Project。request_id在同一次保存意图内固定，重发不创建重复项目。
 - `GET /api/projects/{pid}/tasks` → `{tasks:[{task_id,project_id,operation,prompt,base_artifact_id,created_at,status,status_label,input_count,output_count,preview_artifact:ArtifactDTO|null}]}`，新到旧。摘要包含首张输出预览，不必逐项打开详情才能看到缩略图。
-- `POST /api/projects/{pid}/tasks`，multipart：`request_id`, `operation` generate/edit, `prompt`, `aspect_ratio` auto/1:1/3:2/2:3, `base_artifact_id`可选，`files`可重复上传。→ 完整TaskDetail。仅保存任务，不启动模型；同一request_id重发返回同一任务，不同内容冲突409。
+- `POST /api/projects/{pid}/tasks`，multipart：`request_id`, `operation` generate/edit, `prompt`, `aspect_ratio` auto/1:1/3:2/2:3, `base_artifact_id`可选，`files`可重复上传；可选 `original_prompt`（强化前的用户原文）和 `prompt_source`（JSON 字符串，见“提示词强化”）。→ 完整TaskDetail。仅保存任务，不启动模型；同一request_id重发返回同一任务，不同内容（含强化来源）冲突409。
 - `GET /api/projects/{pid}/tasks/{tid}` → TaskDetail（见下）。
 - `POST /api/projects/{pid}/tasks/{tid}/run`，JSON `{request_id,confirm_generation:true,retry_of?:job_id或last_execution_id}` → `{job_id,status}`。普通重复提交返回既有作业；失败后只有显式retry_of才能重新执行；成功任务不能再次执行，可新建任务。后端无需浏览器等待。
 - `POST /api/projects/{pid}/tasks/{tid}/restore`，JSON `{request_id,execution_id}` → `{job_id,status}`；仅恢复已验证候选归档，不调用模型。
 - `POST /api/artifacts/{aid}/approve`，JSON `{}` → ArtifactDTO；只用于输出图片，重发幂等。
 - `GET /api/artifacts/{aid}` → 已登记图片原文件，图片预览地址；`?download=1` 以附件下载。
 
-TaskDetail在任务摘要基础上增加：`inputs:[ArtifactDTO]`, `outputs:[ArtifactDTO]`, `base_image:ArtifactDTO|null`, `aspect_ratio`, `current_job:{job_id,status,created_at,started_at,finished_at}|null`, `last_execution_id`, `can_generate`, `can_retry`, `can_restore`, `error_summary`, `failure_type`, `elapsed_seconds`, `timings:{prepare_seconds,codex_seconds,validate_seconds,register_seconds,total_seconds}|null`, `executions:[{execution_id,status,created_at,failure_type,total_seconds}]`。API不返回原始stderr、命令、凭据或磁盘路径。
+TaskDetail在任务摘要基础上增加：`inputs:[ArtifactDTO]`, `outputs:[ArtifactDTO]`, `base_image:ArtifactDTO|null`, `aspect_ratio`, `original_prompt:string|null`（强化前原文；未使用强化时为null）, `prompt_source:{kind,enhancement_id,skill_id,skill_version,mode,task_type}|null`, `current_job:{job_id,status,created_at,started_at,finished_at}|null`, `last_execution_id`, `can_generate`, `can_retry`, `can_restore`, `error_summary`, `failure_type`, `elapsed_seconds`, `timings:{prepare_seconds,codex_seconds,validate_seconds,register_seconds,total_seconds}|null`, `executions:[{execution_id,status,created_at,failure_type,total_seconds}]`。API不返回原始stderr、命令、凭据或磁盘路径。
 
 ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size_bytes,created_at,source_artifact_id,url,download_url,review_status:"pending"|"approved",reviewed_at`。
 
@@ -31,11 +31,13 @@ ArtifactDTO：`artifact_id,project_id,task_id,kind,role,format,width,height,size
 
 持久化请求ID：保存任务的request_id跨网络重试不变；请求进行时禁用按钮。多个标签页即使request_id不同，后端也会按task_id去重执行。失败重试使用当前job_id（历史任务无job时使用last_execution_id）作为retry_of。
 
-点击任意输出“基于此图继续修改”：切换到该图所属项目，建立新的编辑草稿，将artifact_id放入base_artifact_id并展示基底预览；不直接执行。所有历史版本都可作为分支基底。
+点击任意输出“修改图片”：切换到该图所属项目，建立新的编辑草稿，将artifact_id放入base_artifact_id并展示基底预览；不直接执行。所有历史版本都可作为分支基底。
 # Asset UX 补充（2026-10-20）
 
 - `GET/POST /api/subprojects/{subproject_id}/assets` 列出或上传当前子项目图片。上传使用 multipart `files`；后台校验图片内容、每张配置上限、每批 1–9 张与 40 MiB 总量。同子项目相同内容返回已有 Artifact ID。权限仍由当前 Account/Workspace 校验。
-- `POST /api/video/projects/from-subproject` 用 `subproject_id` 获取或创建指向同一 MainProject/SubProject 的视频项目。
+- `POST /api/video/projects/from-subproject` 用 `subproject_id` 获取或创建指向同一 MainProject/SubProject 的视频项目；同一次调用是幂等的，返回的 `main_project_id`、`subproject_id` 与图片工作台共用，不复制媒体文件。
+- `POST /api/video/projects/{project_id}/bind-subproject`，JSON `{subproject_id}`：仅用于把历史独立视频项目一次性归入一个尚无视频项目的子项目。已绑定同一子项目时幂等返回；绑定其他子项目或该子项目已有视频项目时返回 409。既有镜头、任务和 MP4 不变，后续新镜头从该子项目生成。
+- 绑定子项目后的手动分镜、上传 MP4 和成功生成结果都会登记到该子项目：视频任务保存 `main_project_id`/`subproject_id`，成功 MP4 通过 `StorageManager` 登记为 Artifact，并返回 `output_artifact_id`、`output_task_id` 与 `video_version`。项目切换与只读刷新不会创建任务或冻结积分。
 - `GET/POST /api/video/projects/{project_id}/tray` 读取或调整暂存引用。POST 字段为 `artifact_id`、`media_type`、`action`（`add`/`remove`）及可选 `shot_id`；移出不删除原素材。
 - `POST /api/video/projects/{project_id}/shots/{shot_id}/clip` 以 `source_shot_id`、`artifact_id` 绑定同项目已完成视频；不能覆盖正在执行或已有成片的镜头。
 - `POST /api/scripts/tasks` 的 `quote_signature` 可省略。服务端仍从当前 Registry 计算真实价格并执行额度、模型可用性和幂等校验；若传入签名，继续校验签名有效性。旧客户端行为兼容，客户端提交的未知价格字段仍被拒绝。
@@ -57,3 +59,14 @@ uncertain 不提供重新生成动作；视频的原执行对账/最终回传由
 查询先核验 Workspace，随后只读已有记录；不补齐 outbox、不结算、不启动模型。旧详情接口的兼容行为保留；
 图片详情、脚本任务和视频 current_job 额外包含相同的 recovery 投影。
 
+
+## 提示词强化（2026-10-31，增量接口）
+
+- `POST /api/prompt-enhancements`，JSON：
+  `{request_id, prompt, mode:"standard"|"creative", task_type:"generate"|"edit"|"reference_generate", aspect_ratio?, references?:[{index,role,usage?,label?,artifact_id?}], edit?:{change_targets,preserve_targets,forbidden_changes,inherit_aspect_ratio}}`。
+  → `{schema_version, enhancement_id, request_id, status:"enhanced"|"fallback", mode, task_type, skill:{skill_id,name,version}, style?, original_prompt, enhanced_prompt, intent_summary, preserved_user_requirements, added_details, negative_constraints, edit_plan?, references, warnings, fallback:{code,message}|null, usage, source:{kind,enhancement_id,skill_id,skill_version,mode,task_type}}`。
+- 边界：`prompt` 非空且不超过4000字符；参考图不超过8张且索引不重复；编辑任务必须带 `edit_target` 或 `base` 参考图，`edit` 只允许编辑任务，`aspect_ratio` 只继承底图；多张参考图中 `role:"other"` 必须写明用途。违反返回400，且不调用模型。
+- 幂等：同一账号+Workspace内相同 `request_id` 返回缓存结果；同一ID的内容指纹不同返回409。缓存只保存本次强化结果，不跨Workspace复用。
+- 模型：默认 `provider:"mock"` 离线演练；配置真实 deepseek-flash 后每次请求最多调用一次。超时、空响应、格式或结构错误、编辑计划缺失、模型不可用、预算超限时返回 `status:"fallback"`、`enhanced_prompt` 等于原文，并以 `fallback.code` 标注 timeout/empty_response/invalid_json/invalid_schema/invalid_edit_plan/model_unavailable/model_error/budget_exceeded。
+- 计费与执行：本接口不修改任务状态、不写文件、不调用 ImageBackend、不冻结或扣减积分；图片生成价格不变。真实调用按账号+Workspace限制每小时/每天次数；`usage` 返回调用次数、Token（若有）以及仅在配置单价时计算的 `estimated_cost`/`currency`。
+- 溯源：用户点击“使用强化版”后，任务保存可附带 `original_prompt` 与 `prompt_source`（取自响应的 `source`）。服务端只接受固定字段，来源不合法返回400；未使用强化的任务两者均为null。

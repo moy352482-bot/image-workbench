@@ -462,10 +462,11 @@ class IdentityStore:
 
     def task_credit(self, task_id):
         with self.connect() as db:
-            row = db.execute("SELECT expected FROM credit_rejections WHERE task_id=?", (task_id,)).fetchone()
-            if row:
-                return {"credit_status": "credit_insufficient", "estimated_credit": row[0], "execution_status": "credit_insufficient"}
+            # 已结算的预约优先于后续重试被拒记录，退款事实不能被一次余额不足覆盖。
             row = db.execute("SELECT status,amount FROM reservations WHERE task_id=? ORDER BY created_at DESC LIMIT 1", (task_id,)).fetchone()
-        if not row:
-            return {"credit_status": "waiting_credit", "execution_status": "waiting_credit"}
-        return {"credit_status": row[0], "reserved_credit": row[1], "execution_status": "failed" if row[0] == "refunded" else row[0]}
+            if row:
+                return {"credit_status": row[0], "reserved_credit": row[1], "execution_status": "failed" if row[0] == "refunded" else row[0]}
+            row = db.execute("SELECT expected FROM credit_rejections WHERE task_id=?", (task_id,)).fetchone()
+        if row:
+            return {"credit_status": "credit_insufficient", "estimated_credit": row[0], "execution_status": "credit_insufficient"}
+        return {"credit_status": "waiting_credit", "execution_status": "waiting_credit"}

@@ -3,7 +3,9 @@
   const $ = id => document.getElementById(id);
   const uuid = () => crypto.randomUUID().replaceAll('-', '');
   const requestedWorkspace = new URL(location.href).searchParams.get('workspace_id');
-  const state = { account: null, config: null, csrf: '', project: null, projectRequest: uuid(), shotRequest: uuid(), referenceOrder: [], runRequests: new Map(), projectSignature: '', loading: false, draftRevision: 0, shotRevision: 0, projectReadSequence: 0 };
+  const state = { account: null, config: null, csrf: '', project: null, mainProjectId: null, subprojectId: null,
+    mainProjects: [], videoProjects: [], treeSequence: 0, shotRequest: uuid(), referenceOrder: [], runRequests: new Map(),
+    projectSignature: '', loading: false, draftRevision: 0, shotRevision: 0, projectReadSequence: 0 };
   const labels = { draft: '待生成', queued: '已排队', running: '生成中', generating: '生成中', completed: '已完成', failed: '生成失败', uncertain: '状态待确认' };
   const modes = { T2V: '文生视频', I2V: '首帧 / 首尾帧', R2V: '参考素材' };
   const resolutions = ['720p', '1080p'];
@@ -14,6 +16,7 @@
   // the controller's state through a view or a project-change event.
   function snapshot() {
     return Object.freeze(structuredClone({account: state.account, config: state.config, project: state.project,
+      mainProjectId: state.mainProjectId, subprojectId: state.subprojectId,
       referenceOrder: state.referenceOrder, draftRevision: state.draftRevision, shotRevision: state.shotRevision}));
   }
   function captureContext() {
@@ -65,6 +68,52 @@
     node.classList.toggle('is-error', error);
     node.textContent = text;
   }
+  let projectDialogMode = 'new-main', projectDialogTarget = null, projectDialogRequest = '';
+  function openProjectDialog(mode = 'new-main', target = null) {
+    projectDialogMode = mode; projectDialogTarget = target; projectDialogRequest = uuid();
+    const editing = mode.startsWith('edit-'), sub = mode.includes('sub');
+    $('videoProjectDialogEyebrow').textContent = editing ? (sub ? '子项目设置' : '主项目设置') : (sub ? '新建子项目' : '新建主项目');
+    $('videoProjectDialogTitle').textContent = editing ? `编辑${sub ? '子项目' : '主项目'}` : '为项目命名';
+    $('videoProjectDialogSubmit').textContent = editing ? '保存修改' : `创建${sub ? '子项目' : '主项目'}`;
+    $('videoProjectDialogName').value = editing && target ? target.name || '' : '';
+    $('videoProjectDialogDescription').value = editing && target ? target.description || '' : '';
+    $('videoProjectDialog').showModal();
+    setTimeout(() => $('videoProjectDialogName').focus(), 20);
+  }
+  function closeProjectDialog() { $('videoProjectDialog').close(); }
+  document.querySelectorAll('#videoProjectDialog .close-dialog').forEach(button => button.addEventListener('click', closeProjectDialog));
+  $('videoProjectDialogForm').addEventListener('submit', event => {
+    event.preventDefault();
+    busy($('videoProjectDialogSubmit'), async () => {
+      const mode = projectDialogMode, target = projectDialogTarget;
+      const name = $('videoProjectDialogName').value.trim();
+      const description = $('videoProjectDialogDescription').value.trim();
+      if (!name) throw new Error('请填写项目名称');
+      const body = {name, description};
+      let payload;
+      if (mode === 'edit-main') {
+        payload = await api(`/api/main-projects/${encodeURIComponent(target.main_project_id || target.project_id)}`, {method: 'PATCH', body: JSON.stringify(body)});
+      } else if (mode === 'edit-sub') {
+        payload = await api(`/api/subprojects/${encodeURIComponent(target.subproject_id)}`, {method: 'PATCH', body: JSON.stringify(body)});
+      } else if (mode === 'new-sub') {
+        const mainId = target.main_project_id || target.project_id;
+        payload = await api(`/api/main-projects/${encodeURIComponent(mainId)}/subprojects`, {method: 'POST', body: JSON.stringify({request_id: projectDialogRequest, ...body})});
+      } else {
+        payload = await api('/api/main-projects', {method: 'POST', body: JSON.stringify({request_id: projectDialogRequest, ...body})});
+      }
+      closeProjectDialog();
+      if (mode === 'new-main') {
+        const sub = (payload.subprojects || []).find(item => item.subproject_id);
+        if (sub) await selectSubproject(sub.subproject_id, {preserveDraft: true});
+        else await loadProjectTree();
+      } else if (mode === 'new-sub') {
+        await selectSubproject(payload.subproject_id, {preserveDraft: true});
+      } else {
+        await loadProjectTree();
+      }
+      notice(mode.startsWith('edit-') ? '项目信息已更新' : '项目已创建');
+    });
+  });
   async function api(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (state.csrf) headers.set('X-Workbench-CSRF', state.csrf);
@@ -135,20 +184,89 @@
     $('videoResolution').value = enabled.includes(previous) ? previous : enabled[0] || '';
     resolutionView();
   }
-  async function loadProjects() {
-    const context = captureContext();
-    const result = await api('/api/video/projects');
-    if (!isCurrent(context)) return result.projects;
-    $('videoProjectList').replaceChildren();
-    for (const project of result.projects) {
-      const button = el('button', 'video-project-button', project.name);
-      button.type = 'button';
-      button.classList.toggle('is-active', project.project_id === state.project?.project_id);
-      button.addEventListener('click', () => selectProject(project.project_id).catch(error => notice(error.message, true)));
-      $('videoProjectList').append(button);
+  async function loadProjectTree() {
+    const sequence = ++state.treeSequence;
+    const [mainPayload, videoPayload] = await Promise.all([api('/api/main-projects'), api('/api/video/projects')]);
+    if (sequence !== state.treeSequence) return {mains: state.mainProjects, projects: state.videoProjects};
+    state.mainProjects = (Array.isArray(mainPayload.main_projects) ? mainPayload.main_projects : [])
+      .filter(main => main.status !== 'archived');
+    state.videoProjects = Array.isArray(videoPayload.projects) ? videoPayload.projects : [];
+    renderProjectTree();
+    return {mains: state.mainProjects, projects: state.videoProjects};
+  }
+  function renderProjectTree() {
+    const list = $('videoProjectList'); list.replaceChildren();
+    if (!state.mainProjects.length) {
+      list.append(el('p', 'field-hint', '还没有主项目，点击右上角 + 创建'));
     }
-    if (!result.projects.length) $('videoProjectList').append(el('p', 'field-hint', '还没有视频项目'));
-    return result.projects;
+    for (const main of state.mainProjects) {
+      const mainId = main.main_project_id || main.project_id;
+      const expanded = mainId === state.mainProjectId;
+      const group = el('div', `project-tree-group${expanded ? ' expanded' : ''}`);
+      const row = el('div', 'project-tree-main');
+      const expand = el('button', 'project-expand', expanded ? '⌄' : '›');
+      expand.type = 'button'; expand.setAttribute('aria-label', '展开或折叠子项目');
+      expand.setAttribute('aria-expanded', String(expanded));
+      expand.addEventListener('click', () => {
+        const open = group.classList.toggle('expanded');
+        expand.textContent = open ? '⌄' : '›'; expand.setAttribute('aria-expanded', String(open));
+      });
+      const button = el('button', `project-item${expanded ? ' selected' : ''}`);
+      button.type = 'button';
+      const marker = el('span', 'project-symbol'); marker.setAttribute('aria-hidden', 'true');
+      button.append(marker, el('span', 'project-name', main.name || '未命名主项目'));
+      button.addEventListener('click', () => selectMainProject(mainId).catch(error => notice(error.message, true)));
+      const options = el('button', 'project-options', '⋯');
+      options.type = 'button'; options.setAttribute('aria-label', `管理项目 ${main.name || ''}`);
+      options.addEventListener('click', () => openProjectDialog('edit-main', main));
+      row.append(expand, button, options);
+      const children = el('div', 'project-tree-children');
+      for (const sub of (Array.isArray(main.subprojects) ? main.subprojects : [])) {
+        const childRow = el('div', 'project-child-row');
+        const child = el('button', `project-child${sub.subproject_id === state.subprojectId ? ' selected' : ''}`);
+        child.type = 'button';
+        const dot = el('span', 'project-child-dot'); dot.setAttribute('aria-hidden', 'true');
+        child.append(dot, el('span', 'project-name', sub.name || '未命名子项目'),
+          el('span', 'project-child-count', String(Number(sub.task_count) || 0)));
+        child.addEventListener('click', () => selectSubproject(sub.subproject_id).catch(error => notice(error.message, true)));
+        const edit = el('button', 'project-sub-options', '⋯');
+        edit.type = 'button'; edit.setAttribute('aria-label', `管理子项目 ${sub.name || ''}`);
+        edit.addEventListener('click', () => openProjectDialog('edit-sub', sub));
+        childRow.append(child, edit); children.append(childRow);
+      }
+      const add = el('button', 'project-child project-child-add', '＋ 新建子项目');
+      add.type = 'button';
+      add.addEventListener('click', () => openProjectDialog('new-sub', main));
+      children.append(add);
+      group.append(row, children); list.append(group);
+    }
+    renderLegacyProjects();
+  }
+  function renderLegacyProjects() {
+    const host = $('videoLegacyProjects'); host.replaceChildren();
+    const legacy = state.videoProjects.filter(project => !project.pipeline?.subproject_id);
+    if (!legacy.length) return;
+    host.append(el('span', 'side-label video-legacy-title', '待归档视频项目'));
+    for (const project of legacy) {
+      const row = el('div', 'video-legacy-row');
+      const button = el('button', `video-project-button${project.project_id === state.project?.project_id ? ' is-active' : ''}`, project.name);
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        if (hasUnsavedDraft() && !window.confirm('当前项目还有未保存的内容，切换后将清空。确定切换吗？')) return;
+        selectProject(project.project_id).catch(error => notice(error.message, true));
+      });
+      row.append(button);
+      if (state.subprojectId) {
+        const bind = el('button', 'text-button video-legacy-bind', '归入当前子项目');
+        bind.type = 'button';
+        bind.addEventListener('click', () => bindLegacyProject(project.project_id).catch(error => notice(error.message, true)));
+        row.append(bind);
+      }
+      host.append(row);
+    }
+  }
+  function allSubprojects() {
+    return state.mainProjects.flatMap(main => (main.subprojects || []).map(sub => ({...sub, main_project_id: main.main_project_id || main.project_id})));
   }
   function renderAssets(project) {
     state.referenceOrder = state.referenceOrder.filter(id => project.assets.some(asset => asset.asset_id === id));
@@ -253,7 +371,9 @@
   }
   function projectView(project, force = false, preserveDraft = false, notify = true) {
     state.project = structuredClone(project);
-    $('videoProjectDetail').hidden = false; $('videoCreatePanel').hidden = true;
+    state.mainProjectId = project.main_project_id || null;
+    state.subprojectId = project.subproject_id || null;
+    $('videoProjectDetail').hidden = false;
     $('videoProjectIntro').hidden = false;
     $('videoActiveName').textContent = project.name; $('videoProjectCrumb').textContent = project.name;
     $('videoActiveScript').textContent = project.script || '未填写脚本说明';
@@ -261,38 +381,79 @@
     if (force || signature !== state.projectSignature) { renderAssets(project); renderShots(project); state.projectSignature = signature; }
     if (notify) document.dispatchEvent(new CustomEvent('video-project-view', { detail: { project: structuredClone(project), force, preserveDraft, context: captureContext() } }));
   }
+  function rememberSelection() {
+    if (state.mainProjectId) localStorage.setItem('image-workbench.project', state.mainProjectId);
+    if (state.subprojectId) localStorage.setItem('image-workbench.subproject', state.subprojectId);
+  }
+  function hasUnsavedDraft() {
+    if (!state.project) return false;
+    return Boolean($('videoShotName').value.trim() || $('videoShotPrompt').value.trim() || state.referenceOrder.length
+      || $('pipelineScriptRequest').value.trim() || $('pipelineImagePrompt').value.trim());
+  }
   async function selectProject(id, preserveDraft = false) {
     if (!preserveDraft) state.draftRevision++;
     const selection = {id, workspace: state.account?.workspace_id, revision: state.draftRevision};
     state.selectingProject = selection; state.projectReadSequence++;
     try {
       const project = await api(`/api/video/projects/${id}`);
-      if (state.selectingProject !== selection || state.switchingWorkspace || selection.workspace !== state.account?.workspace_id) return;
+      if (state.selectingProject !== selection || state.switchingWorkspace || selection.workspace !== state.account?.workspace_id) return null;
       state.selectingProject = null;
       if (!preserveDraft) { $('videoShotForm').reset(); shotChanged(); }
       state.referenceOrder = []; $('videoReferenceChoices').replaceChildren();
       projectView(project, true, preserveDraft); resolutionView();
-      const url = new URL(location.href); url.searchParams.set('project', id); history.replaceState(null, '', url);
-      await loadProjects();
+      const url = new URL(location.href); url.searchParams.set('project', id);
+      if (project.subproject_id) url.searchParams.set('subproject', project.subproject_id); else url.searchParams.delete('subproject');
+      history.replaceState(null, '', url);
+      rememberSelection();
+      await loadProjectTree();
+      return project;
     } finally { if (state.selectingProject === selection) state.selectingProject = null; }
+  }
+  async function selectSubproject(subprojectId, {preserveDraft = false} = {}) {
+    if (state.selectingProject || state.switchingWorkspace) throw new Error('项目正在切换，请稍候再试');
+    if (!preserveDraft && hasUnsavedDraft() && !window.confirm('当前项目还有未保存的内容，切换后将清空。确定切换吗？')) return null;
+    if (!preserveDraft) state.draftRevision++;
+    const selection = {id: null, subprojectId, workspace: state.account?.workspace_id, revision: state.draftRevision};
+    state.selectingProject = selection; state.projectReadSequence++;
+    try {
+      const project = await api('/api/video/projects/from-subproject', {method: 'POST', body: JSON.stringify({subproject_id: subprojectId})});
+      if (state.selectingProject !== selection || state.switchingWorkspace || selection.workspace !== state.account?.workspace_id) return null;
+      state.selectingProject = null;
+      if (!preserveDraft) { $('videoShotForm').reset(); shotChanged(); }
+      state.referenceOrder = []; $('videoReferenceChoices').replaceChildren();
+      projectView(project, true, preserveDraft); resolutionView();
+      const url = new URL(location.href);
+      url.searchParams.set('project', project.project_id); url.searchParams.set('subproject', subprojectId);
+      history.replaceState(null, '', url);
+      rememberSelection();
+      await loadProjectTree();
+      return project;
+    } finally { if (state.selectingProject === selection) state.selectingProject = null; }
+  }
+  async function selectMainProject(mainId) {
+    const main = state.mainProjects.find(item => (item.main_project_id || item.project_id) === mainId);
+    if (!main) throw new Error('主项目不存在或已归档');
+    const subs = Array.isArray(main.subprojects) ? main.subprojects : [];
+    const sub = subs.find(item => item.subproject_id === state.subprojectId) || subs[0];
+    if (!sub) {
+      openProjectDialog('new-sub', main);
+      notice('这个主项目还没有子项目，请先创建一个');
+      return null;
+    }
+    return selectSubproject(sub.subproject_id);
+  }
+  async function bindLegacyProject(projectId) {
+    if (!state.subprojectId) throw new Error('请先选择要归入的子项目');
+    await api(`/api/video/projects/${projectId}/bind-subproject`, {method: 'POST', body: JSON.stringify({subproject_id: state.subprojectId})});
+    const project = await selectSubproject(state.subprojectId, {preserveDraft: true});
+    notice('视频项目已归入当前子项目');
+    return project;
   }
   async function ensureProject() {
     if (state.selectingProject || state.switchingWorkspace) throw new Error('项目正在切换，请稍候再试');
     if (state.project) return structuredClone(state.project);
     if (!state.account) throw new Error('工作台正在加载，请稍候再试');
-    if (state.projectCreating && isCurrent(state.projectCreating.context)) return state.projectCreating.promise;
-    const context = captureContext();
-    state.projectDraft ||= { request_id: state.projectRequest, name: $('videoProjectName').value.trim() || `新作品 ${new Date().toLocaleString('zh-CN', { hour12: false })}`, script: '' };
-    const pending = (async () => {
-      const project = await api('/api/video/projects', { method: 'POST', body: JSON.stringify(state.projectDraft) });
-      if (!isCurrent(context)) throw new Error('已切换项目，请在当前项目重新操作');
-      await selectProject(project.project_id, true);
-      if (!isCurrent(context, project.project_id)) throw new Error('已切换项目，请在当前项目重新操作');
-      state.projectRequest = uuid(); state.projectDraft = null;
-      return project;
-    })();
-    const creating = {context, promise: pending}; state.projectCreating = creating;
-    try { return await pending; } finally { if (state.projectCreating === creating) state.projectCreating = null; }
+    throw new Error('请先在左侧选择主项目和子项目');
   }
   async function refreshProject(context = captureContext(), {notify = true} = {}) {
     if (!context.id || !isCurrent(context)) return null;
@@ -313,16 +474,7 @@
     } finally { if (state.loading === context) state.loading = false; }
   }
 
-  $('newVideoProject').addEventListener('click', () => {
-    state.draftRevision = (state.draftRevision || 0) + 1; state.selectingProject = null; state.project = null; state.projectSignature = '';
-    state.projectRequest = uuid(); state.projectDraft = null; state.referenceOrder = []; shotChanged();
-    $('videoShotForm').reset(); $('videoProjectName').value = ''; $('videoActiveScript').textContent = ''; $('videoUploadMessage').textContent = '';
-    renderAssets({ assets: [] }); renderShots({ shots: [] });
-    document.dispatchEvent(new CustomEvent('video-project-cleared')); $('videoCreatePanel').hidden = false; $('videoProjectIntro').hidden = true;
-    $('videoProjectCrumb').textContent = '新作品'; notice('');
-    const url = new URL(location.href); url.searchParams.delete('project'); history.replaceState(null, '', url);
-    loadProjects().catch(error => notice(error.message, true));
-  });
+  $('newVideoProject').addEventListener('click', () => openProjectDialog('new-main'));
   $('videoShotForm').addEventListener('submit', event => {
     event.preventDefault();
     busy(event.submitter, async () => {
@@ -342,22 +494,46 @@
   $('videoShotForm').addEventListener('change', shotChanged);
   $('videoResolution').addEventListener('change', resolutionView);
   $('videoDuration').addEventListener('input', quote);
-  $('videoRefresh').addEventListener('click', event => busy(event.currentTarget, async () => { await refresh(); await loadProjects(); notice('状态已刷新'); }));
-  $('videoWorkspace').addEventListener('change', async event => { state.draftRevision++; state.switchingWorkspace = true; try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); } catch (error) { state.switchingWorkspace = false; event.target.value = state.account.workspace_id; notice(error.message, true); } });
+  $('videoRefresh').addEventListener('click', event => busy(event.currentTarget, async () => { await refresh(); await loadProjectTree(); notice('状态已刷新'); }));
+  $('videoWorkspace').addEventListener('change', async event => {
+    if (hasUnsavedDraft() && !window.confirm('当前项目还有未保存的内容，切换工作空间后将清空。确定切换吗？')) {
+      event.target.value = state.account.workspace_id; return;
+    }
+    state.draftRevision++; state.switchingWorkspace = true;
+    try { await api('/api/workspaces/select', { method: 'POST', body: JSON.stringify({ workspace_id: event.target.value }) }); location.assign('/video'); }
+    catch (error) { state.switchingWorkspace = false; event.target.value = state.account.workspace_id; notice(error.message, true); }
+  });
   $('videoLogout').addEventListener('click', event => busy(event.currentTarget, async () => { await api('/api/auth/logout', { method: 'POST' }); location.assign('/login'); }));
 
   window.IWVideo = Object.freeze({ snapshot, captureContext, isCurrent, setReferences, addReferences, refreshProject,
-    api, refresh, notice, busy, mediaURL, el, uuid, ensureProject, selectProject });
+    api, refresh, notice, busy, mediaURL, el, uuid, ensureProject, selectProject, selectSubproject, selectMainProject,
+    loadProjectTree, openProjectDialog });
   (async () => {
     const initialRevision = state.draftRevision;
     state.csrf = (await api('/api/config')).csrf_token;
     await refreshAccount();
     for (const workspace of state.account.workspaces) { const option = el('option', '', workspace.name); option.value = workspace.workspace_id; option.selected = workspace.workspace_id === state.account.workspace_id; $('videoWorkspace').append(option); }
     state.config = await api('/api/video/config'); configView();
-    const projects = await loadProjects(); const requested = new URL(location.href).searchParams.get('project');
+    await loadProjectTree();
+    const params = new URL(location.href).searchParams;
+    const requestedProject = params.get('project'), requestedSub = params.get('subproject');
     if (initialRevision === state.draftRevision && !state.project && !state.selectingProject && !state.switchingWorkspace) {
-      if (requested && projects.some(project => project.project_id === requested)) await selectProject(requested);
-      else if (projects.length) await selectProject(projects[0].project_id);
+      const subs = allSubprojects(), subIds = new Set(subs.map(sub => sub.subproject_id));
+      const projects = state.videoProjects.map(project => project.project_id);
+      if (requestedProject && projects.includes(requestedProject)) await selectProject(requestedProject, true);
+      else if (requestedSub && subIds.has(requestedSub)) await selectSubproject(requestedSub, {preserveDraft: true});
+      else {
+        const rememberedSub = localStorage.getItem('image-workbench.subproject');
+        const rememberedMain = localStorage.getItem('image-workbench.project');
+        const preferred = subIds.has(rememberedSub) ? rememberedSub
+          : (subs.find(sub => sub.main_project_id === rememberedMain) || subs[0])?.subproject_id;
+        if (preferred) await selectSubproject(preferred, {preserveDraft: true});
+        else {
+          $('videoProjectDetail').hidden = true; $('videoProjectIntro').hidden = true;
+          $('videoProjectCrumb').textContent = state.mainProjects.length ? '请选择子项目' : '请先新建主项目';
+          notice(state.mainProjects.length ? '请在左侧为新项目创建或选择一个子项目' : '请点击左侧 + 新建主项目，再创建子项目');
+        }
+      }
     }
     document.dispatchEvent(new CustomEvent('video-ready'));
     setInterval(() => { if (!document.hidden && state.account) refresh().catch(error => notice(error.message, true)); }, 8000);

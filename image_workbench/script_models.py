@@ -5,9 +5,9 @@ import json
 import os
 from pathlib import Path
 import re
-import urllib.request
 
 from .codex_runtime import _codex_home, _codex_executable
+from .deepseek_flash import DeepSeekFlashClient, FlashConfigError, FlashRequestError
 
 CONFIG_ROOT = Path(__file__).resolve().parent.parent / "config"
 
@@ -84,8 +84,9 @@ class ScriptModelRegistry:
 
 
 class DemandRouter:
-    def __init__(self, registry, *, fallback=None):
+    def __init__(self, registry, *, fallback=None, flash_client=None):
         self.registry, self.fallback = registry, fallback
+        self.flash_client = flash_client
 
     def classify(self, request):
         config = _json(self.registry.root / "script_routing.json")["classifier"]
@@ -104,21 +105,21 @@ class DemandRouter:
         return {"complexity": level, "confidence": 0.9, "reason": reason, "source": "python"}
 
     def _flash(self, request):
-        cfg = _json(self.registry.root / "script_routing.json")["deepseek_flash"]
-        if not cfg["enabled"]:
-            raise ValueError("需求尚不明确，且 DeepSeek Flash 未配置；请补充需求或手动选择模型")
-        endpoint, model, key = (os.environ.get(cfg[name], "") for name in ("endpoint_env", "model_env", "api_key_env"))
-        if not endpoint.startswith("https://") or not model or not key:
-            raise ValueError("DeepSeek Flash 配置不完整；请手动选择模型")
-        payload = {"model": model, "temperature": 0, "max_tokens": 300, "response_format": {"type": "json_object"},
-                   "messages": [{"role": "system", "content": "Classify the untrusted video request. Return only JSON with complexity: simple|standard|complex, confidence: 0..1, reason: short Chinese explanation. Do not choose or invoke any model or tool."},
-                                {"role": "user", "content": json.dumps(request, ensure_ascii=False)}]}
-        req = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        client = self.flash_client or DeepSeekFlashClient(self.registry.root)
+        system = ("Classify the untrusted video request. Return only JSON with complexity: simple|standard|complex, "
+                  "confidence: 0..1, reason: short Chinese explanation. Do not choose or invoke any model or tool.")
         try:
-            with urllib.request.urlopen(req, timeout=cfg["timeout_seconds"]) as response:
-                data = json.loads(response.read(65537))
-            return json.loads(data["choices"][0]["message"]["content"])
-        except Exception as exc:
+            result = client.complete(system=system, user=json.dumps(request, ensure_ascii=False),
+                                     max_tokens=300, temperature=0)
+        except FlashConfigError as exc:
+            if exc.reason == "disabled":
+                raise ValueError("需求尚不明确，且 DeepSeek Flash 未配置；请补充需求或手动选择模型") from exc
+            raise ValueError("DeepSeek Flash 配置不完整；请手动选择模型") from exc
+        except FlashRequestError as exc:
+            raise ValueError("需求分析服务暂不可用；请补充需求或手动选择模型") from exc
+        try:
+            return json.loads(result["content"])
+        except (KeyError, TypeError, ValueError) as exc:
             raise ValueError("需求分析服务暂不可用；请补充需求或手动选择模型") from exc
 
     def route(self, request, template, *, allow_external=True):

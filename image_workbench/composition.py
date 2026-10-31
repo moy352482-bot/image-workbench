@@ -21,6 +21,8 @@ from .storyboard_web import install_storyboards
 from .plugin_api import PluginRegistry
 from .script_plugin import PLUGIN_ID, ScriptGenerationPlugin
 from .script_workflow import ScriptStoryboardWorkflow
+from .prompt_enhancement import PromptEnhancementService
+from .http_api.prompt_enhancements import install_routes as install_prompt_enhancements
 
 
 def create_app(storage: StorageManager | None = None, *, backend="codex", remote_access=None, registration_policy=None,
@@ -34,6 +36,10 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     application.video_store = VideoStore(application.storage, application.identity)
     application.script_service = ScriptService(application.storage, application.identity)
     application.qwen_store = QwenLabStore(application.storage, application.identity)
+    # Prompt enhancement is stateless: it never receives storage, identity or
+    # the image backend. HTTP resolves the current service on every request so
+    # tests can replace it without rebuilding routes.
+    application.prompt_enhancement_service = PromptEnhancementService.from_config()
     # Resolve text service per operation so tests/integrations can replace the
     # service without rebuilding routes. Identity and workspace scope stay intact.
     def scripts():
@@ -69,4 +75,5 @@ def create_app(storage: StorageManager | None = None, *, backend="codex", remote
     install_storyboards(application.auth, application.storyboard_service, resume_pending=application.script_workflow.resume_pending)
     install_pipeline(application.auth, application.pipeline_service, application.video_store)
     install_qwen(application.auth, application.qwen_store)
+    install_prompt_enhancements(application.auth, lambda: application.prompt_enhancement_service)
     return application

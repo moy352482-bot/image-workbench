@@ -51,6 +51,10 @@ def install_pipeline(app, service, store):
     def from_subproject(body: SubprojectChoice, request: Request):
         return service.from_subproject(*owner(request), body.subproject_id)
 
+    @app.post("/api/video/projects/{pid}/bind-subproject")
+    def bind_subproject(pid: str, body: SubprojectChoice, request: Request):
+        return service.bind_existing(*owner(request), pid, body.subproject_id)
+
     @app.get("/api/video/projects/{pid}/tray")
     def tray(pid: str, request: Request):
         return service.tray(*owner(request), pid)

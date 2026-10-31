@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "skill_id": "cinematic",
+  "version": 1,
+  "name": "电影感画面",
+  "description": "用有来源的光线、空间层次和叙事焦点建立电影感，不靠特效或复制具体影片。",
+  "task_types": ["generate", "reference_generate", "edit"],
+  "modes": ["standard", "creative"],
+  "priority": 20,
+  "selection": {
+    "keywords": ["电影感", "电影", "cinematic", "镜头感", "大片", "叙事光", "氛围感", "film look"],
+    "reference_roles": [],
+    "style_ids": ["cinematic-realism"]
+  },
+  "rules": {
+    "preserve": [
+      "电影感通过光线方向、空间层次和明暗表达，不靠堆叠特效。",
+      "保留主体身份、固定颜色、数量、文字和画幅。",
+      "主光必须有可见或可解释的来源。"
+    ],
+    "forbid_additions": [
+      "不得新增无来源的彩色轮廓光、爆炸、雨雾、追逐或动作模糊。",
+      "不得把风格样例中的演员面容、标志性镜位或剧照布景带进新画面。",
+      "不得为了氛围改变主体结构或隐藏验收所需细节。"
+    ],
+    "structure": ["主体与叙事焦点", "环境光源", "前中后景层次", "镜头距离与视角", "色彩与明暗", "材质微纹理", "负向约束"],
+    "standard": [
+      "只补充光线方向、空间层次和叙事焦点，不增加剧情元素。",
+      "保持用户原始画面的主体和动作不变。"
+    ],
+    "creative": [
+      "可以强化氛围、景深和色调，但必须保留可辨认的主体结构与暗部细节。",
+      "创意只能改变表现方式，不能新增人物、道具或品牌内容。"
+    ],
+    "edit_plan_required": false,
+    "style_default": "cinematic-realism"
+  },
+  "output_requirements": [
+    "enhanced_prompt 要写出主光来源、构图层次和一个明确视觉焦点。",
+    "negative_constraints 要包含无来源光效、剧情化添加和主体结构被遮挡的限制。",
+    "不得复刻具体影片的镜位、演员或剧照。"
+  ]
+}

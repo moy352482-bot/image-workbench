@@ -72,6 +72,6 @@ Copy-Item -LiteralPath .\deploy\server.example.json -Destination .\deploy\server
 
 这会实际运行本地检查并生成 `.deploy/版本号/release.tar.gz`，不连接服务器。该目录还保存检查输出 `checks.txt` 和文件校验清单 `manifest.json`。
 
-发布包包含 `image_workbench/` 程序与网页资源、两个运行依赖清单、版本清单，以及脚本运行必需的三个 `config/script_*.json` 配置和 `skills/video-script-generation/` 内的 JSON、TXT、Markdown 模板与案例。不会上传其他配置、本机 `data/`、账号登录缓存、SSH 私钥、`.venv/`、本机任务缓存、报告或服务器配置文件。服务器在切换版本前检查脚本模板和模型配置可加载。
+发布包包含 `image_workbench/` 程序与网页资源、两个运行依赖清单、版本清单，以及脚本运行必需的三个 `config/script_*.json` 配置和 `skills/video-script-generation/` 内的 JSON、TXT、Markdown 模板与案例。提示词强化随程序启用时，还包含 `config/prompt_enhancement.json`、`skills/prompt-enhancement/skills/*.json` 和 `skills/image-asset-generation/styles/` 下的 JSON。不会上传其他配置、本机 `data/`、账号登录缓存、SSH 私钥、`.venv/`、本机任务缓存、报告或服务器配置文件。服务器在切换版本前检查脚本模板、模型配置、提示词 Skill 与风格库可加载。
 
 部署脚本的打包边界、输入校验、检查失败拦截和代码变动拦截已经自动验证；健康检查失败回退在 WSL/Linux 中使用模拟 systemd 验证。腾讯云首次发布已验证真实 systemd、依赖安装、当前版本切换、登录入口和公网 HTTPS。真实服务回退尚未人为制造故障演练。

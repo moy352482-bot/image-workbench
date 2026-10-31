@@ -41,6 +41,54 @@ class VideoStateBrowserTests(unittest.TestCase):
         self.page.evaluate("id => window.IWVideo.selectProject(id)", pid)
         self.page.wait_for_function("id => window.IWVideo.snapshot().project?.project_id === id", arg=pid)
 
+    def test_project_tree_navigation_uses_shared_main_subprojects_without_starting_jobs(self):
+        self.video()
+        expect(self.page.locator("#videoProjectList")).to_contain_text("浏览器项目 A")
+        expect(self.page.locator("#videoProjectList")).to_contain_text("未分类任务")
+
+        with self.page.expect_response(lambda response: response.url.endswith("/api/main-projects")
+                                       and response.request.method == "POST") as created:
+            self.page.locator("#newVideoProject").click()
+            self.page.locator("#videoProjectDialogName").fill("浏览器品牌 B")
+            self.page.locator("#videoProjectDialogSubmit").click()
+        main = created.value.json()
+        main_id = main["main_project_id"]
+        self.page.wait_for_function("id => window.IWVideo.snapshot().mainProjectId === id", arg=main_id)
+        group = self.page.locator(".project-tree-group").filter(has_text="浏览器品牌 B")
+        expect(group).to_be_visible()
+
+        with self.page.expect_response(lambda response: response.url.endswith("/subprojects")
+                                       and response.request.method == "POST") as sub_created:
+            group.locator(".project-child-add").click()
+            self.page.locator("#videoProjectDialogName").fill("秋季宣传片")
+            self.page.locator("#videoProjectDialogSubmit").click()
+        sub_id = sub_created.value.json()["subproject_id"]
+        self.page.wait_for_function("id => window.IWVideo.snapshot().subprojectId === id", arg=sub_id)
+        expect(self.page.locator("#videoActiveName")).to_have_text("秋季宣传片")
+        self.assertIn("subproject=" + sub_id, self.page.url)
+
+        sub_row = group.locator(".project-child-row").filter(has_text="秋季宣传片")
+        with self.page.expect_response(lambda response: response.url.endswith(f"/api/subprojects/{sub_id}")
+                                       and response.request.method == "PATCH"):
+            sub_row.locator(".project-sub-options").click()
+            self.page.locator("#videoProjectDialogName").fill("秋季成片")
+            self.page.locator("#videoProjectDialogSubmit").click()
+        expect(self.page.locator("#videoProjectList")).to_contain_text("秋季成片")
+        self.page.wait_for_function("id => window.IWVideo.snapshot().subprojectId === id", arg=sub_id)
+
+        with self.page.expect_response(lambda response: response.url.endswith(f"/api/main-projects/{main_id}")
+                                       and response.request.method == "PATCH"):
+            group.locator(".project-options").click()
+            self.page.locator("#videoProjectDialogName").fill("浏览器品牌 2026")
+            self.page.locator("#videoProjectDialogSubmit").click()
+        expect(self.page.locator("#videoProjectList")).to_contain_text("浏览器品牌 2026")
+
+        self.page.locator(".project-tree-group").filter(has_text="浏览器项目 A").locator(".project-item").click()
+        self.page.wait_for_function("id => window.IWVideo.snapshot().project?.project_id === id", arg=self.pid)
+        expect(self.page.locator("#videoActiveName")).to_have_text("浏览器项目 A")
+        self.assertEqual(self.app.video_store._jobs(), [])
+        self.assertEqual(self.app.identity.wallet(self.aid)["used_credit"], 0)
+
     def test_snapshots_and_events_cannot_mutate_state_and_reference_order_is_owned(self):
         assets = self.post(f"/api/video/projects/{self.pid}/assets", files=[
             ("files", (color + ".png", png(color), "image/png")) for color in ("red", "blue")])["assets"]

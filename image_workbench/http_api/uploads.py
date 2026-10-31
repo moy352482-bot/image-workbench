@@ -7,8 +7,9 @@ from starlette.datastructures import UploadFile
 from ..contracts.images import MAX_UPLOAD_BYTES
 
 async def save_task(state, storage, project_id: str, subproject_id: str, request: Request):
-    async with request.form(max_files=8, max_fields=9, max_part_size=64 * 1024) as form:
-        allowed = {"request_id", "operation", "prompt", "aspect_ratio", "base_artifact_id", "files", "name", "description", "reference_artifact_ids"}
+    async with request.form(max_files=8, max_fields=12, max_part_size=64 * 1024) as form:
+        allowed = {"request_id", "operation", "prompt", "aspect_ratio", "base_artifact_id", "files", "name", "description",
+                   "reference_artifact_ids", "original_prompt", "prompt_source"}
         if set(form) - allowed or any(len(form.getlist(key)) != 1 for key in set(form) - {"files"}):
             raise HTTPException(400, "任务字段不正确，不能指定本地文件路径。")
         for key in ("request_id", "operation", "prompt"):
@@ -17,7 +18,7 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
         files = form.getlist("files")
         if len(files) > 8 or any(not isinstance(item, UploadFile) for item in files):
             raise HTTPException(400, "最多上传8张参考图片。")
-        for key in ("aspect_ratio", "base_artifact_id", "name", "description"):
+        for key in ("aspect_ratio", "base_artifact_id", "name", "description", "original_prompt", "prompt_source"):
             if key in form and not isinstance(form[key], str):
                 raise HTTPException(400, "比例或版本来源格式错误。")
         try:
@@ -26,6 +27,11 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
                 raise ValueError()
         except (TypeError, ValueError):
             raise HTTPException(400, "参考素材列表无效，请重新选择图片")
+        source_text = form.get("prompt_source")
+        try:
+            prompt_source = json.loads(source_text) if source_text else None
+        except (TypeError, ValueError):
+            raise HTTPException(400, "提示词来源格式错误。") from None
         temporary = storage.files.path(".workbench", "uploads", uuid4().hex)
         temporary.mkdir()
         sources, total = [], 0
@@ -45,7 +51,8 @@ async def save_task(state, storage, project_id: str, subproject_id: str, request
                 request_id=form["request_id"], operation=form["operation"], prompt=form["prompt"],
                 aspect_ratio=form.get("aspect_ratio", "auto"), base_artifact_id=form.get("base_artifact_id") or None,
                 inputs=sources, reference_artifact_ids=refs, subproject_id=subproject_id,
-                name=form.get("name") or None, description=form.get("description", ""))
+                name=form.get("name") or None, description=form.get("description", ""),
+                original_prompt=form.get("original_prompt") or None, prompt_source=prompt_source)
             return await run_in_threadpool(state.task_view, project_id, task.task_id)
         finally:
             for path in sources:

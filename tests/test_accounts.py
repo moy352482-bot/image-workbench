@@ -285,6 +285,19 @@ class AccountTests(unittest.TestCase):
             self.assertEqual(retry["reserved_credit"], 80)
             self.assertEqual(self.wallet()["frozen_credit"], 80)
 
+    def test_rejected_retry_keeps_refunded_settlement_visible(self):
+        task = self.task()
+        failed = self.execute(task, CountingBackend([self.root / "absent.png"]))
+        self.assertEqual(failed["credit_status"], "refunded")
+        old_job = failed["current_job"]["job_id"]
+        with patch.dict(CreditCostCalculator.policies, {"local": (240, 300)}):
+            rejected = self.submit(task, retry_of=old_job)
+            self.assertEqual(rejected.status_code, 402, rejected.text)
+            detail = self.a.get(f"/api/tasks/{task['task_id']}").json()
+        self.assertEqual(detail["status"], "failed")
+        self.assertEqual(detail["credit_status"], "refunded")
+        self.assertEqual(detail["reserved_credit"], 40)
+
     def test_capacity_rejection_is_clear_and_never_freezes_or_creates_job(self):
         scoped = self.app.scoped_app(self.a_info["account_id"], self.a_info["workspace_id"])
         scoped.state.workbench.identity.capacity_policy = CapacityPolicy(max_pending_per_account=1)
@@ -561,6 +574,10 @@ class MigrationTests(unittest.TestCase):
             projects = client.get("/api/main-projects").json()["main_projects"]
             self.assertEqual(projects[0]["main_project_id"], self.project.project_id)
             self.assertEqual(client.get(f"/api/artifacts/{self.artifact.artifact_id}").status_code, 200)
+            detail = client.get(f"/api/tasks/{self.task.task_id}").json()
+            self.assertEqual(detail["status"], "awaiting_review")
+            self.assertEqual(detail["output_count"], 1)
+            self.assertEqual(detail["credit_status"], "credit_unknown")
 
     def test_stale_preview_does_not_create_identity(self):
         preview = migrate_accounts(self.storage)

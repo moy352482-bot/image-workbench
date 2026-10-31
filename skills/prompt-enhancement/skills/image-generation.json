@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "skill_id": "image-generation",
+  "version": 1,
+  "name": "图片生成",
+  "description": "把普通文生图需求整理成具体、可执行、保留原始意图的图片提示词。",
+  "task_types": ["generate", "reference_generate"],
+  "modes": ["standard", "creative"],
+  "priority": 10,
+  "selection": {
+    "keywords": ["生成", "画", "图片", "海报", "插画", "照片", "场景", "设计", "image", "generate", "picture"],
+    "reference_roles": [],
+    "style_ids": []
+  },
+  "rules": {
+    "preserve": [
+      "保留用户明确指定的主体、数量、动作、地点、颜色、文字、品牌和禁止项。",
+      "用户给出的精确文字必须原样保留，不翻译、不改写。",
+      "用户没有提到的实体不得补造。"
+    ],
+    "forbid_additions": [
+      "不得新增用户未要求的人物、动物、道具、品牌、logo、文字或水印。",
+      "不得把模糊描述扩写成新的故事、人物关系或产品卖点。",
+      "不得改变用户指定的数量、颜色、材质或画幅。"
+    ],
+    "structure": ["主体与数量", "场景与环境", "动作或状态", "构图与视角", "光线", "色彩与材质", "风格", "精确文字", "负向约束"],
+    "standard": [
+      "只做清晰化：把模糊描述转为可执行的视觉描述，不扩大需求范围。",
+      "保留原文中的每一个限定词和禁止项。"
+    ],
+    "creative": [
+      "可以补充光线、氛围、材质、构图和镜头细节，让画面更完整。",
+      "创意补充只能作用于表现方式，不能新增主体、品牌、文字或改变用户硬性约束。"
+    ],
+    "edit_plan_required": false,
+    "style_default": null
+  },
+  "output_requirements": [
+    "enhanced_prompt 是一段可直接用于图片生成的完整自然语言，不使用 Markdown 标题或代码块。",
+    "preserved_user_requirements 至少包含用户原始需求中的硬性约束。",
+    "added_details 只列出实际补充的表现层信息，不得包含新实体。"
+  ]
+}

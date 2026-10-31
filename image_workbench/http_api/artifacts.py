@@ -1,5 +1,6 @@
 """Artifacts HTTP routes."""
 import hashlib
+from fastapi import HTTPException
 from fastapi.responses import Response
 from ..contracts.images import Payload
 
@@ -15,10 +16,10 @@ def install_routes(app, state, storage):
         size_limit = (storage.config.max_text_bytes if item.format in {"TXT", "JSON"} else
                       40 * 1024 * 1024 if item.format == "MP4" else storage.config.max_image_bytes)
         if path.stat().st_size != item.size_bytes or item.size_bytes > size_limit:
-            raise ValueError("图片体积与登记不符")
+            raise HTTPException(status_code=400, detail="文件校验未通过，请刷新后重试。")
         data = path.read_bytes()
         if hashlib.sha256(data).hexdigest() != item.sha256:
-            raise ValueError("图片内容与登记不符")
+            raise HTTPException(status_code=400, detail="文件校验未通过，请刷新后重试。")
         mime, extension = {"PNG": ("image/png", "png"), "JPEG": ("image/jpeg", "jpg"), "WEBP": ("image/webp", "webp"), "TXT": ("text/plain; charset=utf-8", "txt"),
                            "JSON": ("application/json", "json"), "MP4": ("video/mp4", "mp4")}[item.format]
         if item.format in {"TXT", "JSON"}:

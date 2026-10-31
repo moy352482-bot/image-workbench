@@ -47,6 +47,19 @@ def runtime_files(root):
     if (root / "image_workbench" / "storyboard_planner.py").is_file():
         paths.append(root / "skills" / "storyboard-planning" / "SKILL.md")
         paths.append(root / "config" / "storyboard_pricing.json")
+    if (root / "image_workbench" / "prompt_enhancement.py").is_file():
+        paths.append(root / "config" / "prompt_enhancement.json")
+        prompts = root / "skills" / "prompt-enhancement" / "skills"
+        styles = root / "skills" / "image-asset-generation" / "styles"
+        for directory, label in ((prompts, "提示词 Skill"), (styles, "图片风格")):
+            files = [path for path in sorted(directory.rglob("*.json"))
+                     if path.is_file() and not path.name.startswith(".")]
+            if not files:
+                raise ValueError(f"{label}定义缺失")
+            for path in files:
+                if path.is_symlink():
+                    raise ValueError(f"{label}目录不允许符号链接")
+                paths.append(path)
     paths.extend(root / name for name in ("requirements.txt", "requirements-web.txt"))
     for path in paths:
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):

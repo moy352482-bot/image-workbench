@@ -46,6 +46,18 @@
   function statusClass(status) {
     return ['draft', 'queued', 'generating', 'checking', 'awaiting_review', 'approved', 'failed', 'uncertain'].includes(status) ? `status-${status}` : 'status-neutral';
   }
+  const creditStatuses = new Set(['waiting_credit', 'credit_frozen', 'running', 'completed', 'refunded', 'credit_insufficient']);
+  function creditStateText(status, amount) {
+    // 只翻译后端计费状态；金额为 0 时才显示免费，未知状态不猜测。
+    if (amount === 0) return '免费';
+    const names = { waiting_credit: '预计消耗', credit_frozen: '已冻结', running: '已冻结',
+      completed: '已扣除', refunded: '已退回', credit_insufficient: '预计消耗' };
+    return names[status] || '扣费状态待确认';
+  }
+  function creditAmountText(status, amount) {
+    // 历史任务没有冻结/结算流水时，报价不能当作本次账单金额。
+    return creditStatuses.has(status) && amount !== null && amount !== undefined ? String(amount) : '待确认';
+  }
   function modeName(operation) { return operation === 'edit' ? '图片修改' : '图片生成'; }
-  window.WorkbenchFormat = Object.freeze({ formatDate, formatBytes, formatSeconds, executionDuration, executionTimingText, statusText, artifactLabel, statusClass, modeName });
+  window.WorkbenchFormat = Object.freeze({ formatDate, formatBytes, formatSeconds, executionDuration, executionTimingText, statusText, artifactLabel, statusClass, creditStateText, creditAmountText, modeName });
 })();
